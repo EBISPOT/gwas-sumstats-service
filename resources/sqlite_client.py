@@ -15,3 +15,18 @@ class sqlClient():
             print(e)
         return None
 
+    def insert_study(self, data):
+        self.cur.execute("insert or ignore into studies(studyID, callbackID, pmID, filePath, md5, assembly) values (?,?,?,?,?,?)", data)
+
+    def get_study_metadata(self, study):
+        data = []
+        for row in self.cur.execute("select * from studies where studyID =?", (study,)):
+            data.append(row[0])
+        if data:
+            return data
+        else:
+            return False
+
+
+    
+
