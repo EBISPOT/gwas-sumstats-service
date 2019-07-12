@@ -1,6 +1,7 @@
 import simplejson
 from flask import Flask, make_response, Response, jsonify
-import api_endpoints as endpoints
+import resources.api_endpoints as endpoints
+
 
 
 app = Flask(__name__)

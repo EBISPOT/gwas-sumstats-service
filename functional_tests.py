@@ -16,7 +16,6 @@ class BasicTestCase(unittest.TestCase):
         tester = app.test_client(self)
         response = tester.get('/studies', content_type='html/json')
         self.assertEqual(response.status_code, 200)
-        #self.assertEqual(response.data, )
 
 
 if __name__ == '__main__':
