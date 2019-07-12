@@ -1,7 +1,7 @@
-from app import app
-
+import os
 import unittest
-
+from app import app
+import config
 
 class BasicTestCase(unittest.TestCase):
 
@@ -16,6 +16,10 @@ class BasicTestCase(unittest.TestCase):
         tester = app.test_client(self)
         response = tester.get('/studies', content_type='html/json')
         self.assertEqual(response.status_code, 200)
+
+    def test_database(self):
+        tester = os.path.exists(config.DB_PATH)
+        self.assertTrue(tester)
 
 
 if __name__ == '__main__':

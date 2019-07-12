@@ -9,3 +9,11 @@ __pycache__
 
 # virtualenv
 .env
+
+# data
+*.tsv*
+*.txt*
+*.csv*
+*.db
+./data
+./logs
