@@ -6,7 +6,7 @@ DB_SCHEMA = """
             studyID TEXT NOT NULL UNIQUE,
             callbackID TEXT NOT NULL,
             pmID TEXT NOT NULL,
-            filePath TEXT NOT NULL UNIQUE,
+            filePath TEXT NOT NULL,
             md5 TEXT NOT NULL,
             assembly TEXT NOT NULL,
             retrieved INT CHECK (retrieved IN (0,1)),
