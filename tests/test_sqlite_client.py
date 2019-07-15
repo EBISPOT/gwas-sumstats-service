@@ -8,9 +8,9 @@ from tests.test_constants import *
 class TestDB(unittest.TestCase):
     def setUp(self):
         self.testDB = "./tests/study_meta.db"
-        sc = sqlClient(self.testDB)
-        sc.create_conn()
-        sc.cur.execute(config.DB_SCHEMA)
+        sq = sqlClient(self.testDB)
+        sq.create_conn()
+        sq.cur.execute(config.DB_SCHEMA)
 
     def tearDown(self):
         os.remove(self.testDB)
@@ -20,52 +20,63 @@ class TestDB(unittest.TestCase):
         self.assertTrue(tester)
 
     def test_insert_new_study(self):
-        sc = sqlClient(self.testDB)
-        sc.create_conn()
-        sc.insert_new_study([VALID_SET["study_id"][0],
-                             VALID_SET["callback_id"][0],
-                             VALID_SET["pmid"][0],
-                             VALID_SET["file_path"][0],
-                             VALID_SET["md5"][0],
-                             VALID_SET["assembly"][0]
+        sq = sqlClient(self.testDB)
+        sq.create_conn()
+        sq.insert_new_study([VALID_POST["requestEntries"][0]["id"],
+                             "callback123",
+                             VALID_POST["requestEntries"][0]["pmid"],
+                             VALID_POST["requestEntries"][0]["filePath"],
+                             VALID_POST["requestEntries"][0]["md5"],
+                             VALID_POST["requestEntries"][0]["assembly"]
                              ])
-        response = sc.get_study_metadata("abc123")
+        response = sq.get_study_metadata("abc123")
         self.assertTrue(response)
 
     def test_cannot_insert_same_study_twice(self):
-        sc = sqlClient(self.testDB)
-        sc.create_conn()
-        sc.insert_new_study([VALID_SET["study_id"][0],
-                             VALID_SET["callback_id"][0],
-                             VALID_SET["pmid"][0],
-                             VALID_SET["file_path"][0],
-                             VALID_SET["md5"][0],
-                             VALID_SET["assembly"][0]
+        sq = sqlClient(self.testDB)
+        sq.create_conn()
+        sq.insert_new_study([VALID_POST["requestEntries"][0]["id"],
+                             "callback123",
+                             VALID_POST["requestEntries"][0]["pmid"],
+                             VALID_POST["requestEntries"][0]["filePath"],
+                             VALID_POST["requestEntries"][0]["md5"],
+                             VALID_POST["requestEntries"][0]["assembly"]
                              ])
-        response = sc.get_study_count()
+        response = sq.get_study_count()
         self.assertEqual(response, 1)
 
     def test_can_insert_another_study(self):
-        sc = sqlClient(self.testDB)
-        sc.create_conn()
-        sc.insert_new_study([VALID_SET["study_id"][0],
-                             VALID_SET["callback_id"][0],
-                             VALID_SET["pmid"][0],
-                             VALID_SET["file_path"][0],
-                             VALID_SET["md5"][0],
-                             VALID_SET["assembly"][0]
+        sq = sqlClient(self.testDB)
+        sq.create_conn()
+        sq.insert_new_study([VALID_POST["requestEntries"][0]["id"],
+                             "callback123",
+                             VALID_POST["requestEntries"][0]["pmid"],
+                             VALID_POST["requestEntries"][0]["filePath"],
+                             VALID_POST["requestEntries"][0]["md5"],
+                             VALID_POST["requestEntries"][0]["assembly"]
                              ])
-        sc.insert_new_study(["zyx321",
-                             VALID_SET["callback_id"][0],
-                             VALID_SET["pmid"][0],
-                             VALID_SET["file_path"][0],
-                             VALID_SET["md5"][0],
-                             VALID_SET["assembly"][0]
+        sq.insert_new_study([VALID_POST["requestEntries"][1]["id"],
+                             "callback234",
+                             VALID_POST["requestEntries"][1]["pmid"],
+                             VALID_POST["requestEntries"][1]["filePath"],
+                             VALID_POST["requestEntries"][1]["md5"],
+                             VALID_POST["requestEntries"][1]["assembly"]
                              ])
-        response = sc.get_study_count()
+        response = sq.get_study_count()
         self.assertEqual(response, 2)
 
-
+    def test_select_from_callback_id(self):
+        sq = sqlClient(self.testDB)
+        sq.create_conn()
+        sq.insert_new_study([VALID_POST["requestEntries"][0]["id"],
+                             "callback123",
+                             VALID_POST["requestEntries"][0]["pmid"],
+                             VALID_POST["requestEntries"][0]["filePath"],
+                             VALID_POST["requestEntries"][0]["md5"],
+                             VALID_POST["requestEntries"][0]["assembly"]
+                             ])
+        response = sq.get_data_from_callback_id("callback123")
+        self.assertTrue(response)
 
 
 if __name__ == '__main__':

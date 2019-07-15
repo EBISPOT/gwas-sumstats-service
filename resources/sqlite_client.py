@@ -43,6 +43,16 @@ class sqlClient():
         count = count[0]
         return count
 
+    def get_data_from_callback_id(self, callback_id):
+        data = []
+        for row in self.cur.execute("select * from studies where callbackID =?", (callback_id,)):
+            data.append(row[0])
+        if data:
+            return data
+        return False
+
+
+
 
     
 
