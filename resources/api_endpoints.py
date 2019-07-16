@@ -27,10 +27,6 @@ def get_sumstats(callback_id):
 
 
 def create_studies(content):
-    payload = pl.Payload(payload=content)
-    payload.check_basic_content_present()
-    payload.create_study_obj_list()
-    payload.set_callback_id_for_studies()
-    payload.create_entry_for_studies()
-    response = {"callbackID": payload.callback_id}
+    callback_id = au.json_payload_to_db(content)
+    response = {"callbackID": callback_id}
     return simplejson.dumps(response)
