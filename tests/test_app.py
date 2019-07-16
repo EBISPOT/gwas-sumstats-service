@@ -34,12 +34,15 @@ class BasicTestCase(unittest.TestCase):
         response = tester.post('/studies', 
                                json=VALID_POST)
         self.assertEqual(response.status_code, 201)
+        self.assertIn('callbackID', response.get_json())
 
     def test_post_new_study_no_json(self):
         tester = app.test_client(self)
         response = tester.post('/studies',
                                json=None)
         self.assertEqual(response.status_code, 400)
+        self.assertNotIn('callbackID', response.get_json())
+        
 
     def test_post_new_study_missing_data(self):
         tester = app.test_client(self)
@@ -64,7 +67,7 @@ class BasicTestCase(unittest.TestCase):
         response = tester.post('/studies',
                                json=invalid_post)
         self.assertEqual(response.status_code, 400)
-        self.assertIn("Missing field in json", response.get_json()['message'])
+        self.assertIn("Missing field", response.get_json()['message'])
 
     def test_post_new_study_bad_id(self):
         tester = app.test_client(self)
@@ -85,6 +88,33 @@ class BasicTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("is invalid", response.get_json()['message'])
  
+
+    def test_post_duplicate_study_id_in_one_payload(self):
+        tester = app.test_client(self)
+        invalid_post = { 
+                        "requestEntries": [
+                            {
+                             "id": "abc123",
+                             "pmid": "1233454",
+                             "filePath": "file/path.tsv",
+                             "md5":"b1d7e0a58d36502d59d036a17336ddf5",
+                             "assembly":"38"
+                            },
+                            {
+                             "id": "abc123",
+                             "pmid": "1233454",
+                             "filePath": "file/path.tsv",
+                             "md5":"b1d7e0a58d36502d59d036a17336ddf5",
+                             "assembly":"38"
+                            },
+                          ]
+                        }
+        response = tester.post('/studies',
+                               json=invalid_post)
+        self.assertEqual(response.status_code, 400)
+
+
+
 
 
 

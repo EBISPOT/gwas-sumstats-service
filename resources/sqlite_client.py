@@ -25,16 +25,17 @@ class sqlClient():
                          VALUES (?,?,?,?,?,?)
                          """, 
                          data)
+        self.commit()
 
     """ select statements """
     
     def get_study_metadata(self, study):
         data = []
         for row in self.cur.execute("select * from studies where studyID =?", (study,)):
-            data.append(row[0])
+            data.append(row)
         if data:
             return data
-        return False
+        return None
 
     def get_study_count(self):
         count = []
@@ -46,12 +47,15 @@ class sqlClient():
     def get_data_from_callback_id(self, callback_id):
         data = []
         for row in self.cur.execute("select * from studies where callbackID =?", (callback_id,)):
-            data.append(row[0])
+            data.append(row)
         if data:
             return data
-        return False
+        return None
 
+    """ OTHER STATEMENTS """
 
+    def commit(self):
+        self.cur.execute("COMMIT")
 
 
     
