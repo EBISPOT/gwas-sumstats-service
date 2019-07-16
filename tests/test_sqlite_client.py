@@ -76,7 +76,8 @@ class TestDB(unittest.TestCase):
                              VALID_POST["requestEntries"][0]["assembly"]
                              ])
         response = sq.get_data_from_callback_id("callback123")
-        self.assertTrue(response)
+        self.assertIsNotNone(response)
+        self.assertEqual(response[0][0], VALID_POST["requestEntries"][0]["id"])
 
 
 if __name__ == '__main__':

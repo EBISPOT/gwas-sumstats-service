@@ -3,7 +3,7 @@ import logging
 from flask import request, url_for
 from collections import OrderedDict
 from resources.error_classes import *
-import resources.study_controller as sc
+import resources.study_service as st
 import resources.api_utils as au
 
 
@@ -23,18 +23,14 @@ def get_studies():
 
 def create_studies(content):
     callback_id = None
-    if not 'requestEntries' in content:
-        raise BadUserRequest("Missing 'requestEntries' in json")
-    if len(content['requestEntries']) == 0:
-        raise BadUserRequest("Missing data")
+    au.check_basic_content_present(content)
+    au.check_study_ids_ok(content)
+    callback_id = au.generate_callback_id()
     for item in content['requestEntries']:
         study_id, pmid, file_path, md5, assembly = au.parse_new_study_json(item)
-        study = sc.Study(study_id=study_id, pmid=pmid, file_path=file_path, md5=md5, assembly=assembly)
-        print(study.study_id)
-        if not study.valid_study_id():
-            raise BadUserRequest("Study ID: {} is invalid")
-        if study.study_id_exists_in_db():
-            raise BadUserRequest("Study ID: {} exists already")
-    callback_id = au.generate_callback_id()
+        study = st.Study(study_id=study_id, pmid=pmid, 
+                         file_path=file_path, md5=md5, 
+                         assembly=assembly, callback_id=callback_id)
+        study.create_entry_for_study()
     response = {"callbackID": callback_id}
     return simplejson.dumps(response)
