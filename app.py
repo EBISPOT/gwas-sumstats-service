@@ -37,20 +37,13 @@ def root():
                     status=200,
                     mimetype="application/json")
 
-@app.route('/studies', methods=['GET', 'POST'])
-def studies():
-    if request.method == 'GET':
-        resp = endpoints.get_studies()
-        return Response(response=resp,
-                        status=200,
-                        mimetype="application/json")
-    
-    if request.method == 'POST':
-        content = request.get_json(force=True)
-        resp = endpoints.create_studies(content)
-        return Response(response=resp,
-                        status=201,
-                        mimetype="application/json")
+@app.route('/sum-stats', methods=['POST'])
+def sumstats():
+    content = request.get_json(force=True)
+    resp = endpoints.create_studies(content)
+    return Response(response=resp,
+                    status=201,
+                    mimetype="application/json")
 
 
 

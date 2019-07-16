@@ -10,13 +10,13 @@ import resources.api_utils as au
 def root():
     response = {
                 '_links': OrderedDict([
-                    ('studies', au.create_href('studies'))
+                    ('sumstats', au.create_href('sumstats'))
                  ])
                }
     return simplejson.dumps(response)
 
 
-def get_studies():
+def get_sumstats():
     response = {}
     return simplejson.dumps(response)
 
