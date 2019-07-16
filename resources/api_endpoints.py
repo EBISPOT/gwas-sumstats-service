@@ -4,7 +4,9 @@ from flask import request, url_for
 from collections import OrderedDict
 from resources.error_classes import *
 import resources.study_service as st
+from resources.sqlite_client import sqlClient
 import resources.api_utils as au
+import resources.payload as pl
 
 
 def root():
@@ -16,21 +18,18 @@ def root():
     return simplejson.dumps(response)
 
 
-def get_sumstats():
-    response = {}
+def get_sumstats(callback_id):
+    status = au.get_status_for_callback_id(callback_id)
+    # need to do this for each study in payload
+    response = {"status"}
     return simplejson.dumps(response)
 
 
 def create_studies(content):
-    callback_id = None
-    au.check_basic_content_present(content)
-    au.check_study_ids_ok(content)
-    callback_id = au.generate_callback_id()
-    for item in content['requestEntries']:
-        study_id, pmid, file_path, md5, assembly = au.parse_new_study_json(item)
-        study = st.Study(study_id=study_id, pmid=pmid, 
-                         file_path=file_path, md5=md5, 
-                         assembly=assembly, callback_id=callback_id)
-        study.create_entry_for_study()
-    response = {"callbackID": callback_id}
+    payload = pl.Payload(content)
+    payload.check_basic_content_present()
+    payload.check_study_ids_ok()
+    payload.generate_callback_id()
+    payload.create_entry_for_studies()
+    response = {"callbackID": payload.callback_id}
     return simplejson.dumps(response)

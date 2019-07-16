@@ -113,6 +113,15 @@ class BasicTestCase(unittest.TestCase):
         callback_id = response.get_json()["callbackID"]
         response = tester.get('/sum-stats/{}'.format(callback_id))
         self.assertEqual(response.status_code, 200)
+        
+    def test_bad_callback_id(self):
+        tester = app.test_client(self)
+        callback_id = 'NOTINDB'
+        response = tester.get('/sum-stats/{}'.format(callback_id))
+        self.assertEqual(response.status_code, 404)
+
+        
+
 
         
 

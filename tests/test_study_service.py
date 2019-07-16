@@ -5,7 +5,7 @@ from resources.sqlite_client import sqlClient
 import resources.study_service as st
 
 
-class TestStudyController(unittest.TestCase):
+class TestStudyService(unittest.TestCase):
     def setUp(self):
         self.testDB = "./tests/study_meta.db"
         config.DB_PATH = self.testDB 
@@ -40,7 +40,7 @@ class TestStudyController(unittest.TestCase):
         study.create_entry_for_study()
         check = study.get_study_from_db()
         self.assertIsNotNone(check)
-        self.assertEqual(check[0][0], study_id)
+        self.assertEqual(check[0], study_id)
 
 
 if __name__ == '__main__':

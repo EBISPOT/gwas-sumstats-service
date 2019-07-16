@@ -75,8 +75,16 @@ class TestDB(unittest.TestCase):
                              VALID_POST["requestEntries"][0]["md5"],
                              VALID_POST["requestEntries"][0]["assembly"]
                              ])
+        sq.insert_new_study([VALID_POST["requestEntries"][1]["id"],
+                             "callback123",
+                             VALID_POST["requestEntries"][0]["pmid"],
+                             VALID_POST["requestEntries"][0]["filePath"],
+                             VALID_POST["requestEntries"][0]["md5"],
+                             VALID_POST["requestEntries"][0]["assembly"]
+                             ])
         response = sq.get_data_from_callback_id("callback123")
         self.assertIsNotNone(response)
+        self.assertEqual(len(response),2)
         self.assertEqual(response[0][0], VALID_POST["requestEntries"][0]["id"])
 
 

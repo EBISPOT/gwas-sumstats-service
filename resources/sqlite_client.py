@@ -30,12 +30,9 @@ class sqlClient():
     """ select statements """
     
     def get_study_metadata(self, study):
-        data = []
-        for row in self.cur.execute("select * from studies where studyID =?", (study,)):
-            data.append(row)
-        if data:
-            return data
-        return None
+        self.cur.execute("select * from studies where studyID =?", (study,))
+        data = self.cur.fetchone()
+        return data
 
     def get_study_count(self):
         count = []
@@ -48,9 +45,8 @@ class sqlClient():
         data = []
         for row in self.cur.execute("select * from studies where callbackID =?", (callback_id,)):
             data.append(row)
-        if data:
-            return data
-        return None
+        return data if data else None
+            
 
     """ OTHER STATEMENTS """
 
