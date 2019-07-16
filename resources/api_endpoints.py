@@ -19,17 +19,18 @@ def root():
 
 
 def get_sumstats(callback_id):
-    status = au.get_status_for_callback_id(callback_id)
+    payload = pl.Payload(callback_id=callback_id)
+    status = payload.get_status_for_callback_id()
     # need to do this for each study in payload
     response = {"status"}
     return simplejson.dumps(response)
 
 
 def create_studies(content):
-    payload = pl.Payload(content)
+    payload = pl.Payload(payload=content)
     payload.check_basic_content_present()
-    payload.check_study_ids_ok()
-    payload.generate_callback_id()
+    payload.create_study_obj_list()
+    payload.set_callback_id_for_studies()
     payload.create_entry_for_studies()
     response = {"callbackID": payload.callback_id}
     return simplejson.dumps(response)

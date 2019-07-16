@@ -7,11 +7,28 @@ import config
 
 
 class Payload:
-    def __init__(self, payload=None):
+    def __init__(self, payload=None, callback_id=None):
         self.payload = payload
-        self.callback_id = None
-        self.study_list = []
+        self.callback_id = callback_id
+        self.study_obj_list = []
         self.study_ids = []
+
+    def get_status_for_callback_id(self):
+        pass
+
+    def get_data_for_callback_id(self):
+        sq = sqlClient(config.DB_PATH)
+        data = sq.get_data_from_callback_id(self.callback_id)
+        if data is None:
+            raise RequestedNotFound("Couldn't find resource with callback id: {}".format(self.callback_id))
+        for row in data:
+            study_id, callback_id, pmid, file_path, md5, assembly, retrieved, data_valid = row
+            study = st.Study(study_id=study_id, callback_id=callback_id, pmid=pmid, 
+                             file_path=file_path, md5=md5, 
+                             assembly=assembly, retrieved=retrieved,
+                             data_valid=data_valid)
+            self.study_obj_list.append(study)
+        return self.study_obj_list
 
     def check_basic_content_present(self):
         if not 'requestEntries' in self.payload:
@@ -20,7 +37,7 @@ class Payload:
             raise BadUserRequest("Missing data")
         return True
 
-    def check_study_ids_ok(self):
+    def create_study_obj_list(self):
         for item in self.payload['requestEntries']:
             study_id, pmid, file_path, md5, assembly = self.parse_new_study_json(item)
             study = st.Study(study_id=study_id, pmid=pmid, 
@@ -32,7 +49,7 @@ class Payload:
                 raise BadUserRequest("Study ID: {} exists already".format(study_id))
             if study.study_id not in self.study_ids:
                 self.study_ids.append(study.study_id)
-                self.study_list.append(study)
+                self.study_obj_list.append(study)
             else:
                 raise BadUserRequest("Study ID: {} duplicated in payload".format(study_id))
         return True
@@ -45,12 +62,12 @@ class Payload:
         self.callback_id = randid
 
     def set_callback_id_for_studies(self):
-        for study in self.study_list:
+        self.generate_callback_id()
+        for study in self.study_obj_list:
             study.callback_id = self.callback_id
 
     def create_entry_for_studies(self):
-        self.set_callback_id_for_studies()
-        for study in self.study_list:
+        for study in self.study_obj_list:
             study.create_entry_for_study()
 
     @staticmethod

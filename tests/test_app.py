@@ -120,11 +120,6 @@ class BasicTestCase(unittest.TestCase):
         response = tester.get('/sum-stats/{}'.format(callback_id))
         self.assertEqual(response.status_code, 404)
 
-        
-
-
-        
-
 
 if __name__ == '__main__':
     unittest.main()

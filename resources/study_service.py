@@ -5,13 +5,17 @@ from resources.sqlite_client import sqlClient
 
 
 class Study:
-    def __init__(self, study_id, pmid, file_path, md5, assembly, callback_id=None):
+    def __init__(self, study_id, pmid, file_path, 
+                 md5, assembly, callback_id=None,
+                 retrieved=None, data_valid=None):
         self.study_id = study_id
         self.pmid = pmid
         self.file_path = file_path
         self.md5 = md5
         self.assembly = assembly
         self.callback_id = callback_id
+        self.retrieved = retrieved
+        self.data_valid = data_valid
 
     def valid_study_id(self):
         if re.match('^[a-zA-Z0-9]+$', self.study_id) and len(self.study_id) > 3:

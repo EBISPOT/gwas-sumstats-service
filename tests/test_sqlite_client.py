@@ -86,6 +86,7 @@ class TestDB(unittest.TestCase):
         self.assertIsNotNone(response)
         self.assertEqual(len(response),2)
         self.assertEqual(response[0][0], VALID_POST["requestEntries"][0]["id"])
+        self.assertEqual(response[1][0], VALID_POST["requestEntries"][1]["id"])
 
 
 if __name__ == '__main__':
