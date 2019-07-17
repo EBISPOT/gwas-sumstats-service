@@ -5,8 +5,7 @@ branches:
   only:
   - master
 install:
-  - python setup.py -q install
-  - pip install -r requirements.txt
+  - pip install .
   - pip install codacy-coverage
 script:
   - pytest -cov-report html --cov sumstats_service --verbose
