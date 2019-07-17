@@ -7,6 +7,9 @@
 *.coverage
 __pycache__
 
+# pytest coverage plugin files
+htmlcov
+
 # virtualenv
 .env
 

@@ -1,7 +1,7 @@
 import os
 import unittest
 import config
-from resources.sqlite_client import sqlClient
+from sumstats_service.resources.sqlite_client import sqlClient
 from tests.test_constants import *
 
 

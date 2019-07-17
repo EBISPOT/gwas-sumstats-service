@@ -1,8 +1,8 @@
 import os
 import shortuuid
-from resources.sqlite_client import sqlClient
-from resources.error_classes import *
-import resources.study_service as st
+from sumstats_service.resources.sqlite_client import sqlClient
+from sumstats_service.resources.error_classes import *
+import sumstats_service.resources.study_service as st
 import config
 
 

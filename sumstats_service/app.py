@@ -1,7 +1,7 @@
 import simplejson
 from flask import Flask, make_response, Response, jsonify, request
-import resources.api_endpoints as endpoints
-from resources.error_classes import *
+import sumstats_service.resources.api_endpoints as endpoints
+from sumstats_service.resources.error_classes import *
 
 
 app = Flask(__name__)

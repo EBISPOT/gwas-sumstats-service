@@ -1,9 +1,9 @@
 import unittest
 import os
-from app import app
+from sumstats_service.app import app
 from test_constants import *
-from resources.sqlite_client import sqlClient
-import resources.payload as pl
+from sumstats_service.resources.sqlite_client import sqlClient
+import sumstats_service.resources.payload as pl
 import config
 
 

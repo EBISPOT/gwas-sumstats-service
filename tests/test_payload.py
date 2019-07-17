@@ -2,9 +2,9 @@ import unittest
 import os
 import config
 from tests.test_constants import *
-import resources.payload as pl
-from resources.error_classes import *
-from resources.sqlite_client import sqlClient
+import sumstats_service.resources.payload as pl
+from sumstats_service.resources.error_classes import *
+from sumstats_service.resources.sqlite_client import sqlClient
 
 
 class TestAPIUtils(unittest.TestCase):

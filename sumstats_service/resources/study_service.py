@@ -1,7 +1,7 @@
 import re
 import config
-from resources.error_classes import *
-from resources.sqlite_client import sqlClient
+from sumstats_service.resources.error_classes import *
+from sumstats_service.resources.sqlite_client import sqlClient
 
 
 class Study:

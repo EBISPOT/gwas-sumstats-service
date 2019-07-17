@@ -1,9 +1,9 @@
 from urllib.parse import unquote
 from flask import url_for
 import config
-from resources.error_classes import *
-from resources.sqlite_client import sqlClient
-import resources.payload as pl
+from sumstats_service.resources.error_classes import *
+from sumstats_service.resources.sqlite_client import sqlClient
+import sumstats_service.resources.payload as pl
 
 
 

@@ -1,0 +1,14 @@
+language: python
+python:
+  - "3.6"
+branches:
+  only:
+  - master
+install:
+  - pip install -r requirements.txt
+  - python setup.py -q install
+  - pip install codacy-coverage
+script:
+  - pytest -cov-report html --cov sumstats_service --verbose
+  - coverage xml
+  - python-codacy-coverage -r coverage.xml

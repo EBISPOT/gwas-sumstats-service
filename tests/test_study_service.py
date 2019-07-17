@@ -1,8 +1,8 @@
 import unittest
 import os
 import config
-from resources.sqlite_client import sqlClient
-import resources.study_service as st
+from sumstats_service.resources.sqlite_client import sqlClient
+import sumstats_service.resources.study_service as st
 
 
 class TestStudyService(unittest.TestCase):
