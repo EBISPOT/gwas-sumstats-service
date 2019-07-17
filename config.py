@@ -10,6 +10,6 @@ DB_SCHEMA = """
             md5 TEXT NOT NULL,
             assembly TEXT NOT NULL,
             retrieved INT CHECK (retrieved IN (0,1)),
-            dataValid INT CHECK (retrieved IN (0,1))
+            dataValid INT CHECK (dataValid IN (0,1))
             );
             """

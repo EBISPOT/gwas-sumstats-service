@@ -27,15 +27,24 @@ class sqlClient():
                          data)
         self.commit()
 
+    """ update statements """
+    
+    def update_retrieved_status(self, study, status):
+        study_status = status, study
+        self.cur.execute("UPDATE studies SET retrieved = ? WHERE studyID =?", (study_status))
+        self.commit()
+
+    def update_data_valid_status(self, study, status):
+        study_status = status, study
+        self.cur.execute("UPDATE studies SET dataValid = ? WHERE studyID =?", (study_status))
+        self.commit()
+
     """ select statements """
     
     def get_study_metadata(self, study):
-        data = []
-        for row in self.cur.execute("select * from studies where studyID =?", (study,)):
-            data.append(row)
-        if data:
-            return data
-        return None
+        self.cur.execute("select * from studies where studyID =?", (study,))
+        data = self.cur.fetchone()
+        return data
 
     def get_study_count(self):
         count = []
@@ -48,9 +57,8 @@ class sqlClient():
         data = []
         for row in self.cur.execute("select * from studies where callbackID =?", (callback_id,)):
             data.append(row)
-        if data:
-            return data
-        return None
+        return data if data else None
+            
 
     """ OTHER STATEMENTS """
 
