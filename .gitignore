@@ -6,6 +6,7 @@
 *.cache
 *.coverage
 __pycache__
+*.egg-info
 
 # pytest coverage plugin files
 htmlcov
