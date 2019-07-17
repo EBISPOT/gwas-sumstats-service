@@ -8,6 +8,6 @@ install:
   - pip install --force-reinstall -e .
   - pip install codacy-coverage
 script:
-  - pytest -cov-report html --cov sumstats_service --verbose
+  - pytest --cov-report html --cov sumstats_service --verbose
   - coverage xml
   - python-codacy-coverage -r coverage.xml
