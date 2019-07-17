@@ -87,14 +87,24 @@ class TestAPIUtils(unittest.TestCase):
 
     def test_get_data_for_callback_id(self):
         payload = pl.Payload(payload=VALID_POST)
-        payload.create_study_obj_list()
-        payload.set_callback_id_for_studies()
+        payload.payload_to_db()
         cid = payload.callback_id
-        payload.create_entry_for_studies()
         payload_new = pl.Payload(callback_id=cid)
-        payload_new.get_data_for_callback_id()
-        self.assertEqual(payload_new.study_obj_list[0].callback_id, cid)
+        for study in payload_new.study_obj_list:
+            self.assertEqual(study.callback_id, cid)
 
 
+    def test_get_payload_complete_status(self):
+        payload = pl.Payload(payload=VALID_POST)
+        payload.payload_to_db()
+        cid = payload.callback_id
+        completed = payload.get_payload_complete_status()
+        self.assertEqual(completed, False)
+        for study in payload.study_obj_list:
+            study.update_retrieved_status(1)
+            study.update_data_valid_status(1)
+        payload_new = pl.Payload(callback_id=cid)
+        completed = payload_new.get_payload_complete_status()
+        self.assertEqual(completed, True)
 
 

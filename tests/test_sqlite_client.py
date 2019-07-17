@@ -88,6 +88,39 @@ class TestDB(unittest.TestCase):
         self.assertEqual(response[0][0], VALID_POST["requestEntries"][0]["id"])
         self.assertEqual(response[1][0], VALID_POST["requestEntries"][1]["id"])
 
+    def test_update_retrieved_status(self):
+        sq = sqlClient(self.testDB)
+        sq.create_conn()
+        sq.insert_new_study([VALID_POST["requestEntries"][0]["id"],
+                             "callback123",
+                             VALID_POST["requestEntries"][0]["pmid"],
+                             VALID_POST["requestEntries"][0]["filePath"],
+                             VALID_POST["requestEntries"][0]["md5"],
+                             VALID_POST["requestEntries"][0]["assembly"]
+                             ])
+        sq.update_retrieved_status(VALID_POST["requestEntries"][0]["id"], 1)
+        response = sq.get_study_metadata(VALID_POST["requestEntries"][0]["id"])
+        self.assertEqual(response[6], 1)
+        sq.update_retrieved_status(VALID_POST["requestEntries"][0]["id"], 0)
+        response = sq.get_study_metadata(VALID_POST["requestEntries"][0]["id"])
+        self.assertEqual(response[6], 0)
+
+    def test_update_data_valid_status(self):
+        sq = sqlClient(self.testDB)
+        sq.create_conn()
+        sq.insert_new_study([VALID_POST["requestEntries"][0]["id"],
+                             "callback123",
+                             VALID_POST["requestEntries"][0]["pmid"],
+                             VALID_POST["requestEntries"][0]["filePath"],
+                             VALID_POST["requestEntries"][0]["md5"],
+                             VALID_POST["requestEntries"][0]["assembly"]
+                             ])
+        sq.update_data_valid_status(VALID_POST["requestEntries"][0]["id"], 1)
+        response = sq.get_study_metadata(VALID_POST["requestEntries"][0]["id"])
+        self.assertEqual(response[7], 1)
+        sq.update_data_valid_status(VALID_POST["requestEntries"][0]["id"], 0)
+        response = sq.get_study_metadata(VALID_POST["requestEntries"][0]["id"])
+        self.assertEqual(response[7], 0)
 
 if __name__ == '__main__':
     unittest.main()

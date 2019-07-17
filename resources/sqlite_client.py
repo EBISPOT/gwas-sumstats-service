@@ -27,6 +27,18 @@ class sqlClient():
                          data)
         self.commit()
 
+    """ update statements """
+    
+    def update_retrieved_status(self, study, status):
+        study_status = status, study
+        self.cur.execute("UPDATE studies SET retrieved = ? WHERE studyID =?", (study_status))
+        self.commit()
+
+    def update_data_valid_status(self, study, status):
+        study_status = status, study
+        self.cur.execute("UPDATE studies SET dataValid = ? WHERE studyID =?", (study_status))
+        self.commit()
+
     """ select statements """
     
     def get_study_metadata(self, study):

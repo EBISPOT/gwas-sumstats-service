@@ -1,5 +1,5 @@
 import os
-import base64
+import shortuuid
 from resources.sqlite_client import sqlClient
 from resources.error_classes import *
 import resources.study_service as st
@@ -13,8 +13,21 @@ class Payload:
         self.study_obj_list = []
         self.study_ids = []
 
-    def get_status_for_callback_id(self):
-        pass
+        if self.callback_id:
+            self.get_data_for_callback_id()
+
+    def payload_to_db(self):
+        self.check_basic_content_present()
+        self.create_study_obj_list()
+        self.set_callback_id_for_studies()
+        self.create_entry_for_studies()
+
+    def get_payload_complete_status(self):
+        for study in self.study_obj_list:
+            if study.get_status() != 'VALID':
+                return False
+                break
+        return True
 
     def get_data_for_callback_id(self):
         sq = sqlClient(config.DB_PATH)
@@ -55,10 +68,11 @@ class Payload:
         return True
 
     def generate_callback_id(self):
-        randid = base64.b64encode(os.urandom(32))[:8]
+        #randid = base64.b64encode(os.urandom(32))[:8]
+        randid = shortuuid.uuid()[:8]
         sq = sqlClient(config.DB_PATH)
         while sq.get_data_from_callback_id(randid) is not None:
-            randid = base64.b64encode(os.urandom(32))[:8]
+            randid = shortuuid.uuid()[:8]
         self.callback_id = randid
 
     def set_callback_id_for_studies(self):
