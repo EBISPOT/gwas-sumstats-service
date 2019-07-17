@@ -6,6 +6,7 @@ branches:
   - master
 install:
   - pip install --force-reinstall -e .
+  - pip install -r requirements.txt
   - pip install codacy-coverage
 script:
   - pytest --cov-report html --cov sumstats_service --verbose
