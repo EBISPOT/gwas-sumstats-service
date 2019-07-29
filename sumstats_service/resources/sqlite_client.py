@@ -23,7 +23,7 @@ class sqlClient():
                          studyID, callbackID, pmID, 
                          filePath, md5, assembly)
                          VALUES (?,?,?,?,?,?)
-                         """, 
+                         """,
                          data)
         self.commit()
 
@@ -40,7 +40,7 @@ class sqlClient():
         self.commit()
 
     # select statements
-    
+
     def get_study_metadata(self, study):
         self.cur.execute("select * from studies where studyID =?", (study,))
         data = self.cur.fetchone()
@@ -58,7 +58,7 @@ class sqlClient():
         for row in self.cur.execute("select * from studies where callbackID =?", (callback_id,)):
             data.append(row)
         return data if data else None
-            
+
 
     # OTHER STATEMENTS
 

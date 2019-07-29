@@ -5,7 +5,7 @@ from sumstats_service.resources.sqlite_client import sqlClient
 
 
 class Study:
-    def __init__(self, study_id, pmid, file_path, 
+    def __init__(self, study_id, pmid, file_path,
                  md5, assembly, callback_id=None,
                  retrieved=None, data_valid=None,
                  status=None):
@@ -34,7 +34,8 @@ class Study:
             status = 'VALID'
         return status
 
-    def get_error_report(self):
+    @staticmethod
+    def get_error_report():
         return None
 
     def update_retrieved_status(self, status):

@@ -47,7 +47,7 @@ class TestAPIUtils(unittest.TestCase):
                  "md5":"b1d7e0a58d36502d59d036a17336ddf5",
                  "assembly":"38"
                 }
-        payload = pl.Payload(payload=data_missing_field)        
+        payload = pl.Payload(payload=data_missing_field)
         self.assertRaises(BadUserRequest, payload.parse_new_study_json, data_missing_field)
 
     def test_check_basic_content_present(self):
@@ -58,7 +58,7 @@ class TestAPIUtils(unittest.TestCase):
         payload = pl.Payload(payload=missing_data)
         self.assertRaises(BadUserRequest, payload.check_basic_content_present)
         missing_all = {}
-        payload = pl.Payload(payload=missing_all)        
+        payload = pl.Payload(payload=missing_all)
         self.assertRaises(BadUserRequest, payload.check_basic_content_present)
 
     def test_create_study_obj_list(self):

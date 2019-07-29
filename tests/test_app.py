@@ -27,7 +27,7 @@ class BasicTestCase(unittest.TestCase):
 
     def test_post_new_study(self):
         tester = app.test_client(self)
-        response = tester.post('/sum-stats', 
+        response = tester.post('/sum-stats',
                                json=VALID_POST)
         self.assertEqual(response.status_code, 201)
         self.assertIn('callbackID', response.get_json())
@@ -48,7 +48,7 @@ class BasicTestCase(unittest.TestCase):
 
     def test_post_new_study_missing_mandatory_fields(self):
         tester = app.test_client(self)
-        invalid_post = { 
+        invalid_post = {
                         "requestEntries": [
                           {
                             "id": "xyz321",
@@ -66,7 +66,7 @@ class BasicTestCase(unittest.TestCase):
 
     def test_post_new_study_bad_id(self):
         tester = app.test_client(self)
-        invalid_post = { 
+        invalid_post = {
                         "requestEntries": [
                           {
                             "id": "xyz321 asd",
@@ -82,10 +82,10 @@ class BasicTestCase(unittest.TestCase):
                                json=invalid_post)
         self.assertEqual(response.status_code, 400)
         self.assertIn("is invalid", response.get_json()['message'])
- 
+
     def test_post_duplicate_study_id_in_one_payload(self):
         tester = app.test_client(self)
-        invalid_post = { 
+        invalid_post = {
                         "requestEntries": [
                             {
                              "id": "abc123",
@@ -109,12 +109,12 @@ class BasicTestCase(unittest.TestCase):
 
     def test_get_200_based_on_good_callback_id(self):
         tester = app.test_client(self)
-        response = tester.post('/sum-stats', 
+        response = tester.post('/sum-stats',
                                json=VALID_POST)
         callback_id = response.get_json()["callbackID"]
         response = tester.get('/sum-stats/{}'.format(callback_id))
         self.assertEqual(response.status_code, 200)
-        
+
     def test_bad_callback_id(self):
         tester = app.test_client(self)
         callback_id = 'NOTINDB'
@@ -123,7 +123,7 @@ class BasicTestCase(unittest.TestCase):
 
     def test_get_response_on_good_callback_id(self):
         tester = app.test_client(self)
-        response = tester.post('/sum-stats', 
+        response = tester.post('/sum-stats',
                                json=VALID_POST)
         callback_id = response.get_json()["callbackID"]
         response = tester.get('/sum-stats/{}'.format(callback_id))

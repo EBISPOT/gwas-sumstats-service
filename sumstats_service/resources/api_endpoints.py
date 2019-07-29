@@ -1,5 +1,4 @@
 import json
-from flask import request
 from collections import OrderedDict
 from sumstats_service.resources.error_classes import *
 import sumstats_service.resources.api_utils as au
