@@ -3,7 +3,6 @@ attrs==19.1.0
 Click==7.0
 coverage==4.5.3
 Flask==1.1.1
--e git+https://github.com/EBISPOT/gwas-sumstats-service.git@99d16bef05bbff364aec923eef8cc417baffb6a4#egg=gwas_sumstats_service
 importlib-metadata==0.18
 itsdangerous==1.1.0
 Jinja2==2.10.1
@@ -18,8 +17,6 @@ pytest-cov==2.7.1
 shortuuid==0.5.0
 simplejson==3.16.0
 six==1.12.0
-sumstats-service==0.1
--e git+https://github.com/EBISPOT/gwas-sumstats-service.git@99d16bef05bbff364aec923eef8cc417baffb6a4#egg=sumstatsService
 wcwidth==0.1.7
 Werkzeug==0.15.4
 zipp==0.5.2
