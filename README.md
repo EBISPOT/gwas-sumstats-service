@@ -21,6 +21,8 @@ This handles the uploaded summary statistics files, validates them, reports erro
   
 ## Run the tests
 
+Run either:
+- `pytest -v` 
 - `./run_tests.sh`
 
 ## Run the app
