@@ -2,15 +2,15 @@ import re
 import config
 from sumstats_service.resources.error_classes import *
 from sumstats_service.resources.sqlite_client import sqlClient
+import sumstats_service.resources.file_handler as fh
 
 
 class Study:
-    def __init__(self, study_id, pmid, file_path,
+    def __init__(self, study_id, file_path,
                  md5, assembly, callback_id=None,
                  retrieved=None, data_valid=None,
                  status=None):
         self.study_id = study_id
-        self.pmid = pmid
         self.file_path = file_path
         self.md5 = md5
         self.assembly = assembly
@@ -48,9 +48,12 @@ class Study:
         sq = sqlClient(config.DB_PATH)
         sq.update_data_valid_status(self.study_id, status)
 
-    def valid_pmid(self):
-        # check is alphanumeric
-        return self.pmid.isalnum()
+    def fetch_file(self):
+        file_handler = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id)
+        if file_handler.retrieve() is True:
+            self.update_retrieved_status(1)
+        elif file_handler.retrieve() is False:
+            self.update_retrieved_status(0)
 
     def valid_file_path(self):
         pass
@@ -71,14 +74,13 @@ class Study:
         sq = sqlClient(config.DB_PATH)
         study_metadata = sq.get_study_metadata(self.study_id)
         if study_metadata:
-            self.study_id, self.callback_id, self.pmid, self.file_path, self.md5, self.assembly, self.retrieved, self.data_valid = study_metadata
+            self.study_id, self.callback_id, self.file_path, self.md5, self.assembly, self.retrieved, self.data_valid = study_metadata
         return study_metadata
 
     def create_entry_for_study(self):
         # Order here matters
         data = [self.study_id,
                 self.callback_id,
-                self.pmid,
                 self.file_path,
                 self.md5,
                 self.assembly

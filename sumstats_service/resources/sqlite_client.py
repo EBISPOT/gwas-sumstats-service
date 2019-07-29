@@ -20,9 +20,9 @@ class sqlClient():
     def insert_new_study(self, data):
         self.cur.execute("""
                          INSERT OR IGNORE INTO studies(
-                         studyID, callbackID, pmID, 
+                         studyID, callbackID,
                          filePath, md5, assembly)
-                         VALUES (?,?,?,?,?,?)
+                         VALUES (?,?,?,?,?)
                          """,
                          data)
         self.commit()

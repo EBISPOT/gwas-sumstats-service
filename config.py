@@ -5,7 +5,6 @@ DB_SCHEMA = """
             CREATE TABLE studies (
             studyID TEXT NOT NULL UNIQUE,
             callbackID TEXT NOT NULL,
-            pmID TEXT NOT NULL,
             filePath TEXT NOT NULL,
             md5 TEXT NOT NULL,
             assembly TEXT NOT NULL,
