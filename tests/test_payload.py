@@ -7,7 +7,7 @@ from sumstats_service.resources.error_classes import *
 from sumstats_service.resources.sqlite_client import sqlClient
 
 
-class TestAPIUtils(unittest.TestCase):
+class TestPayload(unittest.TestCase):
     def setUp(self):
         self.testDB = "./tests/study_meta.db"
         config.DB_PATH = self.testDB
@@ -27,7 +27,6 @@ class TestAPIUtils(unittest.TestCase):
     def test_parse_new_study_json(self):
         data = {
                  "id": "xyz321",
-                 "pmid": "1233454",
                  "filePath": "file/path.tsv",
                  "md5":"b1d7e0a58d36502d59d036a17336ddf5",
                  "assembly":"38"
@@ -35,15 +34,13 @@ class TestAPIUtils(unittest.TestCase):
         payload = pl.Payload(payload=data)
         result = payload.parse_new_study_json(data)
         self.assertEqual("xyz321", result[0])
-        self.assertEqual("1233454", result[1])
-        self.assertEqual("file/path.tsv", result[2])
-        self.assertEqual("b1d7e0a58d36502d59d036a17336ddf5", result[3])
-        self.assertEqual("38", result[4])
+        self.assertEqual("file/path.tsv", result[1])
+        self.assertEqual("b1d7e0a58d36502d59d036a17336ddf5", result[2])
+        self.assertEqual("38", result[3])
 
     def test_parse_new_study_bad_json(self):
         data_missing_field = {
                  "id": "xyz321",
-                 "filePath": "file/path.tsv",
                  "md5":"b1d7e0a58d36502d59d036a17336ddf5",
                  "assembly":"38"
                 }
@@ -68,14 +65,12 @@ class TestAPIUtils(unittest.TestCase):
                         "requestEntries": [
                             {
                              "id": "abc123",
-                             "pmid": "1233454",
                              "filePath": "file/path.tsv",
                              "md5":"b1d7e0a58d36502d59d036a17336ddf5",
                              "assembly":"38"
                             },
                             {
                              "id": "abc123",
-                             "pmid": "1233454",
                              "filePath": "file/path.tsv",
                              "md5":"b1d7e0a58d36502d59d036a17336ddf5",
                              "assembly":"38"

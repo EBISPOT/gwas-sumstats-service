@@ -21,6 +21,10 @@ class Payload:
         self.set_callback_id_for_studies()
         self.create_entry_for_studies()
 
+    def fetch_files(self):
+        for study in self.study_obj_list:
+            study.fetch_file()
+
     def get_payload_complete_status(self):
         for study in self.study_obj_list:
             if study.get_status() != 'VALID':
@@ -33,8 +37,8 @@ class Payload:
         if data is None:
             raise RequestedNotFound("Couldn't find resource with callback id: {}".format(self.callback_id))
         for row in data:
-            study_id, callback_id, pmid, file_path, md5, assembly, retrieved, data_valid = row
-            study = st.Study(study_id=study_id, callback_id=callback_id, pmid=pmid,
+            study_id, callback_id, file_path, md5, assembly, retrieved, data_valid = row
+            study = st.Study(study_id=study_id, callback_id=callback_id,
                              file_path=file_path, md5=md5,
                              assembly=assembly, retrieved=retrieved,
                              data_valid=data_valid)
@@ -50,8 +54,8 @@ class Payload:
 
     def create_study_obj_list(self):
         for item in self.payload['requestEntries']:
-            study_id, pmid, file_path, md5, assembly = self.parse_new_study_json(item)
-            study = st.Study(study_id=study_id, pmid=pmid,
+            study_id, file_path, md5, assembly = self.parse_new_study_json(item)
+            study = st.Study(study_id=study_id,
                              file_path=file_path, md5=md5,
                              assembly=assembly)
             if not study.valid_study_id():
@@ -88,7 +92,6 @@ class Payload:
         Expecting:
         {
            "id": "xyz321",
-           "pmid": "1233454",
            "filePath": "file/path.tsv",
            "md5":"b1d7e0a58d36502d59d036a17336ddf5",
            "assembly":"38"
@@ -96,11 +99,10 @@ class Payload:
         """
         try:
             study_id = study_dict['id']
-            pmid = study_dict['pmid']
             file_path = study_dict['filePath']
             md5 = study_dict['md5']
             assembly = study_dict['assembly']
         except KeyError as e:
             raise BadUserRequest("Missing field: {} in json".format(str(e)))
-        return (study_id, pmid, file_path, md5, assembly)
+        return (study_id, file_path, md5, assembly)
 
