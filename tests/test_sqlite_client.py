@@ -8,6 +8,8 @@ from tests.test_constants import *
 class TestDB(unittest.TestCase):
     def setUp(self):
         self.testDB = "./tests/study_meta.db"
+        self.test_storepath = "./tests/data"
+        config.STORAGE_PATH = self.test_storepath
         sq = sqlClient(self.testDB)
         sq.create_conn()
         sq.cur.execute(config.DB_SCHEMA)

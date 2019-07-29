@@ -49,7 +49,7 @@ class Study:
         sq.update_data_valid_status(self.study_id, status)
 
     def fetch_file(self):
-        file_handler = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id)
+        file_handler = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id)
         if file_handler.retrieve() is True:
             self.update_retrieved_status(1)
         elif file_handler.retrieve() is False:

@@ -10,6 +10,8 @@ from sumstats_service.resources.sqlite_client import sqlClient
 class TestPayload(unittest.TestCase):
     def setUp(self):
         self.testDB = "./tests/study_meta.db"
+        self.test_storepath = "./tests/data"
+        config.STORAGE_PATH = self.test_storepath
         config.DB_PATH = self.testDB
         sq = sqlClient(self.testDB)
         sq.create_conn()
