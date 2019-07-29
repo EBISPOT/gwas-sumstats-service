@@ -1,4 +1,3 @@
-import os
 import shortuuid
 from sumstats_service.resources.sqlite_client import sqlClient
 from sumstats_service.resources.error_classes import *
@@ -26,7 +25,6 @@ class Payload:
         for study in self.study_obj_list:
             if study.get_status() != 'VALID':
                 return False
-                break
         return True
 
     def get_data_for_callback_id(self):
@@ -36,8 +34,8 @@ class Payload:
             raise RequestedNotFound("Couldn't find resource with callback id: {}".format(self.callback_id))
         for row in data:
             study_id, callback_id, pmid, file_path, md5, assembly, retrieved, data_valid = row
-            study = st.Study(study_id=study_id, callback_id=callback_id, pmid=pmid, 
-                             file_path=file_path, md5=md5, 
+            study = st.Study(study_id=study_id, callback_id=callback_id, pmid=pmid,
+                             file_path=file_path, md5=md5,
                              assembly=assembly, retrieved=retrieved,
                              data_valid=data_valid)
             self.study_obj_list.append(study)
@@ -53,8 +51,8 @@ class Payload:
     def create_study_obj_list(self):
         for item in self.payload['requestEntries']:
             study_id, pmid, file_path, md5, assembly = self.parse_new_study_json(item)
-            study = st.Study(study_id=study_id, pmid=pmid, 
-                             file_path=file_path, md5=md5, 
+            study = st.Study(study_id=study_id, pmid=pmid,
+                             file_path=file_path, md5=md5,
                              assembly=assembly)
             if not study.valid_study_id():
                 raise BadUserRequest("Study ID: {} is invalid".format(study_id))

@@ -8,7 +8,7 @@ import sumstats_service.resources.study_service as st
 class TestStudyService(unittest.TestCase):
     def setUp(self):
         self.testDB = "./tests/study_meta.db"
-        config.DB_PATH = self.testDB 
+        config.DB_PATH = self.testDB
         sq = sqlClient(self.testDB)
         sq.create_conn()
         sq.cur.execute(config.DB_SCHEMA)
@@ -81,19 +81,19 @@ class TestStudyService(unittest.TestCase):
         assembly = "38"
         study = st.Study(study_id=study_id, pmid=pmid, file_path=file_path, md5=md5, assembly=assembly, callback_id=callback_id)
         study.create_entry_for_study()
-        check = study.get_study_from_db()
+        study.get_study_from_db()
         self.assertEqual(study.get_status(), 'VALIDATING')
         study.update_retrieved_status(0)
-        check = study.get_study_from_db()
+        study.get_study_from_db()
         self.assertEqual(study.get_status(), 'INVALID')
         study.update_retrieved_status(1)
-        check = study.get_study_from_db()
+        study.get_study_from_db()
         self.assertEqual(study.get_status(), 'VALIDATING')
         study.update_data_valid_status(0)
-        check = study.get_study_from_db()
+        study.get_study_from_db()
         self.assertEqual(study.get_status(), 'INVALID')
         study.update_data_valid_status(1)
-        check = study.get_study_from_db()
+        study.get_study_from_db()
         self.assertEqual(study.get_status(), 'VALID')
 
 

@@ -10,7 +10,7 @@ from sumstats_service.resources.sqlite_client import sqlClient
 class TestAPIUtils(unittest.TestCase):
     def setUp(self):
         self.testDB = "./tests/study_meta.db"
-        config.DB_PATH = self.testDB 
+        config.DB_PATH = self.testDB
         sq = sqlClient(self.testDB)
         sq.create_conn()
         sq.cur.execute(config.DB_SCHEMA)
@@ -52,10 +52,10 @@ class TestAPIUtils(unittest.TestCase):
 
     def test_check_basic_content_present(self):
         data = {'requestEntries': [{}]}
-        payload = pl.Payload(payload=data)        
+        payload = pl.Payload(payload=data)
         self.assertTrue(payload.check_basic_content_present)
         missing_data = {'requestEntries': []}
-        payload = pl.Payload(payload=missing_data)        
+        payload = pl.Payload(payload=missing_data)
         self.assertRaises(BadUserRequest, payload.check_basic_content_present)
         missing_all = {}
         payload = pl.Payload(payload=missing_all)        
@@ -64,7 +64,7 @@ class TestAPIUtils(unittest.TestCase):
     def test_create_study_obj_list(self):
         payload = pl.Payload(payload=VALID_POST)
         self.assertTrue(payload.create_study_obj_list())
-        dupe_study = { 
+        dupe_study = {
                         "requestEntries": [
                             {
                              "id": "abc123",

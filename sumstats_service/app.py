@@ -19,7 +19,7 @@ def handle_custom_api_exception(error):
 
 
 @app.errorhandler(400)
-def not_found(error):
+def bad_request(error):
     return make_response(jsonify({'error': 'Bad request'}), 400)
 
 

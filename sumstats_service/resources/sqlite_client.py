@@ -15,7 +15,7 @@ class sqlClient():
             print(e)
         return None
 
-    """ insert statements """
+    # insert statements
 
     def insert_new_study(self, data):
         self.cur.execute("""
@@ -27,8 +27,8 @@ class sqlClient():
                          data)
         self.commit()
 
-    """ update statements """
-    
+    # update statements
+
     def update_retrieved_status(self, study, status):
         study_status = status, study
         self.cur.execute("UPDATE studies SET retrieved = ? WHERE studyID =?", (study_status))
@@ -39,7 +39,7 @@ class sqlClient():
         self.cur.execute("UPDATE studies SET dataValid = ? WHERE studyID =?", (study_status))
         self.commit()
 
-    """ select statements """
+    # select statements
     
     def get_study_metadata(self, study):
         self.cur.execute("select * from studies where studyID =?", (study,))
@@ -60,11 +60,7 @@ class sqlClient():
         return data if data else None
             
 
-    """ OTHER STATEMENTS """
+    # OTHER STATEMENTS
 
     def commit(self):
         self.cur.execute("COMMIT")
-
-
-    
-

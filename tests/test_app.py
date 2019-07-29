@@ -10,7 +10,7 @@ import config
 class BasicTestCase(unittest.TestCase):
     def setUp(self):
         self.testDB = "./tests/study_meta.db"
-        config.DB_PATH = self.testDB 
+        config.DB_PATH = self.testDB
         sq = sqlClient(self.testDB)
         sq.create_conn()
         sq.cur.execute(config.DB_SCHEMA)
@@ -160,15 +160,6 @@ class BasicTestCase(unittest.TestCase):
         self.assertEqual(body["statusList"][0]["id"], study1)
         self.assertEqual(body["statusList"][0]["status"], "VALID")
         self.assertEqual(body["statusList"][1]["status"], "VALID")
-        
-
-
-        
-
-        
-        
-
-
 
 
 if __name__ == '__main__':

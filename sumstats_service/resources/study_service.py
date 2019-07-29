@@ -22,7 +22,7 @@ class Study:
         if re.match('^[a-zA-Z0-9]+$', self.study_id) and len(self.study_id) > 3:
             return True
         return False
-    
+
     def get_status(self):
         if self.retrieved is None:
            status = 'VALIDATING'
@@ -75,11 +75,11 @@ class Study:
 
     def create_entry_for_study(self):
         # Order here matters
-        data = [self.study_id, 
+        data = [self.study_id,
                 self.callback_id,
-                self.pmid, 
-                self.file_path, 
-                self.md5, 
+                self.pmid,
+                self.file_path,
+                self.md5,
                 self.assembly
                 ]
         sq = sqlClient(config.DB_PATH)

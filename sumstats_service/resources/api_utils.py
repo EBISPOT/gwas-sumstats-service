@@ -1,10 +1,7 @@
 from urllib.parse import unquote
 from flask import url_for
-import config
 from sumstats_service.resources.error_classes import *
-from sumstats_service.resources.sqlite_client import sqlClient
 import sumstats_service.resources.payload as pl
-
 
 
 def create_href(method_name, params=None):
@@ -29,19 +26,13 @@ def construct_get_payload_response(callback_id):
     response = {"callbackID": str(callback_id),
                 "completed": completed,
                 "statusList": status_list
-                }    
+                }
     return response
 
 def create_study_report(study):
     report = {
-              "id": study.study_id, 
-              "status": study.get_status(), 
+              "id": study.study_id,
+              "status": study.get_status(),
               "error": study.get_error_report()
               }
     return report
-
-
-
-
-    
-    

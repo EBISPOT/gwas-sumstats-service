@@ -10,7 +10,7 @@ from sumstats_service.resources.sqlite_client import sqlClient
 class TestAPIUtils(unittest.TestCase):
     def setUp(self):
         self.testDB = "./tests/study_meta.db"
-        config.DB_PATH = self.testDB 
+        config.DB_PATH = self.testDB
         sq = sqlClient(self.testDB)
         sq.create_conn()
         sq.cur.execute(config.DB_SCHEMA)
@@ -18,7 +18,6 @@ class TestAPIUtils(unittest.TestCase):
 
     def tearDown(self):
         os.remove(self.testDB)
-
 
 
 if __name__ == '__main__':
