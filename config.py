@@ -12,3 +12,5 @@ DB_SCHEMA = """
             dataValid INT CHECK (dataValid IN (0,1))
             );
             """
+RABBITMQ_HOST = "localhost"
+RABBITMQ_PORT = 5682
