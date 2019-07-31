@@ -15,7 +15,7 @@ class BasicTestCase(unittest.TestCase):
         config.DB_PATH = self.testDB
         sq = sqlClient(self.testDB)
         sq.create_conn()
-        sq.cur.execute(config.DB_SCHEMA)
+        sq.cur.executescript(config.DB_SCHEMA)
 
     def tearDown(self):
         os.remove(self.testDB)
@@ -33,6 +33,8 @@ class BasicTestCase(unittest.TestCase):
                                json=VALID_POST)
         self.assertEqual(response.status_code, 201)
         self.assertIn('callbackID', response.get_json())
+        callback_id = response.get_json()["callbackID"]
+        self.assertTrue(os.path.exists(os.path.join(config.STORAGE_PATH, callback_id)))
 
     def test_post_new_study_no_json(self):
         tester = app.test_client(self)
@@ -54,7 +56,6 @@ class BasicTestCase(unittest.TestCase):
                         "requestEntries": [
                           {
                             "id": "xyz321",
-                            "pmid": "1233454",
                             "NOT_filePath": "file/path.tsv",
                             "md5":"b1d7e0a58d36502d59d036a17336ddf5",
                             "assembly":"38"
@@ -72,7 +73,6 @@ class BasicTestCase(unittest.TestCase):
                         "requestEntries": [
                           {
                             "id": "xyz321 asd",
-                            "pmid": "1233454",
                             "filePath": "file/path.tsv",
                             "md5":"b1d7e0a58d36502d59d036a17336ddf5",
                             "assembly":"38"
@@ -91,14 +91,12 @@ class BasicTestCase(unittest.TestCase):
                         "requestEntries": [
                             {
                              "id": "abc123",
-                             "pmid": "1233454",
                              "filePath": "file/path.tsv",
                              "md5":"b1d7e0a58d36502d59d036a17336ddf5",
                              "assembly":"38"
                             },
                             {
                              "id": "abc123",
-                             "pmid": "1233454",
                              "filePath": "file/path.tsv",
                              "md5":"b1d7e0a58d36502d59d036a17336ddf5",
                              "assembly":"38"

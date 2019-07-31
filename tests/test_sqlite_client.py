@@ -12,7 +12,7 @@ class TestDB(unittest.TestCase):
         config.STORAGE_PATH = self.test_storepath
         sq = sqlClient(self.testDB)
         sq.create_conn()
-        sq.cur.execute(config.DB_SCHEMA)
+        sq.cur.executescript(config.DB_SCHEMA)
 
     def tearDown(self):
         os.remove(self.testDB)

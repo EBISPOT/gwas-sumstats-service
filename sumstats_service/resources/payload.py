@@ -37,7 +37,7 @@ class Payload:
         if data is None:
             raise RequestedNotFound("Couldn't find resource with callback id: {}".format(self.callback_id))
         for row in data:
-            study_id, callback_id, file_path, md5, assembly, retrieved, data_valid = row
+            study_id, callback_id, file_path, md5, assembly, retrieved, data_valid, error_code = row
             study = st.Study(study_id=study_id, callback_id=callback_id,
                              file_path=file_path, md5=md5,
                              assembly=assembly, retrieved=retrieved,

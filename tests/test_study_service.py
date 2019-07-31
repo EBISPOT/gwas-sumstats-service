@@ -14,7 +14,7 @@ class TestStudyService(unittest.TestCase):
 
         sq = sqlClient(self.testDB)
         sq.create_conn()
-        sq.cur.execute(config.DB_SCHEMA)
+        sq.cur.executescript(config.DB_SCHEMA)
 
     def tearDown(self):
         os.remove(self.testDB)
@@ -80,7 +80,7 @@ class TestStudyService(unittest.TestCase):
         study = st.Study(study_id=study_id, file_path=file_path, md5=md5, assembly=assembly, callback_id=callback_id)
         study.create_entry_for_study()
         study.get_study_from_db()
-        self.assertEqual(study.get_status(), 'VALIDATING')
+        self.assertEqual(study.get_status(), 'RETRIEVING')
         study.update_retrieved_status(0)
         study.get_study_from_db()
         self.assertEqual(study.get_status(), 'INVALID')
