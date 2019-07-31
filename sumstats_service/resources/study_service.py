@@ -2,8 +2,7 @@ import re
 import config
 from sumstats_service.resources.error_classes import *
 from sumstats_service.resources.sqlite_client import sqlClient
-import sumstats_service.resources.file_handler as fh
-import pika
+import helpers.file_handler as fh
 
 
 class Study:
@@ -84,19 +83,8 @@ class Study:
         sq.insert_new_study(data)
 
     def study_to_validation_queue(self):
-        connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host=config.RABBITMQ_HOST, port=config.RABBITMQ_PORT))
-        channel = connection.channel()
+        ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id,
+                study_id=self.study_id)
+        ssf.retrieve()
         
-        channel.queue_declare(queue='task_queue', durable=True)
         
-        message = str(self.study_id)
-        channel.basic_publish(
-            exchange='',
-            routing_key='task_queue',
-            body=message,
-            properties=pika.BasicProperties(
-                delivery_mode=2,  # make message persistent
-            ))
-        print(" [x] Sent %r" % message)
-        connection.close()

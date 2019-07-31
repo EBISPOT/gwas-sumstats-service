@@ -2,7 +2,7 @@ import unittest
 import os
 import shutil
 import config
-import sumstats_service.resources.file_handler as fh
+import helpers.file_handler as fh
 
 
 class TestSumStatsFile(unittest.TestCase):
