@@ -21,9 +21,9 @@ class Payload:
         self.set_callback_id_for_studies()
         self.create_entry_for_studies()
 
-    def fetch_files(self):
+    def payload_to_validation_queue(self):
         for study in self.study_obj_list:
-            study.fetch_file()
+            study.study_to_validation_queue()
 
     def get_payload_complete_status(self):
         for study in self.study_obj_list:

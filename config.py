@@ -12,3 +12,8 @@ DB_SCHEMA = """
             dataValid INT CHECK (dataValid IN (0,1))
             );
             """
+BROKER = "rabbitmq"
+BROKER_HOST = "localhost"
+BROKER_PORT = 5682
+FILE_QUEUE = "file_queue"
+VALIDATION_QUEUE = "validation_queue"

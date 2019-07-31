@@ -1,12 +1,20 @@
 import simplejson
+import config
+import json
 from flask import Flask, make_response, Response, jsonify, request
 import sumstats_service.resources.api_endpoints as endpoints
+import sumstats_service.resources.api_utils as au
 from sumstats_service.resources.error_classes import *
+from celery import Celery
 
 
 app = Flask(__name__)
+app.config['CELERY_BROKER_URL'] = '{0}://{1}:{2}/0'.format(config.BROKER, config.BROKER_HOST, config.BROKER_PORT)
+app.config['CELERY_RESULT_BACKEND'] =  '{0}://{1}:{2}/0'.format(config.BROKER, config.BROKER_HOST, config.BROKER_PORT)
 app.url_map.strict_slashes = False
 
+celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
+celery.conf.update(app.config)
 
 @app.errorhandler(APIException)
 def handle_custom_api_exception(error):
@@ -46,10 +54,16 @@ def root():
 def sumstats():
     content = request.get_json(force=True)
     resp = endpoints.create_studies(content)
+    if resp:
+        callback_id =json.loads(resp)['callbackID']
+        run_background_task(au.validate_files_from_payload, callback_id)
     return Response(response=resp,
                     status=201,
                     mimetype="application/json")
 
+@celery.task
+def run_background_task(task, *args):
+    task(*args)
 
 @app.route('/sum-stats/<string:callback_id>')
 def get_sumstats(callback_id):

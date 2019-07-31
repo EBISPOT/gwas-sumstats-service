@@ -11,6 +11,7 @@ class TestStudyService(unittest.TestCase):
         self.test_storepath = "./tests/data"
         config.STORAGE_PATH = self.test_storepath
         config.DB_PATH = self.testDB
+
         sq = sqlClient(self.testDB)
         sq.create_conn()
         sq.cur.execute(config.DB_SCHEMA)

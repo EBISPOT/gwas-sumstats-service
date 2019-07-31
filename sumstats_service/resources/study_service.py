@@ -2,7 +2,7 @@ import re
 import config
 from sumstats_service.resources.error_classes import *
 from sumstats_service.resources.sqlite_client import sqlClient
-import sumstats_service.resources.file_handler as fh
+import helpers.file_handler as fh
 
 
 class Study:
@@ -48,12 +48,6 @@ class Study:
         sq = sqlClient(config.DB_PATH)
         sq.update_data_valid_status(self.study_id, status)
 
-    def fetch_file(self):
-        file_handler = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id)
-        if file_handler.retrieve() is True:
-            self.update_retrieved_status(1)
-        elif file_handler.retrieve() is False:
-            self.update_retrieved_status(0)
 
     def valid_file_path(self):
         pass
@@ -87,3 +81,10 @@ class Study:
                 ]
         sq = sqlClient(config.DB_PATH)
         sq.insert_new_study(data)
+
+    def study_to_validation_queue(self):
+        ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id,
+                study_id=self.study_id)
+        ssf.retrieve()
+        
+        

@@ -9,6 +9,6 @@ install:
   - pip install -r requirements.txt
   - pip install codacy-coverage
 script:
-  - pytest --cov-report html --cov sumstats_service --verbose
+  - tox
   - coverage xml
   - python-codacy-coverage -r coverage.xml
