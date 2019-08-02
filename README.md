@@ -10,6 +10,7 @@ This handles the uploaded summary statistics files, validates them, reports erro
 
 ## Installation
 
+- Requires: [RabbitMQ](https://www.rabbitmq.com/) and Python 3.6
 - Clone the repository
   - `git clone https://github.com/EBISPOT/gwas-sumstats-service.git`
   - `cd gwas-sumstats-service`
@@ -28,6 +29,8 @@ This handles the uploaded summary statistics files, validates them, reports erro
 
 ## Run the app
 
+- Spin up a RabbitMQ server on the port (`BROKER_PORT`) specified in the config
+  - `rabbitmq-server`
 - Start the flask app on http://localhost:5000
   - `export FLASK_APP=sumstats_service.app`
   - `flask run`
