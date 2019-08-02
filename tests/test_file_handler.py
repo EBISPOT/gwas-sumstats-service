@@ -45,6 +45,17 @@ class TestSumStatsFile(unittest.TestCase):
         md5_ok = ssf.md5_ok()
         self.assertTrue(md5_ok)
 
+    @requests_mock.Mocker()
+    def test_validate_true_when_valid(self, m):        
+        m.register_uri('GET', self.valid_url, content=self.valid_content)
+        ssf = fh.SumStatFile(file_path=self.valid_url, callback_id=self.cid, 
+                study_id=self.sid, md5exp=self.valid_url_md5)
+        ssf.retrieve()
+        result = ssf.validate_file()
+        self.assertTrue(result)
+        self.assertTrue(os.path.exists(os.path.join(ssf.parent_path, str(self.sid + ".log"))))
+
+
 
 
 
