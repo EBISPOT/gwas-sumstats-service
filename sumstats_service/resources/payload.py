@@ -12,7 +12,7 @@ class Payload:
         self.study_obj_list = []
         self.study_ids = []
 
-        if self.callback_id:
+        if callback_id:
             self.get_data_for_callback_id()
 
     def payload_to_db(self):
@@ -21,9 +21,9 @@ class Payload:
         self.set_callback_id_for_studies()
         self.create_entry_for_studies()
 
-    def payload_to_validation_queue(self):
+    def validate_payload(self):
         for study in self.study_obj_list:
-            study.study_to_validation_queue()
+            study.validate_study()
 
     def get_payload_complete_status(self):
         for study in self.study_obj_list:
@@ -41,7 +41,7 @@ class Payload:
             study = st.Study(study_id=study_id, callback_id=callback_id,
                              file_path=file_path, md5=md5,
                              assembly=assembly, retrieved=retrieved,
-                             data_valid=data_valid)
+                             data_valid=data_valid, error_code=error_code)
             self.study_obj_list.append(study)
         return self.study_obj_list
 

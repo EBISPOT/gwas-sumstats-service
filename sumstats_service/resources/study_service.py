@@ -18,6 +18,7 @@ class Study:
         self.retrieved = retrieved
         self.data_valid = data_valid
         self.error_code = error_code
+        self.error_text = None
 
 
     def valid_study_id(self):
@@ -36,9 +37,9 @@ class Study:
             status = 'VALID'
         return status
 
-    @staticmethod
-    def get_error_report():
-        return None
+    def get_error_report(self):
+        self.set_error_text()
+        return self.error_text
 
     def update_retrieved_status(self, status):
         self.retrieved = status
@@ -50,6 +51,11 @@ class Study:
         sq = sqlClient(config.DB_PATH)
         sq.update_data_valid_status(self.study_id, status)
 
+    def update_error_code(self, error_code):
+        # error codes are in the error table (see the DB_SCHEMA)
+        self.error_code = error_code
+        sq = sqlClient(config.DB_PATH)
+        sq.update_error_code(self.study_id, error_code)
 
     def valid_file_path(self):
         pass
@@ -71,7 +77,16 @@ class Study:
         study_metadata = sq.get_study_metadata(self.study_id)
         if study_metadata:
             self.study_id, self.callback_id, self.file_path, self.md5, self.assembly, self.retrieved, self.data_valid, self.error_code = study_metadata
+            self.set_error_text()
         return study_metadata
+
+    def set_error_text(self):
+        sq = sqlClient(config.DB_PATH)        
+        if self.error_code:
+            self.error_text = sq.get_error_message_from_code(self.error_code)
+            # We may want a catch if the code is not seen in the database
+        else:
+            self.error_text = None
 
     def create_entry_for_study(self):
         # Order here matters
@@ -84,15 +99,17 @@ class Study:
         sq = sqlClient(config.DB_PATH)
         sq.insert_new_study(data)
 
-    def study_to_validation_queue(self):
+    def validate_study(self):
         ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id,
                 study_id=self.study_id, md5exp=self.md5)
         if ssf.retrieve() is True:
             self.update_retrieved_status(1)
             if not ssf.md5_ok():
                 self.update_data_valid_status(0)
+                self.update_error_code(2)
         if ssf.retrieve() is False:
             self.update_retrieved_status(0)
+            self.update_error_code(1)
         
         
     

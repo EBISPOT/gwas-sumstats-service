@@ -10,6 +10,7 @@ class sqlClient():
     def create_conn(self):
         try:
             conn = sqlite3.connect(self.database)
+            conn.row_factory = sqlite3.Row
             return conn
         except NameError as e:
             print(e)
@@ -39,6 +40,11 @@ class sqlClient():
         self.cur.execute("UPDATE studies SET dataValid = ? WHERE studyID =?", (study_status))
         self.commit()
 
+    def update_error_code(self, study, error_code):
+        study_error_code = error_code, study
+        self.cur.execute("UPDATE studies SET errorCode = ? WHERE studyID =?", (study_error_code))
+        self.commit()
+
     # select statements
 
     def get_study_metadata(self, study):
@@ -58,6 +64,13 @@ class sqlClient():
         for row in self.cur.execute("select * from studies where callbackID =?", (callback_id,)):
             data.append(row)
         return data if data else None
+
+    def get_error_message_from_code(self, code):
+        row = self.cur.execute("select errorText from errors where id =?", (code,)).fetchone()
+        if row:
+            return row['errorText']
+        return None
+
 
 
     # OTHER STATEMENTS

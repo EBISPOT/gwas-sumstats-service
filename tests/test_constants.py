@@ -2,14 +2,14 @@ VALID_POST = {
                "requestEntries": [
                    {
                     "id": "abc123",
-                    "filePath": "https://raw.githubusercontent.com/EBISPOT/gwas-sumstats-service/master/tests/test_sumstats_file.tsv",
-                    "md5":"a1195761f082f8cbc2f5a560743077cc",
+                    "filePath": "https://valid_file.tsv",
+                    "md5":"d41d8cd98f00b204e9800998ecf8427e",
                     "assembly":"38"
                    },
                    {
                     "id": "xyz321",
-                    "filePath": "https://raw.githubusercontent.com/EBISPOT/gwas-sumstats-service/master/tests/test_sumstats_file.tsv",
-                    "md5":"a1195761f082f8cbc2f5a560743077cc",
+                    "filePath": "https://valid_file.tsv",
+                    "md5":"d41d8cd98f00b204e9800998ecf8427e",
                     "assembly":"38"
                    },
                  ]

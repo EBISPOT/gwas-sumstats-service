@@ -116,5 +116,30 @@ class TestDB(unittest.TestCase):
         response = sq.get_study_metadata(VALID_POST["requestEntries"][0]["id"])
         self.assertEqual(response[6], 0)
 
+    def test_update_error_code(self):
+        sq = sqlClient(self.testDB)
+        sq.create_conn()
+        sq.insert_new_study([VALID_POST["requestEntries"][0]["id"],
+                             "callback123",
+                             VALID_POST["requestEntries"][0]["filePath"],
+                             VALID_POST["requestEntries"][0]["md5"],
+                             VALID_POST["requestEntries"][0]["assembly"]
+                             ])
+        sq.update_error_code(VALID_POST["requestEntries"][0]["id"], 1)
+        response = sq.get_study_metadata(VALID_POST["requestEntries"][0]["id"])
+        self.assertEqual(response[7], 1)
+        sq.update_error_code(VALID_POST["requestEntries"][0]["id"], None)
+        response = sq.get_study_metadata(VALID_POST["requestEntries"][0]["id"])
+        self.assertEqual(response[7], None)
+
+    def test_error_message_retrieval(self):
+        sq = sqlClient(self.testDB)
+        sq.create_conn()
+        response = sq.get_error_message_from_code(1)
+        self.assertEqual(response, "URL not found")
+        response = sq.get_error_message_from_code(0)
+        self.assertIsNone(response)
+
+
 if __name__ == '__main__':
     unittest.main()

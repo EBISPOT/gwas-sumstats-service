@@ -1,5 +1,5 @@
 import os
-import urllib.request
+import requests
 import config
 import hashlib
 
@@ -23,12 +23,16 @@ class SumStatFile:
 
     def retrieve(self):
         self.make_parent_dir()
-        print(self.store_path)
         try:
-            urllib.request.urlretrieve(self.file_path, self.store_path)
-            return True
-        except (ValueError, urllib.error.HTTPError) as e:
+            response = requests.get(self.file_path)
+        except requests.exceptions.RequestException as e:
             print(e)
+            return False
+        if response.status_code == 200:
+            with open(self.store_path, 'wb') as f:
+                f.write(response.content)
+                return True
+        else:
             return False
 
     def md5_ok(self):

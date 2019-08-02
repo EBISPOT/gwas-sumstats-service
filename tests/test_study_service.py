@@ -94,6 +94,26 @@ class TestStudyService(unittest.TestCase):
         study.get_study_from_db()
         self.assertEqual(study.get_status(), 'VALID')
 
+    def test_update_error(self):
+        study_id = "123abc123"
+        callback_id = "abc123xyz"
+        file_path = "file/path.tsv"
+        md5 = "b1d7e0a58d36502d59d036a17336ddf5"
+        assembly = "38"
+        study = st.Study(study_id=study_id, file_path=file_path, md5=md5, assembly=assembly, callback_id=callback_id)
+        study.create_entry_for_study()
+        study.get_study_from_db()
+        self.assertIsNone(study.error_code)
+        self.assertIsNone(study.error_text)
+        study.update_error_code(1)
+        study.get_study_from_db()
+        self.assertEqual(study.error_code, 1)
+        self.assertEqual(study.error_text, "URL not found")
+        study.update_error_code(None)
+        study.get_study_from_db()
+        self.assertEqual(study.error_code, None)
+        self.assertEqual(study.error_text, None)
+
 
 if __name__ == '__main__':
     unittest.main()
