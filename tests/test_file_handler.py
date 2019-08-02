@@ -14,7 +14,7 @@ class TestSumStatsFile(unittest.TestCase):
         self.cid = "TiQS2yxV"
         self.sid = "mKoYvoLH8L"
         self.valid_url = "https://valid_file.tsv"
-        self.valid_url_md5 = "d41d8cd98f00b204e9800998ecf8427e"
+        self.valid_url_md5 = "a1195761f082f8cbc2f5a560743077cc"
         with open("./tests/test_sumstats_file.tsv", "rb") as f:
             self.valid_content = f.read()
 

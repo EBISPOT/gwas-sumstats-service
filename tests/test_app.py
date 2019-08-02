@@ -9,7 +9,6 @@ import requests
 import requests_mock
 
 
-
 class BasicTestCase(unittest.TestCase):
     def setUp(self):
         self.testDB = "./tests/study_meta.db"
