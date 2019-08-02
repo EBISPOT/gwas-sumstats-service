@@ -21,6 +21,4 @@ def get_sumstats(callback_id):
 def create_studies(content):
     callback_id = au.json_payload_to_db(content)
     response = {"callbackID": callback_id}
-    if response:
-        au.validate_files_from_payload(callback_id)
     return json.dumps(response)

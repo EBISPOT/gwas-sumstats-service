@@ -18,7 +18,7 @@ def json_payload_to_db(content):
 
 def validate_files_from_payload(callback_id):
     payload = pl.Payload(callback_id=callback_id)
-    payload.payload_to_validation_queue()
+    payload.validate_payload()
 
 def construct_get_payload_response(callback_id):
     payload = pl.Payload(callback_id=callback_id)

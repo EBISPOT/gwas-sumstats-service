@@ -15,7 +15,7 @@ class TestAPIUtils(unittest.TestCase):
         config.DB_PATH = self.testDB
         sq = sqlClient(self.testDB)
         sq.create_conn()
-        sq.cur.execute(config.DB_SCHEMA)
+        sq.cur.executescript(config.DB_SCHEMA)
 
 
     def tearDown(self):
