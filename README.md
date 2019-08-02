@@ -18,6 +18,9 @@ This handles the uploaded summary statistics files, validates them, reports erro
   - `source activate .env`
 - Install
   - `pip install .`
+  - `cd gwas-sumstats-validator`
+  - `pip install .`
+  - `cd ..`
   
 ## Run the tests
 
