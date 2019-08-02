@@ -23,6 +23,7 @@ This handles the uploaded summary statistics files, validates them, reports erro
   
 ## Run the tests
 
+- Run this, to setup up a RabbitMQ server, run the tests, and tear it all down.
 - `tox` 
 
 ## Run the app
