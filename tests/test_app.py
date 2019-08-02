@@ -141,37 +141,13 @@ class BasicTestCase(unittest.TestCase):
         body = response.get_json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body["callbackID"], callback_id)
-        self.assertFalse(body["completed"])
-        self.assertEqual(len(body["statusList"]), 2)
-        study1 = VALID_POST["requestEntries"][0]["id"]
-        self.assertEqual(body["statusList"][0]["id"], study1)
-        self.assertEqual(body["statusList"][0]["status"], "VALIDATING")
-        payload = pl.Payload(callback_id = callback_id)
-        # make one study VALID
-        payload.study_obj_list[0].update_retrieved_status(1)
-        payload.study_obj_list[0].update_data_valid_status(1)
-        response = tester.get('/sum-stats/{}'.format(callback_id))
-        body = response.get_json()
-        self.assertEqual(response.status_code, 200)
-        self.assertFalse(body["completed"])
-        self.assertEqual(len(body["statusList"]), 2)
-        study1 = VALID_POST["requestEntries"][0]["id"]
-        self.assertEqual(body["statusList"][0]["id"], study1)
-        self.assertEqual(body["statusList"][0]["status"], "VALID")
-        self.assertEqual(body["statusList"][1]["status"], "VALIDATING")
-        # make the other study VALID
-        payload.study_obj_list[1].update_retrieved_status(1)
-        payload.study_obj_list[1].update_data_valid_status(1)
-        response = tester.get('/sum-stats/{}'.format(callback_id))
-        body = response.get_json()
-        self.assertEqual(response.status_code, 200)
         self.assertTrue(body["completed"])
         self.assertEqual(len(body["statusList"]), 2)
         study1 = VALID_POST["requestEntries"][0]["id"]
         self.assertEqual(body["statusList"][0]["id"], study1)
         self.assertEqual(body["statusList"][0]["status"], "VALID")
-        self.assertEqual(body["statusList"][1]["status"], "VALID")
-
+        payload = pl.Payload(callback_id = callback_id)
+       
     @requests_mock.Mocker()
     def test_error_when_good_file(self, m):
         m.register_uri('GET', self.valid_url, content=self.valid_content)
@@ -241,6 +217,20 @@ class BasicTestCase(unittest.TestCase):
         self.assertEqual(body["statusList"][0]["error"], "URL not found")
         self.assertEqual(body["statusList"][1]["error"], "URL not found")
 
+    @requests_mock.Mocker()
+    def test_validation_response_when_two_good(self, m):
+        m.register_uri('GET', self.valid_url, content=self.valid_content)
+        tester = app.test_client(self)
+        response = tester.post('/sum-stats',
+                               json=VALID_POST)
+        callback_id = response.get_json()["callbackID"]
+        response = tester.get('/sum-stats/{}'.format(callback_id))
+        body = response.get_json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(body["statusList"][0]["error"], None)
+        self.assertTrue(body["completed"])
+        self.assertEqual(body["statusList"][0]["status"], "VALID")
+        self.assertEqual(body["statusList"][1]["status"], "VALID")
 
 
 if __name__ == '__main__':

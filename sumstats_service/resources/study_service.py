@@ -107,6 +107,13 @@ class Study:
             if not ssf.md5_ok():
                 self.update_data_valid_status(0)
                 self.update_error_code(2)
+            else:
+                if ssf.validate_file():
+                    self.update_data_valid_status(1)
+                else:
+                    self.update_data_valid_status(0)
+                    self.update_error_code(3)
+
         if ssf.retrieve() is False:
             self.update_retrieved_status(0)
             self.update_error_code(1)

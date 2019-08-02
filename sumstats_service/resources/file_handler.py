@@ -9,6 +9,7 @@ import validate.validator as val
 logging.basicConfig(level=logging.INFO, format='(%(levelname)s): %(message)s')
 logger = logging.getLogger(__name__)
 
+
 class SumStatFile:
     def __init__(self, file_path=None, callback_id=None, study_id=None, md5exp=None):
         self.file_path = file_path

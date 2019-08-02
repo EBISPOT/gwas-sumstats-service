@@ -17,7 +17,12 @@ class TestSumStatsFile(unittest.TestCase):
         self.valid_url_md5 = "a1195761f082f8cbc2f5a560743077cc"
         with open("./tests/test_sumstats_file.tsv", "rb") as f:
             self.valid_content = f.read()
-
+        os.makedirs(config.STORAGE_PATH, exist_ok=True)
+        invalid_content_path = os.path.join(config.STORAGE_PATH, "test_invalid.tsv")
+        with open(invalid_content_path, "w") as f:
+            f.write("invalid content")
+        with open(invalid_content_path, "rb") as c:
+            self.invalid_content = c.read()
 
     def tearDown(self):
         shutil.rmtree(self.test_storepath)
@@ -55,6 +60,15 @@ class TestSumStatsFile(unittest.TestCase):
         self.assertTrue(result)
         self.assertTrue(os.path.exists(os.path.join(ssf.parent_path, str(self.sid + ".log"))))
 
+    @requests_mock.Mocker()
+    def test_validate_false_when_invalid(self, m):
+        m.register_uri('GET', self.valid_url, content=self.invalid_content)
+        ssf = fh.SumStatFile(file_path=self.valid_url, callback_id=self.cid, 
+                study_id=self.sid, md5exp=self.valid_url_md5)
+        ssf.retrieve()
+        result = ssf.validate_file()
+        self.assertFalse(result)
+        self.assertTrue(os.path.exists(os.path.join(ssf.parent_path, str(self.sid + ".log"))))
 
 
 
