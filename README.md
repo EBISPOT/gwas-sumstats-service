@@ -19,8 +19,7 @@ This handles the uploaded summary statistics files, validates them, reports erro
 - Install
   - `pip install .`
   - `cd gwas-sumstats-validator`
-  - `pip install .`
-  - `cd ..`
+  - `pip install gwas-sumstats-validator/`
   
 ## Run the tests
 
