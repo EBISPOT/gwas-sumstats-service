@@ -4,6 +4,7 @@ python:
 branches:
   only:
   - master
+services: rabbitmq
 install:
   - pip install --force-reinstall -e .
   - pip install -r requirements.txt
