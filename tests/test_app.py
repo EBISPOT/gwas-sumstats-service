@@ -1,7 +1,7 @@
 import unittest
 import os
 from sumstats_service.app import app
-from test_constants import *
+from tests.test_constants import *
 from sumstats_service.resources.sqlite_client import sqlClient
 import sumstats_service.resources.payload as pl
 import config
