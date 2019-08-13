@@ -54,7 +54,7 @@ class SumStatFile:
         return False
 
     def validate_file(self):
-        validator = val.Validator(file=self.store_path, stage='standard')
+        validator = val.Validator(file=self.store_path, filetype='standard')
         self.set_logfile()
         logger.info("Validating headers...")
         if not validator.validate_headers():
