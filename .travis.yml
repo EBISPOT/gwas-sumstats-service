@@ -5,6 +5,10 @@ branches:
   only:
   - master
 services: rabbitmq
+addons:
+  apt:
+    packages:
+      - rabbitmq-server
 install:
   - pip install --force-reinstall -e .
   - pip install -r requirements.txt
