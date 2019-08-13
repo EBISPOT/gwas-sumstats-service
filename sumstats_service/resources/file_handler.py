@@ -4,6 +4,7 @@ import config
 import hashlib
 import logging
 import validate.validator as val
+import pathlib
 
 
 logging.basicConfig(level=logging.INFO, format='(%(levelname)s): %(message)s')
@@ -18,8 +19,7 @@ class SumStatFile:
         self.md5exp = md5exp
         if callback_id:
             self.parent_path = os.path.join(config.STORAGE_PATH, self.callback_id)
-            if study_id: 
-                self.store_path = os.path.join(self.parent_path, self.study_id)
+
         self.logfile = None
 
     def set_logfile(self):
@@ -35,7 +35,12 @@ class SumStatFile:
             pass
 
     def retrieve(self):
+        logger.info("Fetching file from URL: {}".format(self.file_path))        
         self.make_parent_dir()
+        self.ext = self.get_ext()
+        logger.debug("File extension: {}".format(self.ext))        
+        if self.ext:
+            self.set_store_path()
         try:
             response = requests.get(self.file_path)
         except requests.exceptions.RequestException as e:
@@ -44,18 +49,37 @@ class SumStatFile:
         if response.status_code == 200:
             with open(self.store_path, 'wb') as f:
                 f.write(response.content)
+                logger.debug("File written: {}".format(self.store_path))        
                 return True
         else:
             return False
 
+    def set_store_path(self):
+        if self.study_id: 
+               self.store_path = os.path.join(self.parent_path, str(self.study_id + self.ext))
+
+    def get_store_path(self):
+        self.get_ext()
+        self.set_store_path()
+        return self.store_path
+
     def md5_ok(self):
-        if self.md5exp == md5_check(self.store_path):
+        f = self.get_store_path()
+        if self.md5exp == md5_check(f):
             return True
         return False
+
+    def get_ext(self):
+        ext = pathlib.Path(self.file_path).suffix
+        return ext if ext else False
+
 
     def validate_file(self):
         validator = val.Validator(file=self.store_path, filetype='standard')
         self.set_logfile()
+        logger.info("Validating file extension...")
+        if not validator.validate_file_extenstion():
+            return False
         logger.info("Validating headers...")
         if not validator.validate_headers():
             logger.info("Invalid headers...exiting before any further checks")
@@ -71,6 +95,5 @@ def md5_check(file):
     with open(file, "rb") as f:
         for chunk in iter(lambda: f.read(4096), b""):
             hash_md5.update(chunk)
-    return hash_md5.hexdigest()
-        
+    return hash_md5.hexdigest()        
 

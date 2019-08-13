@@ -41,7 +41,6 @@ class BasicTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertIn('callbackID', response.get_json())
         callback_id = response.get_json()["callbackID"]
-        self.assertTrue(os.path.exists(os.path.join(config.STORAGE_PATH, callback_id)))
 
     def test_post_new_study_no_json(self):
         tester = app.test_client(self)
@@ -130,107 +129,6 @@ class BasicTestCase(unittest.TestCase):
         response = tester.get('/sum-stats/{}'.format(callback_id))
         self.assertEqual(response.status_code, 404)
 
-    @requests_mock.Mocker()
-    def test_get_response_on_good_callback_id(self, m):
-        m.register_uri('GET', self.valid_url, content=self.valid_content)
-        tester = app.test_client(self)
-        response = tester.post('/sum-stats',
-                               json=VALID_POST)
-        callback_id = response.get_json()["callbackID"]
-        response = tester.get('/sum-stats/{}'.format(callback_id))
-        body = response.get_json()
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(body["callbackID"], callback_id)
-        self.assertTrue(body["completed"])
-        self.assertEqual(len(body["statusList"]), 2)
-        study1 = VALID_POST["requestEntries"][0]["id"]
-        self.assertEqual(body["statusList"][0]["id"], study1)
-        self.assertEqual(body["statusList"][0]["status"], "VALID")
-        payload = pl.Payload(callback_id = callback_id)
-       
-    @requests_mock.Mocker()
-    def test_error_when_good_file(self, m):
-        m.register_uri('GET', self.valid_url, content=self.valid_content)
-        tester = app.test_client(self)
-        response = tester.post('/sum-stats',
-                               json=VALID_POST)
-        callback_id = response.get_json()["callbackID"]
-        response = tester.get('/sum-stats/{}'.format(callback_id))
-        body = response.get_json()
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(body["statusList"][0]["error"], None)
-
-    @requests_mock.Mocker()
-    def test_error_when_good_url_bad_md5(self, m):
-        m.register_uri('GET', self.valid_url, content=self.valid_content)
-        good_url_bad_md5 = {
-                            "requestEntries": [
-                                {
-                                 "id": "abc123",
-                                 "filePath": "https://valid_file.tsv",
-                                 "md5":"a1195761f082f8cbc2f5a560743077ccBAD",
-                                 "assembly":"38"
-                                }
-                              ]
-                             }
-        tester = app.test_client(self)
-        response = tester.post('/sum-stats',
-                               json=good_url_bad_md5)
-        callback_id = response.get_json()["callbackID"]
-        response = tester.get('/sum-stats/{}'.format(callback_id))
-        body = response.get_json()
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(body["statusList"][0]["error"], "md5sum did not match the one provided")
-
-    @requests_mock.Mocker()
-    def test_error_when_bad_URL(self, m):
-        bad_url1 = "NOTURLhttps://valid_file.tsv"
-        bad_url2 = "https://valid_file.NONEXIST.tsv"
-        m.register_uri('GET', self.valid_url, content=self.valid_content)
-        m.register_uri('GET', bad_url1, exc=requests.exceptions.RequestException)
-        m.register_uri('GET', bad_url2, status_code=404)
-        bad_url_request = {
-                    "requestEntries": [
-                        {
-                         "id": "abc123",
-                         "filePath": bad_url1,
-                         "md5":"a1195761f082f8cbc2f5a560743077cc",
-                         "assembly":"38"
-                        },
-                        {
-                         "id": "abc234",
-                         "filePath": bad_url2,
-                         "md5":"a1195761f082f8cbc2f5a560743077cc",
-                         "assembly":"38"
-                         }
-
-                      ]
-                     }
-
-        tester = app.test_client(self)
-        response = tester.post('/sum-stats',
-                               json=bad_url_request)
-        callback_id = response.get_json()["callbackID"]
-        response = tester.get('/sum-stats/{}'.format(callback_id))
-        body = response.get_json()
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(body["statusList"][0]["error"], "URL not found")
-        self.assertEqual(body["statusList"][1]["error"], "URL not found")
-
-    @requests_mock.Mocker()
-    def test_validation_response_when_two_good(self, m):
-        m.register_uri('GET', self.valid_url, content=self.valid_content)
-        tester = app.test_client(self)
-        response = tester.post('/sum-stats',
-                               json=VALID_POST)
-        callback_id = response.get_json()["callbackID"]
-        response = tester.get('/sum-stats/{}'.format(callback_id))
-        body = response.get_json()
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(body["statusList"][0]["error"], None)
-        self.assertTrue(body["completed"])
-        self.assertEqual(body["statusList"][0]["status"], "VALID")
-        self.assertEqual(body["statusList"][1]["status"], "VALID")
 
 
 if __name__ == '__main__':

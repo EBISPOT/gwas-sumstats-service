@@ -28,17 +28,19 @@ This handles the uploaded summary statistics files, validates them, reports erro
 - Run this, to setup up a RabbitMQ server, run the tests, and tear it all down.
 - `tox` 
 
-## Run the app
+## Run the flask app
 
-- Spin up a RabbitMQ server on the port (`BROKER_PORT`) specified in the config
+- Spin up a RabbitMQ server on the port (`BROKER_PORT`) specified in the config e.g.
   - `rabbitmq-server`
+- Start a celery worker
+  - `celery -A sumstats_service.app.celery worker --loglevel=debug`
 - Start the flask app on http://localhost:5000
   - `export FLASK_APP=sumstats_service.app`
   - `flask run`
 
 ### Example POST method
 ```
-curl -i -H "Content-Type: application/json" -X POST -d '{"requestEntries":[{"id":"abca1234a","pmid":"1233454","filePath":"file/path.tsv","md5":"b1d7e0a58d36502d59d036a17336ddf5","assembly":"38"},{"id":"abca1234","pmid":"1233454","filePath":"file/path.tsv","md5":"b1d7e0a58d36502d59d036a17336ddf5","assembly":"38"}]}' http://localhost:5000/sum-stats
+curl -i -H "Content-Type: application/json" -X POST -d '{"requestEntries":[{"id":"abca1234a","filePath":"https://raw.githubusercontent.com/EBISPOT/gwas-sumstats-service/master/tests/test_sumstats_file.tsv,"md5":"a1195761f082f8cbc2f5a560743077cc","assembly":"38"},{"id":"abca1234",,"filePath":"https://raw.githubusercontent.com/EBISPOT/gwas-sumstats-service/master/tests/test_sumstats_file.tsv,"md5":"a1195761f082f8cbc2f5a560743077cc","assembly":"38"}]}' http://localhost:5000/sum-stats
 
 HTTP/1.0 201 CREATED
 Content-Type: application/json

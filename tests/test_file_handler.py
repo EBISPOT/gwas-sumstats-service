@@ -46,7 +46,7 @@ class TestSumStatsFile(unittest.TestCase):
         ssf = fh.SumStatFile(file_path=self.valid_url, callback_id=self.cid, 
                 study_id=self.sid, md5exp=self.valid_url_md5)
         ssf.retrieve()
-        self.assertEqual(fh.md5_check(os.path.join(ssf.parent_path, self.sid)),self.valid_url_md5)
+        self.assertEqual(fh.md5_check(os.path.join(ssf.store_path)),self.valid_url_md5)
         md5_ok = ssf.md5_ok()
         self.assertTrue(md5_ok)
 
@@ -69,8 +69,6 @@ class TestSumStatsFile(unittest.TestCase):
         result = ssf.validate_file()
         self.assertFalse(result)
         self.assertTrue(os.path.exists(os.path.join(ssf.parent_path, str(self.sid + ".log"))))
-
-
 
 
 
