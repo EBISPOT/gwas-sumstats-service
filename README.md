@@ -8,7 +8,7 @@
 
 This handles the uploaded summary statistics files, validates them, reports errors to the deposition app and puts valid files in the queue for sumstats file harmonisation and HDF5 loading.
 
-## Installation
+## Local installation
 
 - Requires: [RabbitMQ](https://www.rabbitmq.com/) and Python 3.6
 - Clone the repository and submodules
@@ -23,12 +23,12 @@ This handles the uploaded summary statistics files, validates them, reports erro
   - `pip install -r requirements.txt`
   - `pip install gwas-sumstats-validator/`
   
-## Run the tests
+### Run the tests
 
 - Run this, to setup up a RabbitMQ server, run the tests, and tear it all down.
 - `tox` 
 
-## Run the flask app
+### Run the flask app
 
 - Spin up a RabbitMQ server on the port (`BROKER_PORT`) specified in the config e.g.
   - `rabbitmq-server`
@@ -37,6 +37,9 @@ This handles the uploaded summary statistics files, validates them, reports erro
 - Start the flask app on http://localhost:5000
   - `export FLASK_APP=sumstats_service.app`
   - `flask run`
+
+## Installation with Docker
+- tbc
 
 ### Example POST method
 ```
