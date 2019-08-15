@@ -8,6 +8,9 @@
 
 This handles the uploaded summary statistics files, validates them, reports errors to the deposition app and puts valid files in the queue for sumstats file harmonisation and HDF5 loading.
 
+- There is a Flask app handling `POST` and `GET` requests via the endpoints below. Celery worker(s) perform the validation tasks in the background. They can work from anywhere the app is installed and can see the RabbitMQ queue. 
+
+
 ## Local installation
 
 - Requires: [RabbitMQ](https://www.rabbitmq.com/) and Python 3.6
@@ -28,18 +31,31 @@ This handles the uploaded summary statistics files, validates them, reports erro
 - Run this, to setup up a RabbitMQ server, run the tests, and tear it all down.
 - `tox` 
 
-### Run the flask app
+
+### Run as a flask app
 
 - Spin up a RabbitMQ server on the port (`BROKER_PORT`) specified in the config e.g.
   - `rabbitmq-server`
-- Start a celery worker
-  - `celery -A sumstats_service.app.celery worker --loglevel=debug`
-- Start the flask app on http://localhost:5000
-  - `export FLASK_APP=sumstats_service.app`
-  - `flask run`
+- Start the flask app with gunicorn http://localhost:8000
+  - from `gwas-sumstats-service`:
+  - `gunicorn -b 0.0.0.0:8000 sumstats_service.app:app --log-level=debug`
+- Start a celery worker for the database side
+  - from `gwas-sumstats-service`:
+  - `celery -A sumstats_service.app.celery worker --loglevel=debug --queues=postval`
+- Start a celery worker for the validation side
+  - from `gwas-sumstats-service`:
+  - `celery -A sumstats_service.app.celery worker --loglevel=debug --queues=preval`
+ 
 
-## Installation with Docker
-- tbc
+## Run with Docker-compose
+- Spin up the Flask and RabbitMQ and Celery docker containers
+  - clone repo as above
+  - set `BROKER_HOST = "rabbitmq"` in config.py 
+  - `docker-compose build`
+  - `docker-compose up`
+- Start up a celery worker on the machine validating and storing the files
+  - follow the local installation as above
+  - `celery -A sumstats_service.app.celery worker --queues=preval --loglevel=debug`
 
 ### Example POST method
 ```
