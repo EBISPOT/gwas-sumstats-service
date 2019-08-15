@@ -13,9 +13,22 @@ services:
             - 8000:8000
         volumes:
           - ./logs:/sumstats_service/logs
+          - ./data/sumstats_meta.db:/sumstats_service/data/sumstats_meta.db
     rabbitmq:
         image: rabbitmq:3.6-management
         hostname: rabbitmq
         ports:
             - 15672:15672
             - 5672:5672
+
+    celery:
+        build: .
+        image: gwas-ss-service:latest
+        command: "celery -A sumstats_service.app.celery worker --queues=postval --loglevel=debug"
+        depends_on:
+            - rabbitmq
+        links:
+            - rabbitmq
+        volumes:
+          - ./logs:/sumstats_service/logs
+          - ./data/sumstats_meta.db:/sumstats_service/data/sumstats_meta.db
