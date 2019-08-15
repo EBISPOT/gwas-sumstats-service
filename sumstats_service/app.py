@@ -9,8 +9,8 @@ from celery import Celery
 
 
 app = Flask(__name__)
-app.config['CELERY_BROKER_URL'] = 'amqp://guest@localhost//' # '{0}://{1}:{2}/0/'.format(config.BROKER, config.BROKER_HOST, config.BROKER_PORT)
-app.config['CELERY_RESULT_BACKEND'] = 'amqp://guest@localhost//' # '{0}://{1}:{2}/0/'.format(config.BROKER, config.BROKER_HOST, config.BROKER_PORT)
+app.config['CELERY_BROKER_URL'] = '{0}://guest@{1}:{2}'.format(config.BROKER, config.BROKER_HOST, config.BROKER_PORT)
+app.config['CELERY_RESULT_BACKEND'] ='rpc://' #'{0}://guest@{1}:{2}'.format(config.BROKER, config.BROKER_HOST, config.BROKER_PORT)
 app.url_map.strict_slashes = False
 
 celery = Celery('app', broker=app.config['CELERY_BROKER_URL'])
@@ -55,7 +55,7 @@ def sumstats():
     content = request.get_json(force=True)
     resp = endpoints.create_studies(content)
     if resp:
-        callback_id =json.loads(resp)['callbackID']
+        callback_id = json.loads(resp)['callbackID']
         validate_files_in_background.apply_async(args=[callback_id])
     return Response(response=resp,
                     status=201,

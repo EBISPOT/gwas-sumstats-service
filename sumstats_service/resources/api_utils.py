@@ -16,12 +16,14 @@ def json_payload_to_db(content):
     payload.payload_to_db()
     return payload.callback_id
 
-def validate_files_from_payload(callback_id):
+def validate_files_from_payload(callback_id, content):
+    # content = valid json payload
     payload = pl.Payload(callback_id=callback_id)
     payload.validate_payload()
 
 def construct_get_payload_response(callback_id):
     payload = pl.Payload(callback_id=callback_id)
+    payload.get_data_for_callback_id()
     completed = payload.get_payload_complete_status()
     status_list = []
     for study in payload.study_obj_list:

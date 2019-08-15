@@ -27,8 +27,8 @@ DB_SCHEMA = """
             INSERT INTO errors(errorText) VALUES("Validation failed"); -- 3
             COMMIT;
             """
-BROKER = "rabbitmq"
+BROKER = "amqp"
 BROKER_HOST = "localhost"
-BROKER_PORT = 5682
+BROKER_PORT = 5672
 FILE_QUEUE = "file_queue"
 VALIDATION_QUEUE = "validation_queue"

@@ -12,8 +12,6 @@ class Payload:
         self.study_obj_list = []
         self.study_ids = []
 
-        if callback_id:
-            self.get_data_for_callback_id()
 
     def payload_to_db(self):
         self.check_basic_content_present()
