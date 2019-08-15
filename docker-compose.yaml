@@ -1,0 +1,21 @@
+version: '3.3'
+services:
+    gwas-ss-service:
+        build: .
+        image: gwas-ss-service:latest
+        depends_on:
+            - rabbitmq
+        links:
+            - rabbitmq
+        environment:
+          - FLASK_APP=sumstats_service.app
+        ports:
+            - 8000:8000
+        volumes:
+          - ./logs:/sumstats_service/logs
+    rabbitmq:
+        image: rabbitmq:3.6-management
+        hostname: rabbitmq
+        ports:
+            - 15672:15672
+            - 5672:5672
