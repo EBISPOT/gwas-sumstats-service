@@ -6,8 +6,8 @@ import sumstats_service.resources.file_handler as fh
 
 
 class Study:
-    def __init__(self, study_id, file_path,
-                 md5, assembly, callback_id=None,
+    def __init__(self, study_id, file_path=None,
+                 md5=None, assembly=None, callback_id=None,
                  retrieved=None, data_valid=None,
                  status=None, error_code=None):
         self.study_id = study_id
@@ -41,31 +41,43 @@ class Study:
         self.set_error_text()
         return self.error_text
 
-    def update_retrieved_status(self, status):
+    def set_retrieved_status(self, status):
         self.retrieved = status
-        sq = sqlClient(config.DB_PATH)
-        sq.update_retrieved_status(self.study_id, status)
+        #sq = sqlClient(config.DB_PATH)
+        #sq.update_retrieved_status(self.study_id, status)
 
-    def update_data_valid_status(self, status):
+    def set_data_valid_status(self, status):
         self.data_valid = status
-        sq = sqlClient(config.DB_PATH)
-        sq.update_data_valid_status(self.study_id, status)
+        #sq = sqlClient(config.DB_PATH)
+        #sq.update_data_valid_status(self.study_id, status)
 
-    def update_error_code(self, error_code):
+    def set_error_code(self, error_code):
         # error codes are in the error table (see the DB_SCHEMA)
         self.error_code = error_code
-        sq = sqlClient(config.DB_PATH)
-        sq.update_error_code(self.study_id, error_code)
+        #sq = sqlClient(config.DB_PATH)
+        #sq.update_error_code(self.study_id, error_code)
 
-    def valid_file_path(self):
-        pass
+    def store_validation_statuses(self):
+        self.store_retrieved_status()
+        self.store_data_valid_status()
+        self.store_error_code()
+
+    def store_retrieved_status(self):
+        sq = sqlClient(config.DB_PATH)
+        sq.update_retrieved_status(self.study_id, self.retrieved)
+
+    def store_data_valid_status(self):
+        sq = sqlClient(config.DB_PATH)
+        sq.update_data_valid_status(self.study_id, self.data_valid)
+
+    def store_error_code(self):
+        # error codes are in the error table (see the DB_SCHEMA)
+        sq = sqlClient(config.DB_PATH)
+        sq.update_error_code(self.study_id, self.error_code)
 
     def valid_md5(self):
         # check is alphanumeric
         return self.md5.isalnum()
-
-    def valid_assembly(self):
-        pass
 
     def study_id_exists_in_db(self):
         if self.get_study_from_db():
@@ -103,20 +115,20 @@ class Study:
         ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id,
                 study_id=self.study_id, md5exp=self.md5)
         if ssf.retrieve() is True:
-            self.update_retrieved_status(1)
+            self.set_retrieved_status(1)
             if not ssf.md5_ok():
-                self.update_data_valid_status(0)
-                self.update_error_code(2)
+                self.set_data_valid_status(0)
+                self.set_error_code(2)
             else:
                 if ssf.validate_file():
-                    self.update_data_valid_status(1)
+                    self.set_data_valid_status(1)
                 else:
-                    self.update_data_valid_status(0)
-                    self.update_error_code(3)
+                    self.set_data_valid_status(0)
+                    self.set_error_code(3)
 
         if ssf.retrieve() is False:
-            self.update_retrieved_status(0)
-            self.update_error_code(1)
+            self.set_retrieved_status(0)
+            self.set_error_code(1)
         
         
     

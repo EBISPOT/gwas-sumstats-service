@@ -29,6 +29,7 @@ class TestSumStatsFile(unittest.TestCase):
 
     def test_make_parent_dir(self):
         ssf = fh.SumStatFile(callback_id=self.cid, study_id=self.sid)
+        ssf.set_parent_path()
         self.assertFalse(os.path.exists(ssf.parent_path))
         ssf.make_parent_dir()
         self.assertTrue(os.path.exists(ssf.parent_path))

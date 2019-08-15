@@ -17,9 +17,6 @@ class SumStatFile:
         self.callback_id = callback_id
         self.study_id = study_id
         self.md5exp = md5exp
-        if callback_id:
-            self.parent_path = os.path.join(config.STORAGE_PATH, self.callback_id)
-
         self.logfile = None
 
     def set_logfile(self):
@@ -30,6 +27,7 @@ class SumStatFile:
 
     def make_parent_dir(self):
         try:
+            self.set_parent_path()
             os.makedirs(self.parent_path)
         except FileExistsError:
             pass
@@ -53,6 +51,11 @@ class SumStatFile:
                 return True
         else:
             return False
+
+    def set_parent_path(self):
+        self.parent_path = os.path.join(config.STORAGE_PATH, self.callback_id)
+
+
 
     def set_store_path(self):
         if self.study_id: 

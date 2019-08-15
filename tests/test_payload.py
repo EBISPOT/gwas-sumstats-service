@@ -80,7 +80,8 @@ class TestPayload(unittest.TestCase):
                           ]
                         }
         payload = pl.Payload(payload=dupe_study)
-        self.assertRaises(BadUserRequest, payload.create_study_obj_list)
+        payload.create_study_obj_list()
+        self.assertRaises(BadUserRequest, payload.check_study_ids_valid)
 
     def test_get_data_for_callback_id(self):
         payload = pl.Payload(payload=VALID_POST)
@@ -90,7 +91,6 @@ class TestPayload(unittest.TestCase):
         for study in payload_new.study_obj_list:
             self.assertEqual(study.callback_id, cid)
 
-
     def test_get_payload_complete_status(self):
         payload = pl.Payload(payload=VALID_POST)
         payload.payload_to_db()
@@ -98,8 +98,10 @@ class TestPayload(unittest.TestCase):
         completed = payload.get_payload_complete_status()
         self.assertEqual(completed, False)
         for study in payload.study_obj_list:
-            study.update_retrieved_status(1)
-            study.update_data_valid_status(1)
+            study.set_retrieved_status(1)
+            study.store_retrieved_status()
+            study.set_data_valid_status(1)
+            study.store_data_valid_status()
         payload_new = pl.Payload(callback_id=cid)
         completed = payload_new.get_payload_complete_status()
         self.assertEqual(completed, True)

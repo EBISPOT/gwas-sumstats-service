@@ -30,5 +30,3 @@ DB_SCHEMA = """
 BROKER = "amqp"
 BROKER_HOST = "localhost"
 BROKER_PORT = 5672
-FILE_QUEUE = "file_queue"
-VALIDATION_QUEUE = "validation_queue"

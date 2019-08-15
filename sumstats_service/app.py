@@ -8,13 +8,15 @@ from sumstats_service.resources.error_classes import *
 from celery import Celery
 
 
+
 app = Flask(__name__)
 app.config['CELERY_BROKER_URL'] = '{0}://guest@{1}:{2}'.format(config.BROKER, config.BROKER_HOST, config.BROKER_PORT)
-app.config['CELERY_RESULT_BACKEND'] ='rpc://' #'{0}://guest@{1}:{2}'.format(config.BROKER, config.BROKER_HOST, config.BROKER_PORT)
+app.config['CELERY_RESULT_BACKEND'] = 'rpc://' #'{0}://guest@{1}:{2}'.format(config.BROKER, config.BROKER_HOST, config.BROKER_PORT)
 app.url_map.strict_slashes = False
 
-celery = Celery('app', broker=app.config['CELERY_BROKER_URL'])
+celery = Celery('app', broker=app.config['CELERY_BROKER_URL'], backend=app.config['CELERY_RESULT_BACKEND'])
 celery.conf.update(app.config)
+    
 
 @app.errorhandler(APIException)
 def handle_custom_api_exception(error):
@@ -56,14 +58,21 @@ def sumstats():
     resp = endpoints.create_studies(content)
     if resp:
         callback_id = json.loads(resp)['callbackID']
-        validate_files_in_background.apply_async(args=[callback_id])
+        validate_files_in_background.apply_async(args=[callback_id, content])
     return Response(response=resp,
                     status=201,
                     mimetype="application/json")
 
-@celery.task
-def validate_files_in_background(callback_id):
-    au.validate_files_from_payload(callback_id)
+
+@celery.task(queue='preval', options={'queue': 'preval'})
+def validate_files_in_background(callback_id, content):
+    results = au.validate_files_from_payload(callback_id, content)
+    store_validation_results.apply_async(args=[results])
+
+
+@celery.task(queue='postval', options={'queue': 'postval'})
+def store_validation_results(results):
+    au.store_validation_results_in_db(results)
 
 
 @app.route('/sum-stats/<string:callback_id>')

@@ -1,7 +1,10 @@
+import json
 from urllib.parse import unquote
 from flask import url_for
+import config
 from sumstats_service.resources.error_classes import *
 import sumstats_service.resources.payload as pl
+import sumstats_service.resources.study_service as st
 
 
 def create_href(method_name, params=None):
@@ -17,9 +20,22 @@ def json_payload_to_db(content):
     return payload.callback_id
 
 def validate_files_from_payload(callback_id, content):
-    # content = valid json payload
-    payload = pl.Payload(callback_id=callback_id)
+    payload = pl.Payload(callback_id=callback_id, payload=content)
+    payload.create_study_obj_list()
+    payload.set_callback_id_for_studies()
     payload.validate_payload()
+    response = construct_validation_response(callback_id, payload)
+    return json.dumps(response)
+
+def store_validation_results_in_db(validation_response):
+    for item in json.loads(validation_response)['validationList']:
+        study_id = item["id"]
+        study = st.Study(study_id)
+        study.retrieved = item["retrieved"]
+        study.data_valid = item["dataValid"]
+        study.error_code = item["errorCode"]
+        study.store_validation_statuses()
+
 
 def construct_get_payload_response(callback_id):
     payload = pl.Payload(callback_id=callback_id)
@@ -34,6 +50,25 @@ def construct_get_payload_response(callback_id):
                 "statusList": status_list
                 }
     return response
+
+def construct_validation_response(callback_id, payload):
+    validation_list = []
+    for study in payload.study_obj_list:
+        validation_report = create_validation_report(study)
+        validation_list.append(validation_report)
+    response = {"callbackID": str(callback_id),
+                "validationList": validation_list
+                }
+    return response
+
+def create_validation_report(study):
+    report = {
+              "id": study.study_id,
+              "retrieved": study.retrieved,
+              "dataValid": study.data_valid,
+              "errorCode": study.error_code
+              }
+    return report
 
 def create_study_report(study):
     report = {

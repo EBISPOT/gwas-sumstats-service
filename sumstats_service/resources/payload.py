@@ -12,10 +12,10 @@ class Payload:
         self.study_obj_list = []
         self.study_ids = []
 
-
     def payload_to_db(self):
         self.check_basic_content_present()
         self.create_study_obj_list()
+        self.check_study_ids_valid()
         self.set_callback_id_for_studies()
         self.create_entry_for_studies()
 
@@ -56,19 +56,25 @@ class Payload:
             study = st.Study(study_id=study_id,
                              file_path=file_path, md5=md5,
                              assembly=assembly)
+            self.study_obj_list.append(study)
+        return True
+
+    def check_study_ids_valid(self):
+        for study in self.study_obj_list:
             if not study.valid_study_id():
-                raise BadUserRequest("Study ID: {} is invalid".format(study_id))
+                raise BadUserRequest("Study ID: {} is invalid".format(study.study_id))
+                return False
             if study.study_id_exists_in_db():
-                raise BadUserRequest("Study ID: {} exists already".format(study_id))
+                raise BadUserRequest("Study ID: {} exists already".format(study.study_id))
+                return False
             if study.study_id not in self.study_ids:
                 self.study_ids.append(study.study_id)
-                self.study_obj_list.append(study)
             else:
-                raise BadUserRequest("Study ID: {} duplicated in payload".format(study_id))
+                raise BadUserRequest("Study ID: {} duplicated in payload".format(study.study_id))
+                return False
         return True
 
     def generate_callback_id(self):
-        #randid = base64.b64encode(os.urandom(32))[:8]
         randid = shortuuid.uuid()[:8]
         sq = sqlClient(config.DB_PATH)
         while sq.get_data_from_callback_id(randid) is not None:
@@ -76,9 +82,17 @@ class Payload:
         self.callback_id = randid
 
     def set_callback_id_for_studies(self):
-        self.generate_callback_id()
+        if self.callback_id:
+            for study in self.study_obj_list:
+                study.callback_id = self.callback_id
+        else:
+            self.generate_callback_id()
+            for study in self.study_obj_list:
+                study.callback_id = self.callback_id
+
+    def store_validation_results(self):
         for study in self.study_obj_list:
-            study.callback_id = self.callback_id
+            study.store_validation_statuses()
 
     def create_entry_for_studies(self):
         for study in self.study_obj_list:
