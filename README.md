@@ -50,11 +50,11 @@ This handles the uploaded summary statistics files, validates them, reports erro
 ## Run with Docker-compose
 - Spin up the Flask and RabbitMQ and Celery docker containers
   - clone repo as above
-  - set `BROKER_HOST = "rabbitmq"` in config.py 
   - `docker-compose build`
   - `docker-compose up`
 - Start up a celery worker on the machine validating and storing the files
   - follow the local installation as above
+  - set `BROKER_HOST` to that of RabbitMQ host e.g. `localhost` in config.py 
   - `celery -A sumstats_service.app.celery worker --queues=preval --loglevel=debug`
 
 ### Example POST method
