@@ -13,6 +13,8 @@ class TestPayload(unittest.TestCase):
         self.test_storepath = "./tests/data"
         config.STORAGE_PATH = self.test_storepath
         config.DB_PATH = self.testDB
+        config.BROKER_PORT = 5682
+        config.BROKER_HOST = "localhost"
         sq = sqlClient(self.testDB)
         sq.create_conn()
         sq.cur.executescript(config.DB_SCHEMA)

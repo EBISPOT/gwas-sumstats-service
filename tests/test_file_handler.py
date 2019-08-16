@@ -11,6 +11,8 @@ class TestSumStatsFile(unittest.TestCase):
     def setUp(self):
         self.test_storepath = "./tests/data"
         config.STORAGE_PATH = self.test_storepath
+        config.BROKER_PORT = 5682
+        config.BROKER_HOST = "localhost"
         self.cid = "TiQS2yxV"
         self.sid = "mKoYvoLH8L"
         self.valid_url = "https://valid_file.tsv"

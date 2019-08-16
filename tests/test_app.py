@@ -1,6 +1,9 @@
 import unittest
 import os
+import json
 from sumstats_service.app import app
+import sumstats_service.resources.api_endpoints as ep
+import sumstats_service.resources.api_utils as au
 from tests.test_constants import *
 from sumstats_service.resources.sqlite_client import sqlClient
 import sumstats_service.resources.payload as pl
@@ -15,6 +18,8 @@ class BasicTestCase(unittest.TestCase):
         self.test_storepath = "./tests/data"
         config.STORAGE_PATH = self.test_storepath
         config.DB_PATH = self.testDB
+        config.BROKER_PORT = 5682
+        config.BROKER_HOST = "localhost"
         sq = sqlClient(self.testDB)
         sq.create_conn()
         sq.cur.executescript(config.DB_SCHEMA)
@@ -32,16 +37,6 @@ class BasicTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertRegex(study_link, "http://.*sum-stats")
  
-    @requests_mock.Mocker()
-    def test_post_new_study(self, m):
-        m.register_uri('GET', self.valid_url, content=self.valid_content)
-        tester = app.test_client(self)
-        response = tester.post('/sum-stats',
-                               json=VALID_POST)
-        self.assertEqual(response.status_code, 201)
-        self.assertIn('callbackID', response.get_json())
-        callback_id = response.get_json()["callbackID"]
-
     def test_post_new_study_no_json(self):
         tester = app.test_client(self)
         response = tester.post('/sum-stats',
@@ -116,10 +111,11 @@ class BasicTestCase(unittest.TestCase):
     @requests_mock.Mocker()
     def test_get_200_based_on_good_callback_id(self, m):
         m.register_uri('GET', self.valid_url, content=self.valid_content)
+        resp = ep.create_studies(VALID_POST)
+        callback_id = json.loads(resp)['callbackID']
+        results = au.validate_files_from_payload(callback_id, VALID_POST)
+        au.store_validation_results_in_db(results)
         tester = app.test_client(self)
-        response = tester.post('/sum-stats',
-                               json=VALID_POST)
-        callback_id = response.get_json()["callbackID"]
         response = tester.get('/sum-stats/{}'.format(callback_id))
         self.assertEqual(response.status_code, 200)
 
