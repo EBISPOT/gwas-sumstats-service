@@ -59,7 +59,7 @@ This handles the uploaded summary statistics files, validates them, reports erro
 
 ### Example POST method
 ```
-curl -i -H "Content-Type: application/json" -X POST -d '{"requestEntries":[{"id":"abc123","filePath":"https://raw.githubusercontent.com/EBISPOT/gwas-sumstats-service/master/tests/test_sumstats_file.tsv","md5":"a1195761f082f8cbc2f5a560743077cc","assembly":"38"},{"id":"bcd234","filePath":"https://raw.githubusercontent.com/EBISPOT/gwas-sumstats-service/master/tests/test_sumstats_file.tsv","md5":"a1195761f082f8cbc","assembly":"38"}]}' http://localhost:5000/sum-stats
+curl -i -H "Content-Type: application/json" -X POST -d '{"requestEntries":[{"id":"abc123","filePath":"https://raw.githubusercontent.com/EBISPOT/gwas-sumstats-service/master/tests/test_sumstats_file.tsv","md5":"a1195761f082f8cbc2f5a560743077cc","assembly":"38"},{"id":"bcd234","filePath":"https://raw.githubusercontent.com/EBISPOT/gwas-sumstats-service/master/tests/test_sumstats_file.tsv","md5":"a1195761f082f8cbc","assembly":"38"}]}' http://localhost:8000/sum-stats
 
 HTTP/1.0 201 CREATED
 Content-Type: application/json
@@ -72,7 +72,7 @@ Date: Wed, 17 Jul 2019 15:15:23 GMT
 
 ### Example GET method (using callback id from above)
 ```
-curl http://localhost:5000/sum-stats/TiQS2yxV
+curl http://localhost:8000/sum-stats/TiQS2yxV
 
 {
   "callbackID": "TiQS2yxV",
