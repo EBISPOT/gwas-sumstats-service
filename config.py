@@ -28,5 +28,5 @@ DB_SCHEMA = """
             COMMIT;
             """
 BROKER = "amqp"
-BROKER_HOST = "localhost"
+BROKER_HOST = "rabbitmq"
 BROKER_PORT = 5672
