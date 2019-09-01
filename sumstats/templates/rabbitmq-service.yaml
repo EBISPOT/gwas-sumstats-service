@@ -6,15 +6,18 @@ metadata:
     kompose.version: 1.18.0 (06a2e56)
   creationTimestamp: null
   labels:
-    io.kompose.service: gwas-ss-service
-  name: gwas-ss-service
+    io.kompose.service: rabbitmq
+  name: rabbitmq
 spec:
+  type: NodePort
   ports:
-  - name: "8000"
-    port: 8000
-    targetPort: 8000
-  type: LoadBalancer
+  - name: "15672"
+    port: 15672
+    targetPort: 15672
+  - name: "5672"
+    port: 5672
+    targetPort: 5672
   selector:
-    io.kompose.service: gwas-ss-service
+    io.kompose.service: rabbitmq
 status:
   loadBalancer: {}
