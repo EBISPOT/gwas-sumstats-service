@@ -19,10 +19,16 @@ spec:
         io.kompose.service: gwas-ss-service
     spec:
       containers:
-      - env:
-        - name: FLASK_APP
-          value: sumstats_service.app
-        image: jdhayhurst/gwas-sumstats-service:v0.1.0
+      - name: sumstats_service
+        image: jdhayhurst/gwas-sumstats-service:latest
+        command: ["gunicorn", "-b", "0.0.0.0:8000", "sumstats_service.app:app","--log-level=debug","--access-logfile=logs/access.log","--error-logfile=logs/error.log"]
+        env:
+          - name: CELERY_USER
+            value: "username"
+          - name: CELERY_PASSWORD
+            value: "password"
+          - name: QUEUE_HOST
+            value: "release"
         name: gwas-ss-service
         ports:
         - containerPort: 8000

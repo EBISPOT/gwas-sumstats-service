@@ -13,7 +13,6 @@ spec:
   - name: "8000"
     port: 8000
     targetPort: 8000
-  type: NodePort
   selector:
     io.kompose.service: gwas-ss-service
 status:

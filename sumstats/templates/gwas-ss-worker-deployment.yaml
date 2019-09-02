@@ -19,8 +19,16 @@ spec:
         io.kompose.service: gwas-ss-worker
     spec:
       containers:
-      - image: jdhayhurst/gwas-sumstats-worker:v0.1.0
-        name: gwas-ss-worker
+      - name: gwas-ss-worker
+        image: jdhayhurst/gwas-sumstats-service:latest
+        command: ["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=debug", "--queues=postval"]
+        env:
+          - name: CELERY_USER
+            value: "username"
+          - name: CELERY_PASSWORD
+            value: "password"
+          - name: QUEUE_HOST
+            value: "release"
         resources: {}
         volumeMounts:
         - mountPath: "/sumstats_service/logs"
