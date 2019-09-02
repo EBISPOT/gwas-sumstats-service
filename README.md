@@ -57,6 +57,13 @@ This handles the uploaded summary statistics files, validates them, reports erro
   - set `BROKER_HOST` to that of RabbitMQ host e.g. `localhost` in config.py 
   - `celery -A sumstats_service.app.celery worker --queues=preval --loglevel=debug`
 
+## Deploy with helm
+- First, deploy rabbitmq using helm 
+- `helm install --name <release> --set rabbitmq.password=<pwd>,rabbitmq.username=<user>,service.type=NodePort,service.nodePort=<port> stable/rabbitmq`
+- deploy the sumstats service
+- `helm install --name gwas-sumstats --set k8Namespace=default ./sumstats/ --wait`
+
+
 ### Example POST method
 ```
 curl -i -H "Content-Type: application/json" -X POST -d '{"requestEntries":[{"id":"abc123","filePath":"https://raw.githubusercontent.com/EBISPOT/gwas-sumstats-service/master/tests/test_sumstats_file.tsv","md5":"a1195761f082f8cbc2f5a560743077cc","assembly":"38"},{"id":"bcd234","filePath":"https://raw.githubusercontent.com/EBISPOT/gwas-sumstats-service/master/tests/test_sumstats_file.tsv","md5":"a1195761f082f8cbc","assembly":"38"}]}' http://localhost:8000/sum-stats
