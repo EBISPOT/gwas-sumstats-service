@@ -22,4 +22,8 @@ EXPOSE 8000
 
 RUN mkdir -p logs
 
-CMD ["gunicorn", "-b", "0.0.0.0:8000", "sumstats_service.app:app","--log-level=debug","--access-logfile=logs/access.log","--error-logfile=logs/error.log"]
+ENV CELERY_PROTOCOL "amqp"
+ENV CELERY_USER "guest"
+ENV CELERY_PASSWORD "guest"
+ENV QUEUE_HOST "rabbitmq"
+ENV QUEUE_PORT 5672

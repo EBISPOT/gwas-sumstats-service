@@ -6,11 +6,17 @@ import sumstats_service.resources.api_endpoints as endpoints
 import sumstats_service.resources.api_utils as au
 from sumstats_service.resources.error_classes import *
 from celery import Celery
-
+import os
 
 
 app = Flask(__name__)
-app.config['CELERY_BROKER_URL'] = '{0}://guest@{1}:{2}'.format(config.BROKER, config.BROKER_HOST, config.BROKER_PORT)
+app.config['CELERY_BROKER_URL'] = '{msg_protocol}://{user}:{pwd}@{host}:{port}'.format(
+        msg_protocol=os.environ['CELERY_PROTOCOL'], 
+        user=os.environ['CELERY_USER'],
+        pwd=os.environ['CELERY_PASSWORD'],
+        host=os.environ['QUEUE_HOST'],
+        port=os.environ['QUEUE_PORT']
+        )
 app.config['CELERY_RESULT_BACKEND'] = 'rpc://' #'{0}://guest@{1}:{2}'.format(config.BROKER, config.BROKER_HOST, config.BROKER_PORT)
 app.url_map.strict_slashes = False
 
