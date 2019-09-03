@@ -1,0 +1,43 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{.Values.worker.name}}
+  namespace: {{.Values.k8Namespace}}
+  lables:
+    version: {{.Values.image.tag}}
+spec:
+  replicas: {{.Values.replicaCount}}
+  template:
+    metadata:
+      labels:
+        app: {{.Values.worker.name}}
+    spec:
+      containers:
+      - name: {{.Values.worker.name}}
+        image: "{{.Values.image.repository}}:{{.Values.image.tag}}"
+        command: {{.Values.worker.celeryCmd}}
+        imagePullPolicy: {{.Values.image.pullPolicy}}
+        resources:
+          requests:
+            cpu: {{.Values.resources.requests.cpu}}
+            memory: {{.Values.resources.requests.memory}}
+        volumeMounts:
+        - mountPath: {{.Values.image.logMountPath}}
+          name: log
+        - mountPath: {{.Values.image.dataMountPath}}
+          name: data
+        env:
+        - name: CELERY_USER
+          value: {{.Values.image.env.celeryUser}}
+        - name: CELERY_PASSWORD
+          value: {{.Values.image.env.celeryPwd}}
+        - name: QUEUE_HOST
+          value: "{{.Values.release}}-rabbitmq"
+      volumes:
+      - name: log
+        persistentVolumeClaim:
+           claimName: {{ .Values.volume.log.ClaimName }}
+      - name: data
+        persistentVolumeClaim:
+           claimName: {{ .Values.volume.data.ClaimName }}
+

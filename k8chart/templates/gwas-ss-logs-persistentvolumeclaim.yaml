@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Values.volume.log.VolumeName }}
+  labels:
+    name: {{ .Values.volume.log.VolumeName }}
+    type: {{ .Values.volume.log.type }}
+
+spec:
+  storageClassName: {{ .Values.volume.log.storageClassName }}
+  capacity:
+    storage: {{ .Values.volume.log.capacity.storage }}
+  accessModes:
+    -  {{ .Values.volume.log.accessModes }}
+  hostPath:
+    path: {{ .Values.volume.log.hostPath }}
+---    
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  creationTimestamp: null
+  name: {{ .Values.volume.log.ClaimName }}
+spec:
+  selector:
+    matchLabels:
+      name: {{ .Values.volume.log.VolumeName }}
+  accessModes:
+    -  {{ .Values.volume.log.accessModes }}
+  resources:
+    requests:
+      storage: {{ .Values.volume.log.capacity.storage }}
