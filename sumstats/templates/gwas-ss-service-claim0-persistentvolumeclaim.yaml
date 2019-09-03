@@ -12,7 +12,7 @@ spec:
   accessModes:
     - ReadWriteOnce
   hostPath:
-    path: "/Users/jhayhurst/temp/logs/"
+    path: "/path/to/logs/"
 ---    
 apiVersion: v1
 kind: PersistentVolumeClaim
