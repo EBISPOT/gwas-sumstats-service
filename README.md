@@ -57,7 +57,7 @@ This handles the uploaded summary statistics files, validates them, reports erro
   - set `BROKER_HOST` to that of RabbitMQ host e.g. `localhost` in config.py 
   - `celery -A sumstats_service.app.celery worker --queues=preval --loglevel=debug`
 
-## Deploy with helm
+## Deploy with helm (kubernetes)
 - First, deploy rabbitmq using helm 
   - `helm install --name <release> --set rabbitmq.password=<pwd>,rabbitmq.username=<user>,service.type=NodePort,service.nodePort=<port> stable/rabbitmq`
 - deploy the sumstats service
