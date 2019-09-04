@@ -1,4 +1,5 @@
 import sqlite3
+import config
 
 
 class sqlClient():
@@ -6,6 +7,8 @@ class sqlClient():
         self.database = database
         self.conn = self.create_conn()
         self.cur = self.conn.cursor()
+        if self.conn:
+            self.create_tables()
 
     def create_conn(self):
         try:
@@ -72,8 +75,10 @@ class sqlClient():
         return None
 
 
-
     # OTHER STATEMENTS
 
     def commit(self):
         self.cur.execute("COMMIT")
+
+    def create_tables(self):
+        self.cur.executescript(config.DB_SCHEMA)
