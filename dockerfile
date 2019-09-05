@@ -14,8 +14,7 @@ RUN apt-get update \
 
 COPY . .
 
-RUN pip install . \
-    &&  pip install gwas-sumstats-validator/
+RUN pip install .
 
 # Expose port:
 EXPOSE 8000

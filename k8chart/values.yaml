@@ -22,7 +22,7 @@ volume:
   log:
     ClaimName: gwas-ss-logs
     VolumeName: gwas-ss-logs-pv
-    type: local
+    type: persistentVolumeClaim
     storageClassName: standard
     capacity:
       storage: 1Gi
@@ -31,7 +31,7 @@ volume:
   data:
     ClaimName: gwas-ss-data
     VolumeName: gwas-ss-service-pv
-    type: local
+    type: persistentVolumeClaim
     storageClassName: standard
     capacity:
       storage: 1Gi
