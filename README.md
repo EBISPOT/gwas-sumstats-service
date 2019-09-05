@@ -14,17 +14,15 @@ This handles the uploaded summary statistics files, validates them, reports erro
 ## Local installation
 
 - Requires: [RabbitMQ](https://www.rabbitmq.com/) and Python 3.6
-- Clone the repository and submodules
+- Clone the repository
   - `git clone https://github.com/EBISPOT/gwas-sumstats-service.git`
   - `cd gwas-sumstats-service`
-  - `git submodule update --init --recursive`
   - Set up environment
   - `virtualenv --python=python3.6 .env`
   - `source activate .env/bin/activate`
 - Install
   - `pip install .`
   - `pip install -r requirements.txt`
-  - `pip install gwas-sumstats-validator/`
   
 ### Run the tests
 
