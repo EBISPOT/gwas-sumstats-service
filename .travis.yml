@@ -13,7 +13,6 @@ install:
   - pip install --force-reinstall -e .
   - pip install -r requirements.txt
   - pip install codacy-coverage
-  - pip install gwas-sumstats-validator/
 script:
   - tox
   - coverage xml
