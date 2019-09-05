@@ -1,0 +1,26 @@
+image: docker:latest
+
+stages:
+  - build
+
+services:
+  - docker:dind
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+  CI_REGISTRY_IMAGE: ebispot/gwas-sumstats-service
+
+  
+# always build an image tagged with the commit SHA from master
+build:
+  stage: build
+  script:
+   - echo "$DOCKER_HUB_PASSWORD" > dhpw.txt
+   - docker login -u "${DOCKER_HUB_USER}" --password-stdin < dhpw.txt
+#   - docker pull $CI_REGISTRY_IMAGE:latest
+   - docker build --cache-from $CI_REGISTRY_IMAGE:latest -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
+   - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  only:
+   - master
+
