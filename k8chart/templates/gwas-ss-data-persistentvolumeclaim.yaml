@@ -4,9 +4,6 @@ metadata:
   creationTimestamp: null
   name: {{ .Values.volume.data.ClaimName }}
 spec:
-  selector:
-    matchLabels:
-      name: {{ .Values.volume.data.VolumeName }}
   accessModes:
     -  {{ .Values.volume.data.accessModes }}
   resources:

@@ -21,7 +21,7 @@ volume:
     ClaimName: gwas-depo-logs
   data:
     ClaimName: gwas-ss-data
-    VolumeName: gwas-ss-service-pv
+    VolumeName: gwas-ss-service-data
     type: persistentVolumeClaim
     storageClassName: standard
     capacity:
