@@ -16,27 +16,17 @@ image:
     celeryUser: "username"
     celeryPwd: "password"
 
-release: "sumstats-v01"
-
 volume:
   log:
-    ClaimName: gwas-ss-logs
-    VolumeName: gwas-ss-logs-pv
-    type: persistentVolumeClaim
-    storageClassName: standard
-    capacity:
-      storage: 1Gi
-    accessModes: ReadWriteOnce
-    hostPath: "/path/to/logs"
+    ClaimName: gwas-depo-logs
   data:
     ClaimName: gwas-ss-data
     VolumeName: gwas-ss-service-pv
     type: persistentVolumeClaim
     storageClassName: standard
     capacity:
-      storage: 1Gi
+      storage: 10Gi
     accessModes: ReadWriteOnce
-    hostPath: "/path/to/data"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -46,7 +36,7 @@ service:
   name: gwas-ss-service
   type: ClusterIP
   port: 8000
-  gunicornCmd: '["gunicorn", "-b", "0.0.0.0:8000", "sumstats_service.app:app","--log-level=debug","--access-logfile=logs/access.log","--error-logfile=logs/error.log"]'
+  gunicornCmd: '["gunicorn", "-b", "0.0.0.0:8000", "sumstats_service.app:app","--log-level=debug","--access-logfile=logs/ss_access.log","--error-logfile=logs/ss_error.log"]'
 
 worker:
   name: gwas-ss-worker

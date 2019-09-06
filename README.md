@@ -57,9 +57,9 @@ This handles the uploaded summary statistics files, validates them, reports erro
 
 ## Deploy with helm (kubernetes)
 - First, deploy rabbitmq using helm 
-  - `helm install --name <release> --set rabbitmq.password=<pwd>,rabbitmq.username=<user>,service.type=NodePort,service.nodePort=<port> stable/rabbitmq`
+  - `helm install --name rabbitmq --set rabbitmq.password=<pwd>,rabbitmq.username=<user>,service.type=NodePort,service.nodePort=<port> stable/rabbitmq`
 - deploy the sumstats service
-  - `helm install --name gwas-sumstats --set volume.log.hostPath=</path/to/logs>,volume.data.hostPath=</path/to/data>,release=<release> k8chart/ --wait`
+  - `helm install --name gwas-sumstats --set volume.log.hostPath=</path/to/logs>,volume.data.hostPath=</path/to/data> k8chart/ --wait`
 - Start a celery worker from docker
   - `docker run -it -d --name sumstats -e CELERY_USER=<user> -e CELERY_PASSWORD=<pwd> -e QUEUE_HOST=<host ip> -e QUEUE_PORT=<port>  gwas-sumstats-service:latest /bin/bash`
   - `docker exec sumstats celery -A sumstats_service.app.celery worker --loglevel=debug --queues=preval`

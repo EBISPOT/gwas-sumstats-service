@@ -31,8 +31,6 @@ spec:
           value: {{.Values.image.env.celeryUser}}
         - name: CELERY_PASSWORD
           value: {{.Values.image.env.celeryPwd}}
-        - name: QUEUE_HOST
-          value: "{{.Values.release}}-rabbitmq"
       volumes:
       - name: log
         persistentVolumeClaim:
