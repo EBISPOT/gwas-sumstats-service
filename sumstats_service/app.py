@@ -58,7 +58,7 @@ def root():
                     mimetype="application/json")
 
 
-@app.route('/sum-stats', methods=['POST'])
+@app.route('/v1/sum-stats', methods=['POST'])
 def sumstats():
     content = request.get_json(force=True)
     resp = endpoints.create_studies(content)
@@ -81,7 +81,7 @@ def store_validation_results(results):
     au.store_validation_results_in_db(results)
 
 
-@app.route('/sum-stats/<string:callback_id>')
+@app.route('/v1/sum-stats/<string:callback_id>')
 def get_sumstats(callback_id):
     resp = endpoints.get_sumstats(callback_id=callback_id)
     return Response(response=resp,

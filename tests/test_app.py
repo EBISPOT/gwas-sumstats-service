@@ -39,14 +39,14 @@ class BasicTestCase(unittest.TestCase):
  
     def test_post_new_study_no_json(self):
         tester = app.test_client(self)
-        response = tester.post('/sum-stats',
+        response = tester.post('/v1/sum-stats',
                                json=None)
         self.assertEqual(response.status_code, 400)
         self.assertNotIn('callbackID', response.get_json())
 
     def test_post_new_study_missing_data(self):
         tester = app.test_client(self)
-        response = tester.post('/sum-stats',
+        response = tester.post('/v1/sum-stats',
                                json='{}')
         self.assertEqual(response.status_code, 400)
         self.assertIn("Missing 'requestEntries' in json", response.get_json()['message'])
@@ -63,7 +63,7 @@ class BasicTestCase(unittest.TestCase):
                            },
                          ]
                        }
-        response = tester.post('/sum-stats',
+        response = tester.post('/v1/sum-stats',
                                json=invalid_post)
         self.assertEqual(response.status_code, 400)
         self.assertIn("Missing field", response.get_json()['message'])
@@ -81,7 +81,7 @@ class BasicTestCase(unittest.TestCase):
                          ]
                        }
 
-        response = tester.post('/sum-stats',
+        response = tester.post('/v1/sum-stats',
                                json=invalid_post)
         self.assertEqual(response.status_code, 400)
         self.assertIn("is invalid", response.get_json()['message'])
@@ -104,7 +104,7 @@ class BasicTestCase(unittest.TestCase):
                             },
                           ]
                         }
-        response = tester.post('/sum-stats',
+        response = tester.post('/v1/sum-stats',
                                json=invalid_post)
         self.assertEqual(response.status_code, 400)
 
@@ -116,13 +116,13 @@ class BasicTestCase(unittest.TestCase):
         results = au.validate_files_from_payload(callback_id, VALID_POST)
         au.store_validation_results_in_db(results)
         tester = app.test_client(self)
-        response = tester.get('/sum-stats/{}'.format(callback_id))
+        response = tester.get('/v1/sum-stats/{}'.format(callback_id))
         self.assertEqual(response.status_code, 200)
 
     def test_bad_callback_id(self):
         tester = app.test_client(self)
         callback_id = 'NOTINDB'
-        response = tester.get('/sum-stats/{}'.format(callback_id))
+        response = tester.get('/v1/sum-stats/{}'.format(callback_id))
         self.assertEqual(response.status_code, 404)
 
 
