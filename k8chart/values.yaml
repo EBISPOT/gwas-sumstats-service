@@ -6,7 +6,7 @@
 replicaCount: 1
 
 image:
-  repository: jdhayhurst/gwas-sumstats-service
+  repository: ebispot/gwas-sumstats-service
   tag: latest
   pullPolicy: Always
   containerPort: 8000
