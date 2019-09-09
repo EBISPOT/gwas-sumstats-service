@@ -61,7 +61,7 @@ This handles the uploaded summary statistics files, validates them, reports erro
 - deploy the sumstats service
   - `helm install --name gwas-sumstats k8chart/ --wait`
 - Start a celery worker from docker
-  - `docker run -it -d --name sumstats -e CELERY_USER=<user> -e CELERY_PASSWORD=<pwd> -e QUEUE_HOST=<host ip> -e QUEUE_PORT=<port>  gwas-sumstats-service:latest /bin/bash`
+  - `docker run -it -d --name sumstats -v /path/to/data/:$INSTALL_PATH/sumstats_service/data -e CELERY_USER=<user> -e CELERY_PASSWORD=<pwd> -e QUEUE_HOST=<host ip> -e QUEUE_PORT=<port>  gwas-sumstats-service:latest /bin/bash`
   - `docker exec sumstats celery -A sumstats_service.app.celery worker --loglevel=debug --queues=preval`
 
 
