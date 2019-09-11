@@ -25,7 +25,7 @@ class Payload:
 
     def get_payload_complete_status(self):
         for study in self.study_obj_list:
-            if study.get_status() != 'VALID':
+            if study.get_status() == 'RETRIEVING':
                 return False
         return True
 
