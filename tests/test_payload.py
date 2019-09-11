@@ -100,6 +100,14 @@ class TestPayload(unittest.TestCase):
         completed = payload.get_payload_complete_status()
         self.assertEqual(completed, False)
         for study in payload.study_obj_list:
+            study.set_retrieved_status(0)
+            study.store_retrieved_status()
+            study.set_data_valid_status(0)
+            study.store_data_valid_status()
+        payload_new = pl.Payload(callback_id=cid)
+        completed = payload_new.get_payload_complete_status()
+        self.assertEqual(completed, True)
+        for study in payload.study_obj_list:
             study.set_retrieved_status(1)
             study.store_retrieved_status()
             study.set_data_valid_status(1)
@@ -107,5 +115,4 @@ class TestPayload(unittest.TestCase):
         payload_new = pl.Payload(callback_id=cid)
         completed = payload_new.get_payload_complete_status()
         self.assertEqual(completed, True)
-
 
