@@ -1,5 +1,4 @@
 import os
-import wget
 import urllib
 import config
 import hashlib
@@ -41,7 +40,7 @@ class SumStatFile:
         if self.ext:
             self.set_store_path()
         try:
-            wget.download(self.file_path, self.store_path)
+            urllib.request.urlretrieve(self.file_path, self.store_path)
             logger.debug("File written: {}".format(self.store_path))        
             return True
         except urllib.error.URLError as e:
