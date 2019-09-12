@@ -1,5 +1,6 @@
 import os
-import requests
+import wget
+import urllib
 import config
 import hashlib
 import logging
@@ -40,22 +41,15 @@ class SumStatFile:
         if self.ext:
             self.set_store_path()
         try:
-            response = requests.get(self.file_path)
-        except requests.exceptions.RequestException as e:
+            wget.download(self.file_path, self.store_path)
+            logger.debug("File written: {}".format(self.store_path))        
+            return True
+        except urllib.error.URLError as e:
             print(e)
-            return False
-        if response.status_code == 200:
-            with open(self.store_path, 'wb') as f:
-                f.write(response.content)
-                logger.debug("File written: {}".format(self.store_path))        
-                return True
-        else:
-            return False
+        return False
 
     def set_parent_path(self):
         self.parent_path = os.path.join(config.STORAGE_PATH, self.callback_id)
-
-
 
     def set_store_path(self):
         if self.study_id: 
