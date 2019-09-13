@@ -1,4 +1,4 @@
-import unittest
+import pytest
 import os
 import json
 from sumstats_service.app import app
@@ -10,8 +10,8 @@ import sumstats_service.resources.payload as pl
 import config
 
 
-class BasicTestCase(unittest.TestCase):
-    def setUp(self):
+class TestAPP:
+    def setup_method(self, method):
         self.testDB = "./tests/study_meta.db"
         self.test_storepath = "./tests/data"
         config.STORAGE_PATH = self.test_storepath
@@ -21,54 +21,53 @@ class BasicTestCase(unittest.TestCase):
         sq.cur.executescript(config.DB_SCHEMA)
         self.valid_url = "file://{}".format(os.path.abspath("./tests/test_sumstats_file.tsv"))
             
-    def tearDown(self):
+    def teardown_method(self, method):
         os.remove(self.testDB)
 
     def test_index(self):
         tester = app.test_client(self)
         response = tester.get('/', content_type='html/json')
         study_link = response.get_json()['_links']['sumstats']['href']
-        self.assertEqual(response.status_code, 200)
-        self.assertRegex(study_link, "http://.*sum-stats")
+        assert response.status_code == 200
 
-   # def test_get_200_based_on_good_callback_id(self):
-   #     valid_json = {
-   #            "requestEntries": [
-   #                {
-   #                 "id": "abc123",
-   #                 "filePath": self.valid_url,
-   #                 "md5":"a1195761f082f8cbc2f5a560743077cc",
-   #                 "assembly":"38"
-   #                },
-   #                {
-   #                 "id": "xyz321",
-   #                 "filePath": self.valid_url,
-   #                 "md5":"a1195761f082f8cbc2f5a560743077cc",
-   #                 "assembly":"38"
-   #                },
-   #              ]
-   #            } 
-   #     tester = app.test_client(self)
-   #     response = tester.post('/v1/sum-stats', json=valid_json)
-   #     print(response.get_json())
-   #     self.assertEqual(response.status_code, 201)
-   #     callback_id = response.get_json()["callbackID"]
-   #     response = tester.get('/v1/sum-stats/{}'.format(callback_id))
-   #     self.assertEqual(response.status_code, 200) 
+    def test_get_200_based_on_good_callback_id(self, celery_session_worker):
+        valid_json = {
+               "requestEntries": [
+                   {
+                    "id": "abc123",
+                    "filePath": self.valid_url,
+                    "md5":"a1195761f082f8cbc2f5a560743077cc",
+                    "assembly":"38"
+                   },
+                   {
+                    "id": "xyz321",
+                    "filePath": self.valid_url,
+                    "md5":"a1195761f082f8cbc2f5a560743077cc",
+                    "assembly":"38"
+                   },
+                 ]
+               } 
+        tester = app.test_client(self)
+        response = tester.post('/v1/sum-stats', json=valid_json)
+        print(response.get_json())
+        assert response.status_code == 201
+        callback_id = response.get_json()["callbackID"]
+        response = tester.get('/v1/sum-stats/{}'.format(callback_id))
+        assert response.status_code == 200 
 
     def test_post_new_study_no_json(self):
         tester = app.test_client(self)
         response = tester.post('/v1/sum-stats',
                                json=None)
-        self.assertEqual(response.status_code, 400)
-        self.assertNotIn('callbackID', response.get_json())
+        assert response.status_code == 400
+        assert 'callbackID' not in response.get_json()
 
     def test_post_new_study_missing_data(self):
         tester = app.test_client(self)
         response = tester.post('/v1/sum-stats',
                                json='{}')
-        self.assertEqual(response.status_code, 400)
-        self.assertIn("Missing 'requestEntries' in json", response.get_json()['message'])
+        assert response.status_code == 400
+        assert "Missing 'requestEntries' in json" in response.get_json()['message']
 
     def test_post_new_study_missing_mandatory_fields(self):
         tester = app.test_client(self)
@@ -84,8 +83,8 @@ class BasicTestCase(unittest.TestCase):
                        }
         response = tester.post('/v1/sum-stats',
                                json=invalid_post)
-        self.assertEqual(response.status_code, 400)
-        self.assertIn("Missing field", response.get_json()['message'])
+        assert response.status_code == 400
+        assert "Missing field" in response.get_json()['message']
 
     def test_post_new_study_bad_id(self):
         tester = app.test_client(self)
@@ -102,8 +101,8 @@ class BasicTestCase(unittest.TestCase):
 
         response = tester.post('/v1/sum-stats',
                                json=invalid_post)
-        self.assertEqual(response.status_code, 400)
-        self.assertIn("is invalid", response.get_json()['message'])
+        assert response.status_code == 400
+        assert "is invalid" in response.get_json()['message']
 
     def test_post_duplicate_study_id_in_one_payload(self):
         tester = app.test_client(self)
@@ -125,13 +124,13 @@ class BasicTestCase(unittest.TestCase):
                         }
         response = tester.post('/v1/sum-stats',
                                json=invalid_post)
-        self.assertEqual(response.status_code, 400)
+        assert response.status_code == 400
 
     def test_bad_callback_id(self):
         tester = app.test_client(self)
         callback_id = 'NOTINDB'
         response = tester.get('/v1/sum-stats/{}'.format(callback_id))
-        self.assertEqual(response.status_code, 404)
+        assert response.status_code == 404
 
 
 
