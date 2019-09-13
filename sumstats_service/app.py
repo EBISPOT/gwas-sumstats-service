@@ -70,6 +70,26 @@ def sumstats():
                     mimetype="application/json")
 
 
+@app.route('/v1/sum-stats/<string:callback_id>', methods=['GET'])
+def get_sumstats(callback_id):
+    resp = endpoints.get_sumstats(callback_id=callback_id)
+    return Response(response=resp,
+                    status=200,
+                    mimetype="application/json")
+
+
+@app.route('/v1/sum-stats/<string:callback_id>', methods=['DELETE'])
+def delete_sumstats(callback_id):
+    resp = endpoints.delete_sumstats(callback_id=callback_id)
+    if resp:
+        remove_payload_files.apply_async(args=[callback_id])
+    return Response(response=resp,
+                    status=200,
+                    mimetype="application/json")
+
+
+# Celery tasks
+
 @celery.task(queue='preval', options={'queue': 'preval'})
 def validate_files_in_background(callback_id, content):
     results = au.validate_files_from_payload(callback_id, content)
@@ -81,13 +101,9 @@ def store_validation_results(results):
     au.store_validation_results_in_db(results)
 
 
-@app.route('/v1/sum-stats/<string:callback_id>')
-def get_sumstats(callback_id):
-    resp = endpoints.get_sumstats(callback_id=callback_id)
-    return Response(response=resp,
-                    status=200,
-                    mimetype="application/json")
-
+@celery.task(queue='preval', options={'queue': 'preval'})
+def remove_payload_files(callback_id):
+    au.remove_payload_files(callback_id)
 
 
 if __name__ == '__main__':

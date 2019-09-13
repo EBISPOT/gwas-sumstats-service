@@ -1,5 +1,6 @@
 import pytest
 import os
+import shutil
 import json
 from sumstats_service.app import app
 import sumstats_service.resources.api_endpoints as ep
@@ -49,11 +50,10 @@ class TestAPP:
                } 
         tester = app.test_client(self)
         response = tester.post('/v1/sum-stats', json=valid_json)
-        print(response.get_json())
         assert response.status_code == 201
         callback_id = response.get_json()["callbackID"]
         response = tester.get('/v1/sum-stats/{}'.format(callback_id))
-        assert response.status_code == 200 
+        assert response.status_code == 200
 
     def test_post_new_study_no_json(self):
         tester = app.test_client(self)
@@ -131,6 +131,37 @@ class TestAPP:
         callback_id = 'NOTINDB'
         response = tester.get('/v1/sum-stats/{}'.format(callback_id))
         assert response.status_code == 404
+
+    def test_delete_payload(self):
+        valid_json = {
+               "requestEntries": [
+                   {
+                    "id": "abc123",
+                    "filePath": self.valid_url,
+                    "md5":"a1195761f082f8cbc2f5a560743077cc",
+                    "assembly":"38"
+                   },
+                   {
+                    "id": "xyz321",
+                    "filePath": self.valid_url,
+                    "md5":"a1195761f082f8cbc2f5a560743077cc",
+                    "assembly":"38"
+                   },
+                 ]
+               } 
+        tester = app.test_client(self)
+        response = tester.post('/v1/sum-stats', json=valid_json)
+        assert response.status_code == 201
+        callback_id = response.get_json()["callbackID"]
+        response = tester.get('/v1/sum-stats/{}'.format(callback_id))
+        assert response.status_code == 200
+        response = tester.delete('/v1/sum-stats/{}'.format(callback_id))
+        assert response.status_code == 200
+        response = tester.get('/v1/sum-stats/{}'.format(callback_id))
+        assert response.status_code == 404
+        response = tester.delete('/v1/sum-stats/{}'.format(callback_id))
+        assert response.status_code == 404
+
 
 
 

@@ -2,6 +2,7 @@ import shortuuid
 from sumstats_service.resources.sqlite_client import sqlClient
 from sumstats_service.resources.error_classes import *
 import sumstats_service.resources.study_service as st
+import sumstats_service.resources.file_handler as fh
 import config
 
 
@@ -117,4 +118,8 @@ class Payload:
         except KeyError as e:
             raise BadUserRequest("Missing field: {} in json".format(str(e)))
         return (study_id, file_path, md5, assembly)
+
+    def remove_payload_directory(self):
+        fh.remove_payload(self.callback_id)
+
 
