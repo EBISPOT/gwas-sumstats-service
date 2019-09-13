@@ -8,8 +8,6 @@ from tests.test_constants import *
 from sumstats_service.resources.sqlite_client import sqlClient
 import sumstats_service.resources.payload as pl
 import config
-import requests
-import requests_mock
 
 
 class BasicTestCase(unittest.TestCase):
@@ -18,25 +16,46 @@ class BasicTestCase(unittest.TestCase):
         self.test_storepath = "./tests/data"
         config.STORAGE_PATH = self.test_storepath
         config.DB_PATH = self.testDB
-        config.BROKER_PORT = 5682
-        config.BROKER_HOST = "localhost"
         sq = sqlClient(self.testDB)
         sq.create_conn()
         sq.cur.executescript(config.DB_SCHEMA)
-        self.valid_url = "https://valid_file.tsv"
-        with open("./tests/test_sumstats_file.tsv", "rb") as f:
-            self.valid_content = f.read()
+        self.valid_url = "file://{}".format(os.path.abspath("./tests/test_sumstats_file.tsv"))
             
     def tearDown(self):
         os.remove(self.testDB)
 
     def test_index(self):
-        tester = app.test_client()
+        tester = app.test_client(self)
         response = tester.get('/', content_type='html/json')
         study_link = response.get_json()['_links']['sumstats']['href']
         self.assertEqual(response.status_code, 200)
         self.assertRegex(study_link, "http://.*sum-stats")
- 
+
+   # def test_get_200_based_on_good_callback_id(self):
+   #     valid_json = {
+   #            "requestEntries": [
+   #                {
+   #                 "id": "abc123",
+   #                 "filePath": self.valid_url,
+   #                 "md5":"a1195761f082f8cbc2f5a560743077cc",
+   #                 "assembly":"38"
+   #                },
+   #                {
+   #                 "id": "xyz321",
+   #                 "filePath": self.valid_url,
+   #                 "md5":"a1195761f082f8cbc2f5a560743077cc",
+   #                 "assembly":"38"
+   #                },
+   #              ]
+   #            } 
+   #     tester = app.test_client(self)
+   #     response = tester.post('/v1/sum-stats', json=valid_json)
+   #     print(response.get_json())
+   #     self.assertEqual(response.status_code, 201)
+   #     callback_id = response.get_json()["callbackID"]
+   #     response = tester.get('/v1/sum-stats/{}'.format(callback_id))
+   #     self.assertEqual(response.status_code, 200) 
+
     def test_post_new_study_no_json(self):
         tester = app.test_client(self)
         response = tester.post('/v1/sum-stats',
@@ -74,7 +93,7 @@ class BasicTestCase(unittest.TestCase):
                         "requestEntries": [
                           {
                             "id": "xyz321 asd",
-                            "filePath": "file/path.tsv",
+                            "filePath": self.valid_url,
                             "md5":"b1d7e0a58d36502d59d036a17336ddf5",
                             "assembly":"38"
                            },
@@ -92,13 +111,13 @@ class BasicTestCase(unittest.TestCase):
                         "requestEntries": [
                             {
                              "id": "abc123",
-                             "filePath": "file/path.tsv",
+                             "filePath": self.valid_url,
                              "md5":"b1d7e0a58d36502d59d036a17336ddf5",
                              "assembly":"38"
                             },
                             {
                              "id": "abc123",
-                             "filePath": "file/path.tsv",
+                             "filePath": self.valid_url,
                              "md5":"b1d7e0a58d36502d59d036a17336ddf5",
                              "assembly":"38"
                             },
@@ -107,17 +126,6 @@ class BasicTestCase(unittest.TestCase):
         response = tester.post('/v1/sum-stats',
                                json=invalid_post)
         self.assertEqual(response.status_code, 400)
-
-    @requests_mock.Mocker()
-    def test_get_200_based_on_good_callback_id(self, m):
-        m.register_uri('GET', self.valid_url, content=self.valid_content)
-        resp = ep.create_studies(VALID_POST)
-        callback_id = json.loads(resp)['callbackID']
-        results = au.validate_files_from_payload(callback_id, VALID_POST)
-        au.store_validation_results_in_db(results)
-        tester = app.test_client(self)
-        response = tester.get('/v1/sum-stats/{}'.format(callback_id))
-        self.assertEqual(response.status_code, 200)
 
     def test_bad_callback_id(self):
         tester = app.test_client(self)
