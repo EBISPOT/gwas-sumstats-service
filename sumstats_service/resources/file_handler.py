@@ -45,6 +45,8 @@ class SumStatFile:
             return True
         except urllib.error.URLError as e:
             print(e)
+        except ValueError as e:
+            print(e)
         return False
 
     def set_parent_path(self):
