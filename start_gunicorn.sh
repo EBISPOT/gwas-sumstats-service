@@ -1,3 +1,4 @@
+#!/bin/bash
 export CELERY_PROTOCOL='amqp'
 export CELERY_USER='guest'
 export CELERY_PASSWORD='guest'
