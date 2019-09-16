@@ -1,10 +1,12 @@
 import os
 import urllib
+import shutil
 import config
 import hashlib
 import logging
 import validate.validator as val
 import pathlib
+from sumstats_service.resources.error_classes import *
 
 
 logging.basicConfig(level=logging.INFO, format='(%(levelname)s): %(message)s')
@@ -93,5 +95,13 @@ def md5_check(file):
     with open(file, "rb") as f:
         for chunk in iter(lambda: f.read(4096), b""):
             hash_md5.update(chunk)
-    return hash_md5.hexdigest()        
+    return hash_md5.hexdigest()
+
+def remove_payload(callback_id):
+    path = os.path.join(config.STORAGE_PATH, callback_id)
+    try:
+        shutil.rmtree(path)
+    except FileNotFoundError as e:
+        logger.error(e)
+
 

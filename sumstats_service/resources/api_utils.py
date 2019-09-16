@@ -51,6 +51,30 @@ def construct_get_payload_response(callback_id):
                 }
     return response
 
+def delete_payload_from_db(callback_id):
+    payload = pl.Payload(callback_id=callback_id)
+    if not payload:
+        raise RequestedNotFound("Couldn't find resource with callback id: {}".format(self.callback_id))
+    payload.get_data_for_callback_id()
+    status_list = []
+    for study in payload.study_obj_list:
+        status_list.append({
+                            "id": study.study_id, 
+                            "status": "DELETED"
+                            })
+        study.remove()
+    response = {"callbackID": str(callback_id),
+                "completed": "DELETED",
+                "statusList": status_list
+                }
+    return json.dumps(response)
+
+
+def remove_payload_files(callback_id):
+    payload = pl.Payload(callback_id=callback_id)
+    payload.remove_payload_directory()
+    
+
 def construct_validation_response(callback_id, payload):
     validation_list = []
     for study in payload.study_obj_list:

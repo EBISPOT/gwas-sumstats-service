@@ -57,6 +57,10 @@ class Study:
         #sq = sqlClient(config.DB_PATH)
         #sq.update_error_code(self.study_id, error_code)
 
+    def remove(self):
+        sq = sqlClient(config.DB_PATH)
+        sq.delete_study_entry(self.study_id)
+
     def store_validation_statuses(self):
         self.store_retrieved_status()
         self.store_data_valid_status()

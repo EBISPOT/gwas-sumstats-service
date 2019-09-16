@@ -82,3 +82,9 @@ class sqlClient():
 
     def create_tables(self):
         self.cur.executescript(config.DB_SCHEMA)
+
+    def delete_study_entry(self, study):
+        self.cur.execute("delete from studies where studyID =?", (study,))
+        self.commit()
+
+        

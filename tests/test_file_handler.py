@@ -31,6 +31,15 @@ class TestSumStatsFile(unittest.TestCase):
         ssf.make_parent_dir()
         self.assertTrue(os.path.exists(ssf.parent_path))
 
+    def test_remove_parent_dir(self):
+        ssf = fh.SumStatFile(callback_id=self.cid, study_id=self.sid)
+        ssf.set_parent_path()
+        self.assertFalse(os.path.exists(ssf.parent_path))
+        ssf.make_parent_dir()
+        self.assertTrue(os.path.exists(ssf.parent_path))
+        fh.remove_payload(self.cid)
+        self.assertFalse(os.path.exists(ssf.parent_path))
+
     def test_retrieve(self):
         ssf = fh.SumStatFile(file_path=self.valid_url, callback_id=self.cid, study_id=self.sid)
         retrieved = ssf.retrieve()

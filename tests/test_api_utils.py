@@ -108,7 +108,36 @@ class TestAPIUtils(unittest.TestCase):
         self.assertEqual(check["validationList"][1]["dataValid"], 0)
         self.assertEqual(check["validationList"][1]["errorCode"], 2)
 
-        
+
+    def test_delete_payload_from_db(self):
+        valid_json = {
+               "requestEntries": [
+                   {
+                    "id": "abc123",
+                    "filePath": self.valid_url,
+                    "md5":"a1195761f082f8cbc2f5a560743077cc",
+                    "assembly":"38"
+                   },
+                   {
+                    "id": "xyz321",
+                    "filePath": self.valid_url,
+                    "md5":"a1195761f082f8cbc2f5a560743077cc",
+                    "assembly":"38"
+                   },
+                 ]
+               } 
+        cid = au.json_payload_to_db(valid_json)
+        resp = au.validate_files_from_payload(cid, valid_json)
+        au.store_validation_results_in_db(resp)
+        path = os.path.join(self.test_storepath, cid)
+        self.assertTrue(os.path.exists(path))
+        resp = au.delete_payload_from_db(cid)
+        check = json.loads(resp)
+        self.assertEqual(check["callbackID"], cid)
+        print(resp)
+        au.remove_payload_files(cid)
+        self.assertFalse(os.path.exists(path))
+
 
 if __name__ == '__main__':
     unittest.main()
