@@ -1,8 +1,13 @@
 import os
 import urllib
+from urllib.parse import urlparse, parse_qs
+import requests
+import gzip
 import shutil
 import config
 import hashlib
+import magic
+import csv
 import logging
 import validate.validator as val
 import pathlib
@@ -37,30 +42,61 @@ class SumStatFile:
     def retrieve(self):
         logger.info("Fetching file from URL: {}".format(self.file_path))        
         self.make_parent_dir()
-        self.ext = self.get_ext()
-        logger.debug("File extension: {}".format(self.ext))        
-        if self.ext:
-            self.set_store_path()
-        try:
-            urllib.request.urlretrieve(self.file_path, self.store_path)
-            logger.debug("File written: {}".format(self.store_path))        
-            return True
-        except urllib.error.URLError as e:
-            print(e)
-        except ValueError as e:
-            print(e)
-        return False
+        self.set_store_path()
+        url_parts = parse_url(self.file_path)
+        if url_parts is False:
+            return False
+        # check if gdrive
+        logger.debug(get_net_loc(self.file_path))
+        if "drive.google.com" in get_net_loc(self.file_path) :
+            logger.info("gdrive file")
+            download_status = self.download_from_gdrive()
+        # elif dropbox
+        else:
+            logger.info("standard file path")
+            download_status = self.download_with_urllib()
+        if download_status == True:
+            ext = self.get_ext()
+            path_with_ext = self.store_path + ext
+            os.rename(self.store_path, path_with_ext)
+            self.store_path =  path_with_ext
+            logger.info("store path is {}".format(self.store_path))
+        return download_status # True or False
 
     def set_parent_path(self):
         self.parent_path = os.path.join(config.STORAGE_PATH, self.callback_id)
 
     def set_store_path(self):
         if self.study_id: 
-               self.store_path = os.path.join(self.parent_path, str(self.study_id + self.ext))
+               self.store_path = os.path.join(self.parent_path, str(self.study_id))
+
+    def download_with_urllib(self):
+        try:
+            urllib.request.urlretrieve(self.file_path, self.store_path)
+            logger.debug("File written: {}".format(self.store_path))        
+            return True
+        except urllib.error.URLError as e:
+            logger.error(e)
+        except ValueError as e:
+            logger.error(e)
+        return False
+
+    def download_from_gdrive(self):
+        file_id = get_gdrive_id(self.file_path)
+        if file_id:
+            try:
+                download_file_from_google_drive(file_id, self.store_path)
+                return True
+            except requests.exceptions.RequestException as e:
+                logger.error(e)
+        return False
 
     def get_store_path(self):
-        self.get_ext()
-        self.set_store_path()
+        if not self.store_path:
+            self.set_store_path()
+            self.get_ext()
+            path_with_ext = self.store_path + ext
+            self.store_path =  path_with_ext
         return self.store_path
 
     def md5_ok(self):
@@ -70,15 +106,22 @@ class SumStatFile:
         return False
 
     def get_ext(self):
-        ext = pathlib.Path(self.file_path).suffix
-        return ext if ext else False
-
+        ext = None
+        detect = magic.Magic(uncompress=True)
+        description = detect.from_file(self.store_path)
+        if "gzip" in description:
+            with gzip.open(self.store_path, 'rt') as f:
+                ext = self.get_dialect(f) + ".gz"
+        else:
+            with open(self.store_path, 'r') as f:
+                ext = self.get_dialect(f)
+        return ext
 
     def validate_file(self):
         validator = val.Validator(file=self.store_path, filetype='standard')
         self.set_logfile()
         logger.info("Validating file extension...")
-        if not validator.validate_file_extenstion():
+        if not validator.validate_file_extension():
             return False
         logger.info("Validating headers...")
         if not validator.validate_headers():
@@ -90,12 +133,29 @@ class SumStatFile:
         else:
             return False
 
+
+    def get_dialect(self, csv_file):
+        detect = csv.Sniffer().sniff(csv_file.readline()).delimiter
+        if str(detect) == '\t':
+            return ".tsv"
+        elif str(detect) == ',':
+            return ".csv"
+        else:
+            ext = pathlib.Path(self.file_path).suffix
+            if ext:
+                return ext
+            else:
+                logger.error("Unable to determine file type/extension setting to .tsv")
+                return ".tsv"
+
+
 def md5_check(file):
     hash_md5 = hashlib.md5()
     with open(file, "rb") as f:
         for chunk in iter(lambda: f.read(4096), b""):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
+
 
 def remove_payload(callback_id):
     path = os.path.join(config.STORAGE_PATH, callback_id)
@@ -104,4 +164,52 @@ def remove_payload(callback_id):
     except FileNotFoundError as e:
         logger.error(e)
 
+def parse_url(url):
+    url_parse = urlparse(url)
+    if not url_parse.scheme:
+        logger.error("No schema defined in URL")
+        return False
+    else:
+        return url_parse
 
+
+def get_net_loc(url):
+    return urlparse(url).netloc
+
+def get_gdrive_id(url):
+    file_id = None
+    url_parse = parse_url(url)
+    if url_parse.query and "id" in parse_qs(url_parse.query):
+        file_id = queries["id"]
+    else:
+        try:
+            file_id = url_parse.path.split("/d/")[1].split("/")[0]
+        except IndexError:
+            logger.error("Couldn't parse id from url path: {}".format(url_parse.path))
+    if not file_id:
+        logger.error("Gdrive URL given but no id given")
+    return file_id
+
+def download_file_from_google_drive(id, destination):
+    def get_confirm_token(response):
+        for key, value in response.cookies.items():
+            if key.startswith('download_warning'):
+                return value
+        return None
+
+    def save_response_content(response, destination):
+        CHUNK_SIZE = 32768
+        with open(destination, "wb") as f:
+            for chunk in response.iter_content(CHUNK_SIZE):
+                if chunk: # filter out keep-alive new chunks
+                    f.write(chunk)
+
+    URL = "https://docs.google.com/uc?export=download"
+    session = requests.Session()
+    response = session.get(URL, params = { 'id' : id }, stream = True)
+    token = get_confirm_token(response)
+    if token:
+        params = { 'id' : id, 'confirm' : token }
+        response = session.get(URL, params = params, stream = True)
+    save_response_content(response, destination)
+    
