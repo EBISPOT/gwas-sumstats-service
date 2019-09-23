@@ -3,7 +3,6 @@ import urllib
 from urllib.parse import urlparse, parse_qs
 import requests
 import gzip
-import gdown
 import shutil
 import config
 import hashlib
