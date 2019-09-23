@@ -44,6 +44,9 @@ class SumStatFile:
         logger.info("Fetching file from URL: {}".format(self.file_path))        
         self.make_parent_dir()
         self.set_store_path()
+        url_parts = parse_url(self.file_path)
+        if url_parts is False:
+            return False
         # check if gdrive
         logger.debug(get_net_loc(self.file_path))
         if "drive.google.com" in get_net_loc(self.file_path) :
@@ -162,19 +165,31 @@ def remove_payload(callback_id):
     except FileNotFoundError as e:
         logger.error(e)
 
+def parse_url(url):
+    url_parse = urlparse(url)
+    if not url_parse.scheme:
+        logger.error("No schema defined in URL")
+        return False
+    else:
+        return url_parse
+
 
 def get_net_loc(url):
     return urlparse(url).netloc
 
 def get_gdrive_id(url):
-    queries = parse_qs(urlparse(url).query)
-    try:
+    file_id = None
+    url_parse = parse_url(url)
+    if url_parse.query and "id" in parse_qs(url_parse.query):
         file_id = queries["id"]
-        return file_id
-    except KeyError:
+    else:
+        try:
+            file_id = url_parse.path.split("/d/")[1].split("/")[0]
+        except IndexError:
+            logger.error("Couldn't parse id from url path: {}".format(url_parse.path))
+    if not file_id:
         logger.error("Gdrive URL given but no id given")
-        return False
-    ## USE gdown
+    return file_id
 
 def download_file_from_google_drive(id, destination):
     def get_confirm_token(response):
