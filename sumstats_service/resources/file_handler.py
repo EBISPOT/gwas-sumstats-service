@@ -180,7 +180,7 @@ def get_gdrive_id(url):
     file_id = None
     url_parse = parse_url(url)
     if url_parse.query and "id" in parse_qs(url_parse.query):
-        file_id = queries["id"]
+        file_id = parse_qs(url_parse.query)["id"]
     else:
         try:
             file_id = url_parse.path.split("/d/")[1].split("/")[0]
