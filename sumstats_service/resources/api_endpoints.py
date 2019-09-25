@@ -12,7 +12,6 @@ def root():
                }
     return json.dumps(response)
 
-
 def get_sumstats(callback_id):
     response = au.construct_get_payload_response(callback_id)
     return json.dumps(response)

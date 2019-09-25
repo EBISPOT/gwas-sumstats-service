@@ -1,6 +1,6 @@
 import os
 import urllib
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs, urlunparse
 import requests
 import gzip
 import shutil
@@ -40,28 +40,38 @@ class SumStatFile:
             pass
 
     def retrieve(self):
-        logger.info("Fetching file from URL: {}".format(self.file_path))        
-        self.make_parent_dir()
-        self.set_store_path()
-        url_parts = parse_url(self.file_path)
-        if url_parts is False:
+        try:
+            logger.info("Fetching file from URL: {}".format(self.file_path))        
+            self.make_parent_dir()
+            self.set_store_path()
+            url_parts = parse_url(self.file_path)
+            if url_parts is False:
+                return False
+            # check if gdrive
+            logger.debug(get_net_loc(self.file_path))
+            if "drive.google" in get_net_loc(self.file_path):
+                logger.info("gdrive file")
+                download_status = self.download_from_gdrive()
+            elif "dropbox" in  get_net_loc(self.file_path):
+                logger.info("dropbox file")
+                download_status = self.download_from_dropbox()
+            elif "http" in url_parts.scheme:
+                logger.info("http download")
+                download_status = download_with_requests(self.file_path, self.store_path)
+            else:
+                logger.info("not http download")
+                download_status = download_with_urllib(self.file_path, self.store_path)
+
+            if download_status == True:
+                ext = self.get_ext()
+                path_with_ext = self.store_path + ext
+                os.rename(self.store_path, path_with_ext)
+                self.store_path =  path_with_ext
+                logger.info("store path is {}".format(self.store_path))
+            return download_status # True or False
+        except Exception as e:
+            logger.error(e)
             return False
-        # check if gdrive
-        logger.debug(get_net_loc(self.file_path))
-        if "drive.google.com" in get_net_loc(self.file_path) :
-            logger.info("gdrive file")
-            download_status = self.download_from_gdrive()
-        # elif dropbox
-        else:
-            logger.info("standard file path")
-            download_status = self.download_with_urllib()
-        if download_status == True:
-            ext = self.get_ext()
-            path_with_ext = self.store_path + ext
-            os.rename(self.store_path, path_with_ext)
-            self.store_path =  path_with_ext
-            logger.info("store path is {}".format(self.store_path))
-        return download_status # True or False
 
     def set_parent_path(self):
         self.parent_path = os.path.join(config.STORAGE_PATH, self.callback_id)
@@ -70,16 +80,13 @@ class SumStatFile:
         if self.study_id: 
                self.store_path = os.path.join(self.parent_path, str(self.study_id))
 
-    def download_with_urllib(self):
-        try:
-            urllib.request.urlretrieve(self.file_path, self.store_path)
-            logger.debug("File written: {}".format(self.store_path))        
-            return True
-        except urllib.error.URLError as e:
-            logger.error(e)
-        except ValueError as e:
-            logger.error(e)
-        return False
+    def download_from_dropbox(self):
+        url = self.file_path
+        url_parse = parse_url(url)
+        if url_parse.query:
+            download_true_query = url_parse.query.replace("dl=0", "dl=1")
+            url = urlunparse(url_parse._replace(query=download_true_query))
+        return download_with_requests(url, self.store_path)
 
     def download_from_gdrive(self):
         file_id = get_gdrive_id(self.file_path)
@@ -109,6 +116,7 @@ class SumStatFile:
         ext = None
         detect = magic.Magic(uncompress=True)
         description = detect.from_file(self.store_path)
+        logger.debug("file magic: " + self.store_path + ": " + description)
         if "gzip" in description:
             with gzip.open(self.store_path, 'rt') as f:
                 ext = self.get_dialect(f) + ".gz"
@@ -120,17 +128,21 @@ class SumStatFile:
     def validate_file(self):
         validator = val.Validator(file=self.store_path, filetype='standard')
         self.set_logfile()
-        logger.info("Validating file extension...")
-        if not validator.validate_file_extension():
-            return False
-        logger.info("Validating headers...")
-        if not validator.validate_headers():
-            logger.info("Invalid headers...exiting before any further checks")
-            return False
-        logger.info("Validating data...")
-        if validator.validate_data():
-            return True
-        else:
+        try:
+            logger.info("Validating file extension...")
+            if not validator.validate_file_extension():
+                return False
+            logger.info("Validating headers...")
+            if not validator.validate_headers():
+                logger.info("Invalid headers...exiting before any further checks")
+                return False
+            logger.info("Validating data...")
+            if validator.validate_data():
+                return True
+            else:
+                return False
+        except Exception as e:
+            logger.error(e)
             return False
 
 
@@ -171,6 +183,28 @@ def parse_url(url):
         return False
     else:
         return url_parse
+
+def download_with_urllib(url, localpath):
+    try:
+        urllib.request.urlretrieve(url, localpath)
+        logger.debug("File written: {}".format(url))        
+        return True
+    except urllib.error.URLError as e:
+        logger.error(e)
+    except ValueError as e:
+        logger.error(e)
+    return False
+
+def download_with_requests(url, localpath):
+    try:
+        with requests.get(url, stream=True) as r:
+            with open(localpath, 'wb') as f:
+                shutil.copyfileobj(r.raw, f)
+                logger.debug("File written: {}".format(url))        
+                return True
+    except requests.exceptions.RequestException as e:
+        logger.error(e)
+        return False
 
 
 def get_net_loc(url):
