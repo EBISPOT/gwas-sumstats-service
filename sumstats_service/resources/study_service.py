@@ -129,8 +129,7 @@ class Study:
                 else:
                     self.set_data_valid_status(0)
                     self.set_error_code(3)
-
-        if ssf.retrieve() is False:
+        else:
             self.set_retrieved_status(0)
             self.set_error_code(1)
         

@@ -14,7 +14,7 @@ import pathlib
 from sumstats_service.resources.error_classes import *
 
 
-logging.basicConfig(level=logging.INFO, format='(%(levelname)s): %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='(%(levelname)s): %(message)s')
 logger = logging.getLogger(__name__)
 
 
@@ -27,9 +27,11 @@ class SumStatFile:
         self.logfile = None
 
     def set_logfile(self):
+        for handler in logger.handlers[:]:  # remove all old handlers
+            logger.removeHandler(handler)
         self.logfile = os.path.join(self.parent_path, str(self.study_id + ".log"))
         handler = logging.FileHandler(self.logfile)
-        handler.setLevel(logging.ERROR)
+        handler.setLevel(logging.INFO)
         logger.addHandler(handler)
 
     def make_parent_dir(self):
@@ -41,7 +43,7 @@ class SumStatFile:
 
     def retrieve(self):
         try:
-            logger.info("Fetching file from URL: {}".format(self.file_path))        
+            logger.debug("Fetching file from URL: {}".format(self.file_path))        
             self.make_parent_dir()
             self.set_store_path()
             url_parts = parse_url(self.file_path)
@@ -50,24 +52,23 @@ class SumStatFile:
             # check if gdrive
             logger.debug(get_net_loc(self.file_path))
             if "drive.google" in get_net_loc(self.file_path):
-                logger.info("gdrive file")
+                logger.debug("gdrive file")
                 download_status = self.download_from_gdrive()
             elif "dropbox" in  get_net_loc(self.file_path):
-                logger.info("dropbox file")
+                logger.debug("dropbox file")
                 download_status = self.download_from_dropbox()
             elif "http" in url_parts.scheme:
-                logger.info("http download")
+                logger.debug("http download")
                 download_status = download_with_requests(self.file_path, self.store_path)
             else:
-                logger.info("not http download")
+                logger.debug("not http download")
                 download_status = download_with_urllib(self.file_path, self.store_path)
-
             if download_status == True:
                 ext = self.get_ext()
                 path_with_ext = self.store_path + ext
                 os.rename(self.store_path, path_with_ext)
                 self.store_path =  path_with_ext
-                logger.info("store path is {}".format(self.store_path))
+                logger.debug("store path is {}".format(self.store_path))
             return download_status # True or False
         except Exception as e:
             logger.error(e)
@@ -116,7 +117,7 @@ class SumStatFile:
         ext = None
         detect = magic.Magic(uncompress=True)
         description = detect.from_file(self.store_path)
-        logger.debug("file magic: " + self.store_path + ": " + description)
+        logger.info("file type description: " + description)
         if "gzip" in description:
             with gzip.open(self.store_path, 'rt') as f:
                 ext = self.get_dialect(f) + ".gz"
@@ -131,18 +132,23 @@ class SumStatFile:
         try:
             logger.info("Validating file extension...")
             if not validator.validate_file_extension():
+                logger.info("VALIDATION FAILED")
                 return False
             logger.info("Validating headers...")
             if not validator.validate_headers():
                 logger.info("Invalid headers...exiting before any further checks")
+                logger.info("VALIDATION FAILED")
                 return False
             logger.info("Validating data...")
             if validator.validate_data():
+                logger.info("VALIDATION SUCCESSFUL")
                 return True
             else:
+                logger.info("VALIDATION FAILED")
                 return False
         except Exception as e:
             logger.error(e)
+            logger.info("VALIDATION FAILED")
             return False
 
 
