@@ -1,5 +1,5 @@
 apiVersion: extensions/v1beta1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: {{.Values.service.name}}
   namespace: {{.Values.k8Namespace}}
