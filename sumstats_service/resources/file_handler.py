@@ -19,12 +19,13 @@ logger = logging.getLogger(__name__)
 
 
 class SumStatFile:
-    def __init__(self, file_path=None, callback_id=None, study_id=None, md5exp=None):
+    def __init__(self, file_path=None, callback_id=None, study_id=None, md5exp=None, readme=None):
         self.file_path = file_path
         self.callback_id = callback_id
         self.study_id = study_id
         self.md5exp = md5exp
         self.logfile = None
+        self.readme = readme
 
     def set_logfile(self):
         for handler in logger.handlers[:]:  # remove all old handlers
@@ -106,6 +107,12 @@ class SumStatFile:
             path_with_ext = self.store_path + ext
             self.store_path =  path_with_ext
         return self.store_path
+
+    def write_readme_file(self):
+        if self.readme:
+            readme_path = os.path.join(self.parent_path, str(self.study_id)) + ".README"
+            with open(readme_path, 'w') as readme:
+                readme.write(self.readme)
 
     def md5_ok(self):
         f = self.get_store_path()

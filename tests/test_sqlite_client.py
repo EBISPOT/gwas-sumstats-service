@@ -30,7 +30,8 @@ class TestDB(unittest.TestCase):
                              "callback123",
                              VALID_POST["requestEntries"][0]["filePath"],
                              VALID_POST["requestEntries"][0]["md5"],
-                             VALID_POST["requestEntries"][0]["assembly"]
+                             VALID_POST["requestEntries"][0]["assembly"],
+                             VALID_POST["requestEntries"][0]["readme"]
                              ])
         response = sq.get_study_metadata("abc123")
         self.assertTrue(response)
@@ -42,7 +43,8 @@ class TestDB(unittest.TestCase):
                              "callback123",
                              VALID_POST["requestEntries"][0]["filePath"],
                              VALID_POST["requestEntries"][0]["md5"],
-                             VALID_POST["requestEntries"][0]["assembly"]
+                             VALID_POST["requestEntries"][0]["assembly"],
+                             VALID_POST["requestEntries"][0]["readme"]
                              ])
         response = sq.get_study_count()
         self.assertEqual(response, 1)
@@ -54,13 +56,15 @@ class TestDB(unittest.TestCase):
                              "callback123",
                              VALID_POST["requestEntries"][0]["filePath"],
                              VALID_POST["requestEntries"][0]["md5"],
-                             VALID_POST["requestEntries"][0]["assembly"]
+                             VALID_POST["requestEntries"][0]["assembly"],
+                             VALID_POST["requestEntries"][0]["readme"]
                              ])
         sq.insert_new_study([VALID_POST["requestEntries"][1]["id"],
                              "callback234",
                              VALID_POST["requestEntries"][1]["filePath"],
                              VALID_POST["requestEntries"][1]["md5"],
-                             VALID_POST["requestEntries"][1]["assembly"]
+                             VALID_POST["requestEntries"][1]["assembly"],
+                             None
                              ])
         response = sq.get_study_count()
         self.assertEqual(response, 2)
@@ -72,13 +76,15 @@ class TestDB(unittest.TestCase):
                              "callback123",
                              VALID_POST["requestEntries"][0]["filePath"],
                              VALID_POST["requestEntries"][0]["md5"],
-                             VALID_POST["requestEntries"][0]["assembly"]
+                             VALID_POST["requestEntries"][0]["assembly"],
+                             VALID_POST["requestEntries"][0]["readme"]
                              ])
         sq.insert_new_study([VALID_POST["requestEntries"][1]["id"],
                              "callback123",
                              VALID_POST["requestEntries"][0]["filePath"],
                              VALID_POST["requestEntries"][0]["md5"],
-                             VALID_POST["requestEntries"][0]["assembly"]
+                             VALID_POST["requestEntries"][0]["assembly"],
+                             VALID_POST["requestEntries"][0]["readme"]
                              ])
         response = sq.get_data_from_callback_id("callback123")
         self.assertIsNotNone(response)
@@ -93,7 +99,8 @@ class TestDB(unittest.TestCase):
                              "callback123",
                              VALID_POST["requestEntries"][0]["filePath"],
                              VALID_POST["requestEntries"][0]["md5"],
-                             VALID_POST["requestEntries"][0]["assembly"]
+                             VALID_POST["requestEntries"][0]["assembly"],
+                             VALID_POST["requestEntries"][0]["readme"]
                              ])
         sq.update_retrieved_status(VALID_POST["requestEntries"][0]["id"], 1)
         response = sq.get_study_metadata(VALID_POST["requestEntries"][0]["id"])
@@ -109,7 +116,8 @@ class TestDB(unittest.TestCase):
                              "callback123",
                              VALID_POST["requestEntries"][0]["filePath"],
                              VALID_POST["requestEntries"][0]["md5"],
-                             VALID_POST["requestEntries"][0]["assembly"]
+                             VALID_POST["requestEntries"][0]["assembly"],
+                             VALID_POST["requestEntries"][0]["readme"]
                              ])
         sq.update_data_valid_status(VALID_POST["requestEntries"][0]["id"], 1)
         response = sq.get_study_metadata(VALID_POST["requestEntries"][0]["id"])
@@ -125,7 +133,8 @@ class TestDB(unittest.TestCase):
                              "callback123",
                              VALID_POST["requestEntries"][0]["filePath"],
                              VALID_POST["requestEntries"][0]["md5"],
-                             VALID_POST["requestEntries"][0]["assembly"]
+                             VALID_POST["requestEntries"][0]["assembly"],
+                             VALID_POST["requestEntries"][0]["readme"]
                              ])
         sq.update_error_code(VALID_POST["requestEntries"][0]["id"], 1)
         response = sq.get_study_metadata(VALID_POST["requestEntries"][0]["id"])

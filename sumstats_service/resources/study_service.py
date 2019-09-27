@@ -9,7 +9,7 @@ class Study:
     def __init__(self, study_id, file_path=None,
                  md5=None, assembly=None, callback_id=None,
                  retrieved=None, data_valid=None,
-                 status=None, error_code=None):
+                 status=None, error_code=None, readme=None):
         self.study_id = study_id
         self.file_path = file_path
         self.md5 = md5
@@ -19,6 +19,7 @@ class Study:
         self.data_valid = data_valid
         self.error_code = error_code
         self.error_text = None
+        self.readme = readme
 
 
     def valid_study_id(self):
@@ -92,7 +93,7 @@ class Study:
         sq = sqlClient(config.DB_PATH)
         study_metadata = sq.get_study_metadata(self.study_id)
         if study_metadata:
-            self.study_id, self.callback_id, self.file_path, self.md5, self.assembly, self.retrieved, self.data_valid, self.error_code = study_metadata
+            self.study_id, self.callback_id, self.file_path, self.md5, self.assembly, self.retrieved, self.data_valid, self.error_code, self.readme = study_metadata
             self.set_error_text()
         return study_metadata
 
@@ -110,14 +111,14 @@ class Study:
                 self.callback_id,
                 self.file_path,
                 self.md5,
-                self.assembly
+                self.assembly,
+                self.readme
                 ]
         sq = sqlClient(config.DB_PATH)
         sq.insert_new_study(data)
 
     def validate_study(self):
-        ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id,
-                study_id=self.study_id, md5exp=self.md5)
+        ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id, md5exp=self.md5, readme=self.readme)
         if ssf.retrieve() is True:
             self.set_retrieved_status(1)
             if not ssf.md5_ok():
@@ -126,6 +127,7 @@ class Study:
             else:
                 if ssf.validate_file():
                     self.set_data_valid_status(1)
+                    ssf.write_readme_file()
                 else:
                     self.set_data_valid_status(0)
                     self.set_error_code(3)
