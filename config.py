@@ -13,6 +13,7 @@ DB_SCHEMA = """
             retrieved INT CHECK (retrieved IN (0,1)),
             dataValid INT CHECK (dataValid IN (0,1)),
             errorCode INT,
+            readme TEXT,
             FOREIGN KEY(errorCode) REFERENCES errors(id)
             );
 

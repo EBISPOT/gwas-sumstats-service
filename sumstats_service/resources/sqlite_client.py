@@ -25,8 +25,8 @@ class sqlClient():
         self.cur.execute("""
                          INSERT OR IGNORE INTO studies(
                          studyID, callbackID,
-                         filePath, md5, assembly)
-                         VALUES (?,?,?,?,?)
+                         filePath, md5, assembly, readme)
+                         VALUES (?,?,?,?,?,?)
                          """,
                          data)
         self.commit()

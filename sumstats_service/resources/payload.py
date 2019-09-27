@@ -36,11 +36,11 @@ class Payload:
         if data is None:
             raise RequestedNotFound("Couldn't find resource with callback id: {}".format(self.callback_id))
         for row in data:
-            study_id, callback_id, file_path, md5, assembly, retrieved, data_valid, error_code = row
+            study_id, callback_id, file_path, md5, assembly, retrieved, data_valid, error_code, readme = row
             study = st.Study(study_id=study_id, callback_id=callback_id,
                              file_path=file_path, md5=md5,
                              assembly=assembly, retrieved=retrieved,
-                             data_valid=data_valid, error_code=error_code)
+                             data_valid=data_valid, error_code=error_code, readme=readme)
             self.study_obj_list.append(study)
         return self.study_obj_list
 
@@ -53,10 +53,10 @@ class Payload:
 
     def create_study_obj_list(self):
         for item in self.payload['requestEntries']:
-            study_id, file_path, md5, assembly = self.parse_new_study_json(item)
+            study_id, file_path, md5, assembly, readme = self.parse_new_study_json(item)
             study = st.Study(study_id=study_id,
                              file_path=file_path, md5=md5,
-                             assembly=assembly)
+                             assembly=assembly, readme=readme)
             self.study_obj_list.append(study)
         return True
 
@@ -107,7 +107,8 @@ class Payload:
            "id": "xyz321",
            "filePath": "file/path.tsv",
            "md5":"b1d7e0a58d36502d59d036a17336ddf5",
-           "assembly":"38"
+           "assembly":"38",
+           "readme":"optional text"
         }
         """
         try:
@@ -117,7 +118,8 @@ class Payload:
             assembly = study_dict['assembly']
         except KeyError as e:
             raise BadUserRequest("Missing field: {} in json".format(str(e)))
-        return (study_id, file_path, md5, assembly)
+        readme = study_dict['readme']if "readme" in study_dict else None     
+        return (study_id, file_path, md5, assembly, readme)
 
     def remove_payload_directory(self):
         fh.remove_payload(self.callback_id)
