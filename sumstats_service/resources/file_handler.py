@@ -210,7 +210,10 @@ def download_with_urllib(url, localpath):
 
 def download_with_requests(url, localpath):
     try:
+        # stream prevents us from running into memory issues
         with requests.get(url, stream=True) as r:
+            # for handling gzip/non-gzipped
+            r.raw.decode_content = True 
             with open(localpath, 'wb') as f:
                 shutil.copyfileobj(r.raw, f)
                 logger.debug("File written: {}".format(url))        
