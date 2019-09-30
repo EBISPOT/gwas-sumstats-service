@@ -209,18 +209,23 @@ def download_with_urllib(url, localpath):
     return False
 
 def download_with_requests(url, localpath):
-    try:
-        # stream prevents us from running into memory issues
-        with requests.get(url, stream=True) as r:
-            # for handling gzip/non-gzipped
-            r.raw.decode_content = True 
-            with open(localpath, 'wb') as f:
-                shutil.copyfileobj(r.raw, f)
-                logger.debug("File written: {}".format(url))        
-                return True
-    except requests.exceptions.RequestException as e:
-        logger.error(e)
+    response = requests.head(url)
+    if response.status_code != 200:
+        logger.error("URL status code: {}".format(response.status_code))
         return False
+    else:
+        try:
+            # stream prevents us from running into memory issues
+            with requests.get(url, stream=True) as r:
+                # for handling gzip/non-gzipped
+                r.raw.decode_content = True 
+                with open(localpath, 'wb') as f:
+                    shutil.copyfileobj(r.raw, f)
+                    logger.debug("File written: {}".format(url))        
+                    return True
+        except requests.exceptions.RequestException as e:
+            logger.error(e)
+            return False
 
 
 def get_net_loc(url):
