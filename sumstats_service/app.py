@@ -18,6 +18,7 @@ app.config['CELERY_BROKER_URL'] = '{msg_protocol}://{user}:{pwd}@{host}:{port}'.
         port=os.environ['QUEUE_PORT']
         )
 app.config['CELERY_RESULT_BACKEND'] = 'rpc://' #'{0}://guest@{1}:{2}'.format(config.BROKER, config.BROKER_HOST, config.BROKER_PORT)
+app.config['BROKER_TRANSPORT_OPTIONS'] = {'confirm_publish': True}
 app.url_map.strict_slashes = False
 
 celery = Celery('app', broker=app.config['CELERY_BROKER_URL'], backend=app.config['CELERY_RESULT_BACKEND'])
@@ -64,7 +65,7 @@ def sumstats():
     resp = endpoints.create_studies(content)
     if resp:
         callback_id = json.loads(resp)['callbackID']
-        validate_files_in_background.apply_async(args=[callback_id, content])
+        validate_files_in_background.apply_async(args=[callback_id, content], link=store_validation_results.s())
     return Response(response=resp,
                     status=201,
                     mimetype="application/json")
@@ -82,7 +83,7 @@ def get_sumstats(callback_id):
 def delete_sumstats(callback_id):
     resp = endpoints.delete_sumstats(callback_id=callback_id)
     if resp:
-        remove_payload_files.apply_async(args=[callback_id])
+        remove_payload_files.apply_async(args=[callback_id], retry=True)
     return Response(response=resp,
                     status=200,
                     mimetype="application/json")
@@ -93,7 +94,8 @@ def delete_sumstats(callback_id):
 @celery.task(queue='preval', options={'queue': 'preval'})
 def validate_files_in_background(callback_id, content):
     results = au.validate_files_from_payload(callback_id, content)
-    store_validation_results.apply_async(args=[results])
+    return results
+    #store_validation_results.apply_async(args=[results], retry=True)
 
 
 @celery.task(queue='postval', options={'queue': 'postval'})
