@@ -61,6 +61,7 @@ def root():
 @app.route('/v1/sum-stats', methods=['POST'])
 def sumstats():
     content = request.get_json(force=True)
+    print(content)
     resp = endpoints.create_studies(content)
     if resp:
         callback_id = json.loads(resp)['callbackID']
