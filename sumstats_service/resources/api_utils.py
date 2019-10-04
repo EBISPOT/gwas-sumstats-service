@@ -28,13 +28,18 @@ def validate_files_from_payload(callback_id, content):
     return json.dumps(response)
 
 def store_validation_results_in_db(validation_response):
-    for item in json.loads(validation_response)['validationList']:
-        study_id = item["id"]
-        study = st.Study(study_id)
-        study.retrieved = item["retrieved"]
-        study.data_valid = item["dataValid"]
-        study.error_code = item["errorCode"]
-        study.store_validation_statuses()
+    try:
+        for item in json.loads(validation_response)['validationList']:
+            study_id = item["id"]
+            study = st.Study(study_id)
+            study.retrieved = item["retrieved"]
+            study.data_valid = item["dataValid"]
+            study.error_code = item["errorCode"]
+            study.store_validation_statuses()
+            return True
+    except Exception as e:
+        logger.error(e)
+        return False
 
 
 def construct_get_payload_response(callback_id):
