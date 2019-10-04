@@ -7,6 +7,11 @@ import sumstats_service.resources.api_utils as au
 from sumstats_service.resources.error_classes import *
 from celery import Celery
 import os
+import logging
+
+
+logging.basicConfig(level=logging.DEBUG, format='(%(levelname)s): %(message)s')
+logger = logging.getLogger(__name__)
 
 
 app = Flask(__name__)
@@ -62,11 +67,11 @@ def root():
 @app.route('/v1/sum-stats', methods=['POST'])
 def sumstats():
     content = request.get_json(force=True)
-    print(content)
+    logger.debug("POST content: " + str(content))
     resp = endpoints.create_studies(content)
     if resp:
         callback_id = json.loads(resp)['callbackID']
-        validate_files_in_background.apply_async(args=[callback_id, content], link=store_validation_results.s())
+        validate_files_in_background.apply_async(args=[callback_id, content], link=store_validation_results.s(), retry=True)
     return Response(response=resp,
                     status=201,
                     mimetype="application/json")

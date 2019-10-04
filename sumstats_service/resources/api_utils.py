@@ -5,6 +5,11 @@ import config
 from sumstats_service.resources.error_classes import *
 import sumstats_service.resources.payload as pl
 import sumstats_service.resources.study_service as st
+import logging
+
+
+logging.basicConfig(level=logging.DEBUG, format='(%(levelname)s): %(message)s')
+logger = logging.getLogger(__name__)
 
 
 def create_href(method_name, params=None):
@@ -31,12 +36,13 @@ def store_validation_results_in_db(validation_response):
     try:
         for item in json.loads(validation_response)['validationList']:
             study_id = item["id"]
+            logger.debug("loading " + study_id)
             study = st.Study(study_id)
             study.retrieved = item["retrieved"]
             study.data_valid = item["dataValid"]
             study.error_code = item["errorCode"]
             study.store_validation_statuses()
-            return True
+        return True
     except Exception as e:
         logger.error(e)
         return False
