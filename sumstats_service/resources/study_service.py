@@ -20,7 +20,7 @@ class Study:
         self.error_code = error_code
         self.error_text = None
         self.readme = readme
-
+        
 
     def valid_study_id(self):
         if re.match('^[a-zA-Z0-9]+$', self.study_id) and len(self.study_id) > 3:
@@ -28,13 +28,15 @@ class Study:
         return False
 
     def get_status(self):
-        if self.retrieved is None:
-           status = 'RETRIEVING'
-        if self.retrieved is 1 and self.data_valid is None:
-            status = 'VALIDATING'
-        if self.retrieved is 0 or self.data_valid is 0:
+        if self.error_code is not None:
             status = 'INVALID'
-        if self.retrieved is 1 and self.data_valid is 1:
+        elif self.retrieved is None and self.data_valid is None:
+           status = 'RETRIEVING'
+        elif self.retrieved is 1 and self.data_valid is None:
+            status = 'VALIDATING'
+        elif self.retrieved is 0 or self.data_valid is 0:
+            status = 'INVALID'
+        elif self.retrieved is 1 and self.data_valid is 1:
             status = 'VALID'
         return status
 
@@ -117,23 +119,47 @@ class Study:
         sq = sqlClient(config.DB_PATH)
         sq.insert_new_study(data)
 
-    def validate_study(self):
-        ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id, md5exp=self.md5, readme=self.readme)
-        if ssf.retrieve() is True:
-            self.set_retrieved_status(1)
-            if not ssf.md5_ok():
-                self.set_data_valid_status(0)
-                self.set_error_code(2)
-            else:
-                if ssf.validate_file():
-                    self.set_data_valid_status(1)
-                    ssf.write_readme_file()
-                else:
-                    self.set_data_valid_status(0)
-                    self.set_error_code(3)
+
+    def valid_assembly(self):
+        valid_list = ["GRCh38", "GRCh37", "NCBI36", "NCBI35", "NCBI34"]
+        if self.assembly not in valid_list:
+            return False
         else:
-            self.set_retrieved_status(0)
-            self.set_error_code(1)
+            return True
+
+
+    def mandatory_metadata_check(self):
+        mandatory_fields = [self.study_id, self.file_path, self.md5, self.assembly]
+        if None in mandatory_fields or "" in mandatory_fields:
+            return False
+        else:
+            return True
+
+
+    def validate_study(self):
+        # Step through the validation
+        if not self.mandatory_metadata_check():
+            self.set_error_code(4)
+        else:
+            if not self.valid_assembly():
+                self.set_error_code(5)
+            else:
+                ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id, md5exp=self.md5, readme=self.readme)
+                if ssf.retrieve() is True:
+                    self.set_retrieved_status(1)
+                    if not ssf.md5_ok():
+                        self.set_data_valid_status(0)
+                        self.set_error_code(2)
+                    else:
+                        if ssf.validate_file():
+                            self.set_data_valid_status(1)
+                            ssf.write_readme_file()
+                        else:
+                            self.set_data_valid_status(0)
+                            self.set_error_code(3)
+                else:
+                    self.set_retrieved_status(0)
+                    self.set_error_code(1)
         
         
     

@@ -34,13 +34,13 @@ class TestAPIUtils(unittest.TestCase):
                     "id": "abc123",
                     "filePath": self.valid_url,
                     "md5":"a1195761f082f8cbc2f5a560743077cc",
-                    "assembly":"38"
+                    "assembly":"GRCh38"
                    },
                    {
                     "id": "xyz321",
                     "filePath": self.valid_url,
                     "md5":"a1195761f082f8cbc2f5a560743077cc",
-                    "assembly":"38"
+                    "assembly":"GRCh38"
                    },
                  ]
                } 
@@ -59,13 +59,13 @@ class TestAPIUtils(unittest.TestCase):
                     "id": "abc123",
                     "filePath": "https://does_not_exist.tsv",
                     "md5":"a1195761f082f8cbc2f5a560743077cc",
-                    "assembly":"38"
+                    "assembly":"GRCh38"
                    },
                    {
                     "id": "xyz321",
                     "filePath": self.valid_url,
                     "md5":"a1195761f082f8cbc2f5a560743077cc",
-                    "assembly":"38"
+                    "assembly":"GRCh38"
                    },
                  ]
                }
@@ -87,13 +87,13 @@ class TestAPIUtils(unittest.TestCase):
                     "id": "abc123",
                     "filePath": self.valid_url,
                     "md5":"a1195761f082f8cbc2f5a560743077cc",
-                    "assembly":"38"
+                    "assembly":"GRCh38"
                    },
                    {
                     "id": "xyz321",
                     "filePath": self.valid_url,
                     "md5":"a1195761f082f8cbc2f5a560743077BAD",
-                    "assembly":"38"
+                    "assembly":"GRCh38"
                    },
                  ]
                }
@@ -116,13 +116,13 @@ class TestAPIUtils(unittest.TestCase):
                     "id": "abc123",
                     "filePath": self.valid_url,
                     "md5":"a1195761f082f8cbc2f5a560743077cc",
-                    "assembly":"38"
+                    "assembly":"GRCh38"
                    },
                    {
                     "id": "xyz321",
                     "filePath": self.valid_url,
                     "md5":"a1195761f082f8cbc2f5a560743077cc",
-                    "assembly":"38"
+                    "assembly":"GRCh38"
                    },
                  ]
                } 

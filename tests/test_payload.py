@@ -33,23 +33,24 @@ class TestPayload(unittest.TestCase):
                  "id": "xyz321",
                  "filePath": "file/path.tsv",
                  "md5":"b1d7e0a58d36502d59d036a17336ddf5",
-                 "assembly":"38"
+                 "assembly":"GRCh38"
                 }
         payload = pl.Payload(payload=data)
         result = payload.parse_new_study_json(data)
         self.assertEqual("xyz321", result[0])
         self.assertEqual("file/path.tsv", result[1])
         self.assertEqual("b1d7e0a58d36502d59d036a17336ddf5", result[2])
-        self.assertEqual("38", result[3])
+        self.assertEqual("GRCh38", result[3])
 
     def test_parse_new_study_bad_json(self):
         data_missing_field = {
                  "id": "xyz321",
                  "md5":"b1d7e0a58d36502d59d036a17336ddf5",
-                 "assembly":"38"
+                 "assembly":"GRCh38"
                 }
         payload = pl.Payload(payload=data_missing_field)
-        self.assertRaises(BadUserRequest, payload.parse_new_study_json, data_missing_field)
+        study_id, file_path, md5, assembly, readme = payload.parse_new_study_json(data_missing_field)
+        self.assertIsNone(file_path)
 
     def test_check_basic_content_present(self):
         data = {'requestEntries': [{}]}
@@ -71,13 +72,13 @@ class TestPayload(unittest.TestCase):
                              "id": "abc123",
                              "filePath": "file/path.tsv",
                              "md5":"b1d7e0a58d36502d59d036a17336ddf5",
-                             "assembly":"38"
+                             "assembly":"GRCh38"
                             },
                             {
                              "id": "abc123",
                              "filePath": "file/path.tsv",
                              "md5":"b1d7e0a58d36502d59d036a17336ddf5",
-                             "assembly":"38"
+                             "assembly":"GRCh38"
                             },
                           ]
                         }

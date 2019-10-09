@@ -47,6 +47,16 @@ def store_validation_results_in_db(validation_response):
         logger.error(e)
         return False
 
+def validate_metadata(callback_id):
+    metadata_valid = []
+    payload = pl.Payload(callback_id=callback_id)    
+    payload.get_data_for_callback_id()
+    for study in payload.study_obj_list:
+        metadata_valid.append(study.validate_metadata())
+    if any(metadata_valid) == False:
+        return False
+    else:
+        return True
 
 def construct_get_payload_response(callback_id):
     payload = pl.Payload(callback_id=callback_id)
