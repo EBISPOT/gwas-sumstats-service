@@ -116,6 +116,7 @@ class SumStatFile:
 
     def md5_ok(self):
         f = self.get_store_path()
+        logger.info("md5: " + md5_check(f))
         if self.md5exp == md5_check(f):
             return True
         return False
@@ -134,8 +135,8 @@ class SumStatFile:
         return ext
 
     def validate_file(self):
-        validator = val.Validator(file=self.store_path, filetype='standard')
         self.set_logfile()
+        validator = val.Validator(file=self.store_path, filetype='standard', error_limit=1, logfile=self.logfile)
         try:
             logger.info("Validating file extension...")
             if not validator.validate_file_extension():

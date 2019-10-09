@@ -112,14 +112,11 @@ class Payload:
            "readme":"optional text"
         }
         """
-        try:
-            study_id = study_dict['id']
-            file_path = study_dict['filePath']
-            md5 = study_dict['md5']
-            assembly = study_dict['assembly']
-        except KeyError as e:
-            raise BadUserRequest("Missing field: {} in json".format(str(e)))
-        readme = study_dict['readme']if "readme" in study_dict else None     
+        study_id = study_dict['id'] if 'id' in study_dict else None
+        file_path = study_dict['filePath'] if 'filePath' in study_dict else None
+        md5 = study_dict['md5'] if 'md5' in study_dict else None
+        assembly = study_dict['assembly'] if 'assembly' in study_dict else None
+        readme = study_dict['readme'] if 'readme' in study_dict else None     
         return (study_id, file_path, md5, assembly, readme)
 
     def remove_payload_directory(self):

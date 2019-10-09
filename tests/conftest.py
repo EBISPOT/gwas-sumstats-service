@@ -15,3 +15,5 @@ def celery_config():
             'result_backend': 'rpc://',
             'queues':('preval', 'postval')
            }
+
+    

@@ -21,6 +21,7 @@ class TestAPP:
         sq.create_conn()
         sq.cur.executescript(config.DB_SCHEMA)
         self.valid_url = "file://{}".format(os.path.abspath("./tests/test_sumstats_file.tsv"))
+        
             
     def teardown_method(self, method):
         os.remove(self.testDB)
@@ -31,20 +32,20 @@ class TestAPP:
         study_link = response.get_json()['_links']['sumstats']['href']
         assert response.status_code == 200
 
-    def test_get_200_based_on_good_callback_id(self, celery_session_worker):
+    def test_get_200_based_on_good_callback_id(self):
         valid_json = {
                "requestEntries": [
                    {
                     "id": "abc123",
                     "filePath": self.valid_url,
                     "md5":"a1195761f082f8cbc2f5a560743077cc",
-                    "assembly":"38"
+                    "assembly":"GRCh38"
                    },
                    {
                     "id": "xyz321",
                     "filePath": self.valid_url,
                     "md5":"a1195761f082f8cbc2f5a560743077cc",
-                    "assembly":"38"
+                    "assembly":"GRCh38"
                    },
                  ]
                } 
@@ -77,14 +78,17 @@ class TestAPP:
                             "id": "xyz321",
                             "NOT_filePath": "file/path.tsv",
                             "md5":"b1d7e0a58d36502d59d036a17336ddf5",
-                            "assembly":"38"
+                            "assembly":"GRCh38"
                            },
                          ]
                        }
         response = tester.post('/v1/sum-stats',
                                json=invalid_post)
-        assert response.status_code == 400
-        assert "Missing field" in response.get_json()['message']
+        assert response.status_code == 201
+        callback_id = response.get_json()["callbackID"]
+        response = tester.get('/v1/sum-stats/{}'.format(callback_id))
+        assert response.status_code == 200
+
 
     def test_post_new_study_bad_id(self):
         tester = app.test_client(self)
@@ -94,7 +98,7 @@ class TestAPP:
                             "id": "xyz321 asd",
                             "filePath": self.valid_url,
                             "md5":"b1d7e0a58d36502d59d036a17336ddf5",
-                            "assembly":"38"
+                            "assembly":"GRCh38"
                            },
                          ]
                        }
@@ -112,13 +116,13 @@ class TestAPP:
                              "id": "abc123",
                              "filePath": self.valid_url,
                              "md5":"b1d7e0a58d36502d59d036a17336ddf5",
-                             "assembly":"38"
+                             "assembly":"GRCh38"
                             },
                             {
                              "id": "abc123",
                              "filePath": self.valid_url,
                              "md5":"b1d7e0a58d36502d59d036a17336ddf5",
-                             "assembly":"38"
+                             "assembly":"GRCh38"
                             },
                           ]
                         }
@@ -139,13 +143,13 @@ class TestAPP:
                     "id": "abc123",
                     "filePath": self.valid_url,
                     "md5":"a1195761f082f8cbc2f5a560743077cc",
-                    "assembly":"38"
+                    "assembly":"GRCh38"
                    },
                    {
                     "id": "xyz321",
                     "filePath": self.valid_url,
                     "md5":"a1195761f082f8cbc2f5a560743077cc",
-                    "assembly":"38"
+                    "assembly":"GRCh38"
                    },
                  ]
                } 
@@ -171,13 +175,13 @@ class TestAPP:
                     "filePath": self.valid_url,
                     "readme": TEST_README,
                     "md5":"a1195761f082f8cbc2f5a560743077cc",
-                    "assembly":"38"
+                    "assembly":"GRCh38"
                    },
                    {
                     "id": "xyz321",
                     "filePath": self.valid_url,
                     "md5":"a1195761f082f8cbc2f5a560743077cc",
-                    "assembly":"38"
+                    "assembly":"GRCh38"
                    },
                  ]
                } 
