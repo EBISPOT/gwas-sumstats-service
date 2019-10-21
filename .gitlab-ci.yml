@@ -53,7 +53,7 @@ deploy_staging:
     - helm init
     - helm delete --purge gwas-sumstats-service || true
     - sleep 30
-    - helm install --name gwas-sumstats-service --set k8Namespace=default,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_SHA,image.env.celeryUser=$RABBITUSER,image.env.celeryPwd=$RABBITPWD ./k8chart/ --wait
+    - helm install --name gwas-sumstats-service --set k8Namespace=gwas,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_SHA,image.env.celeryUser=$RABBITUSER,image.env.celeryPwd=$RABBITPWD ./k8chart/ --wait
   environment:
     name: sandbox
   only:
