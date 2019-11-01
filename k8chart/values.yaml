@@ -36,7 +36,7 @@ service:
   name: gwas-ss-service
   type: ClusterIP
   port: 8000
-  gunicornCmd: '["gunicorn", "-b", "0.0.0.0:8000", "sumstats_service.app:app","--log-level=debug","--access-logfile=logs/ss_access.log","--error-logfile=logs/ss_error.log"]'
+  gunicornCmd: '["gunicorn", "-b", "0.0.0.0:8000", "sumstats_service.app:app", "-k=eventlet", "-t=100", "-w=2", "--log-level=debug","--access-logfile=logs/ss_access.log","--error-logfile=logs/ss_error.log"]'
 
 worker:
   name: gwas-ss-worker
