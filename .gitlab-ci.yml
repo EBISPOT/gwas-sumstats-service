@@ -50,6 +50,7 @@ deploy_staging:
     - echo "Deploy to staging server"
     - mkdir -p /root/.kube
     - echo ${SANDBOX_KUBECONF} | base64 -d > /root/.kube/config
+    - RABBITPWD=$(kubectl --namespace rabbitmq get secret rabbitmq -o jsonpath="{.data.rabbitmq-password}" | base64 --decode)
     - helm init
     - helm delete --purge gwas-sumstats-service || true
     - sleep 30
