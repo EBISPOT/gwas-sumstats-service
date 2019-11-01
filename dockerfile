@@ -24,5 +24,5 @@ RUN mkdir -p logs
 ENV CELERY_PROTOCOL "amqp"
 ENV CELERY_USER "guest"
 ENV CELERY_PASSWORD "guest"
-ENV QUEUE_HOST "rabbitmq"
+ENV QUEUE_HOST "rabbitmq.rabbitmq"
 ENV QUEUE_PORT 5672
