@@ -57,7 +57,7 @@ This handles the uploaded summary statistics files, validates them, reports erro
 
 ## Deploy with helm (kubernetes)
 - First, deploy rabbitmq using helm 
-  - `helm install --name rabbitmq --set rabbitmq.password=<pwd>,rabbitmq.username=<user>,service.type=NodePort,service.nodePort=<port> stable/rabbitmq`
+  - `helm install --name rabbitmq --namespace rabbitmq --set rabbitmq.username=<user>,service.type=NodePort,service.nodePort=<port> stable/rabbitmq`
 - deploy the sumstats service
   - `helm install --name gwas-sumstats k8chart/ --wait`
 - Start a celery worker from docker
@@ -67,7 +67,7 @@ This handles the uploaded summary statistics files, validates them, reports erro
 
 ### Example POST method
 ```
-curl -i -H "Content-Type: application/json" -X POST -d '{"requestEntries":[{"id":"abc123","filePath":"https://raw.githubusercontent.com/EBISPOT/gwas-sumstats-service/master/tests/test_sumstats_file.tsv","md5":"a1195761f082f8cbc2f5a560743077cc","assembly":"38"},{"id":"bcd234","filePath":"https://raw.githubusercontent.com/EBISPOT/gwas-sumstats-service/master/tests/test_sumstats_file.tsv","md5":"a1195761f082f8cbc","assembly":"38"}]}' http://localhost:8000/v1/sum-stats
+curl -i -H "Content-Type: application/json" -X POST -d '{"requestEntries":[{"id":"abc123","filePath":"https://raw.githubusercontent.com/EBISPOT/gwas-sumstats-service/master/tests/test_sumstats_file.tsv","md5":"a1195761f082f8cbc2f5a560743077cc","assembly":"GRCh38"},{"id":"bcd234","filePath":"https://raw.githubusercontent.com/EBISPOT/gwas-sumstats-service/master/tests/test_sumstats_file.tsv","md5":"a1195761f082f8cbc","assembly":"GRCh38"}]}' http://localhost:8000/v1/sum-stats
 
 HTTP/1.0 201 CREATED
 Content-Type: application/json
