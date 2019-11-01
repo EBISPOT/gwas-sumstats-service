@@ -25,7 +25,7 @@ build:
   only:
    - master
 
-     #
+
 # if a tag is created create an images with the tag and a latest
 build_release:
   variables:
@@ -53,7 +53,6 @@ deploy_staging:
     - RABBITPWD=$(kubectl --namespace rabbitmq get secret rabbitmq -o jsonpath="{.data.rabbitmq-password}" | base64 -d)
     - helm init
     - helm delete --purge gwas-sumstats-service || true
-    - sleep 30
     - helm install --name gwas-sumstats-service --set k8Namespace=gwas,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_SHA,image.env.celeryUser=$RABBITUSER,image.env.celeryPwd=$RABBITPWD ./k8chart/ --wait
   environment:
     name: sandbox
@@ -70,13 +69,9 @@ deploy_fallback:
     - RABBITPWD=$(kubectl --namespace rabbitmq get secret rabbitmq -o jsonpath="{.data.rabbitmq-password}" | base64 -d)
     - helm init
     - helm delete --purge gwas-sumstats-service || true
-    - sleep 30
     - helm install --name gwas-sumstats-service --set k8Namespace=gwas,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_SHA,image.env.celeryUser=$RABBITUSER,image.env.celeryPwd=$RABBITPWD ./k8chart/ --wait
   environment:
     name: fallback
   when: manual
   only:
     - tags
-
-
-
