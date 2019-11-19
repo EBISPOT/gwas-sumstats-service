@@ -1,5 +1,8 @@
+import os
+
+
 DB_PATH = "./data/sumstats_meta.db"
-STORAGE_PATH = "./data"
+STORAGE_PATH = os.environ.get('STORAGE_PATH') if os.environ.get('STORAGE_PATH') else "./data"
 LOGGING_PATH = "./logs"
 BROKER = "amqp"
 BROKER_HOST = "rabbitmq"
@@ -28,11 +31,11 @@ DB_SCHEMA = """
             );
 
             BEGIN TRANSACTION;
-            INSERT OR IGNORE INTO errors(id, errorText) VALUES(1, "URL not found"); -- 1
-            INSERT OR IGNORE INTO errors(id, errorText) VALUES(2, "md5sum did not match the one provided"); -- 2
+            INSERT OR IGNORE INTO errors(id, errorText) VALUES(1, "The summary statistics file cannot be found"); -- 1
+            INSERT OR IGNORE INTO errors(id, errorText) VALUES(2, "The md5sum of the summary statistics file does not match the one provided"); -- 2
             INSERT OR IGNORE INTO errors(id, errorText) VALUES(3, "Summary statistics file validation failed, please run the validator on your file to see the errors (available here: https://pypi.org/project/ss-validate/)"); -- 3
             INSERT OR IGNORE INTO errors(id, errorText) VALUES(4, "Missing mandatory field, you must provide (i) file path/URL, (ii) md5 sum and (iii) genome assembly for each file"); -- 4
-            INSERT OR IGNORE INTO errors(id, errorText) VALUES(5, "Genome assembly invalid - please see docs for valid assemblies"); -- 5 
+            INSERT OR IGNORE INTO errors(id, errorText) VALUES(5, "Genome assembly invalid - please see documentation for valid assemblies"); -- 5 
             COMMIT;
             """
 

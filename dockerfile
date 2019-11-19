@@ -6,7 +6,7 @@ WORKDIR $INSTALL_PATH
 
 COPY requirements.txt requirements.txt
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc python-dev libmagic-dev \
+    && apt-get install -y --no-install-recommends gcc openssh-client python-dev libmagic-dev \
     && rm -rf /var/lib/apt/lists/* \
     && pip install -r requirements.txt \
     && apt-get purge -y --auto-remove gcc python-dev
@@ -14,7 +14,7 @@ RUN apt-get update \
 
 COPY . .
 
-RUN pip install .
+RUN pip install -e .
 
 # Expose port:
 EXPOSE 8000

@@ -1,0 +1,51 @@
+import json
+import sumstats_service.resources.payload as pl
+import argparse
+import sys
+
+
+def validate_files_from_payload(callback_id, content):
+    payload = pl.Payload(callback_id=callback_id, payload=content)
+    payload.create_study_obj_list()
+    payload.set_callback_id_for_studies()
+    payload.validate_payload()
+    response = construct_validation_response(callback_id, payload)
+    return json.dumps(response)
+
+
+def construct_validation_response(callback_id, payload):
+    validation_list = []
+    for study in payload.study_obj_list:
+        validation_report = create_validation_report(study)
+        validation_list.append(validation_report)
+    response = {"callbackID": str(callback_id),
+                "validationList": validation_list
+                }
+    return response
+
+
+def create_validation_report(study):
+    report = {
+              "id": study.study_id,
+              "retrieved": study.retrieved,
+              "dataValid": study.data_valid,
+              "errorCode": study.error_code
+              }
+    return report
+
+
+def main():
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument("-cid", help='The callback ID', required=True)
+    argparser.add_argument("-payload", help='JSON payload (input)', required=True)
+    argparser.add_argument("-out", help='JSON output file (e.g. SOME_ID.json)', required=False, default='validation.json')
+
+    args = argparser.parse_args()
+
+    result = validate_files_from_payload(args.cid, json.loads(args.payload))
+    with open(args.out, 'w') as out:
+        out.write(result)
+
+
+if __name__ == '__main__':
+    main()

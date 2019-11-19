@@ -40,7 +40,7 @@ service:
 
 worker:
   name: gwas-ss-worker
-  celeryCmd: '["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=debug", "--queues=postval"]'
+  celeryCmd: '["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=debug", "--queues=postval,postval"]'
 
 ingress:
   enabled: false

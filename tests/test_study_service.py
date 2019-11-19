@@ -94,7 +94,7 @@ class TestStudyService(unittest.TestCase):
         study.store_error_code()
         study.get_study_from_db()
         self.assertEqual(study.error_code, 1)
-        self.assertEqual(study.error_text, "URL not found")
+        self.assertEqual(study.error_text, "The summary statistics file cannot be found")
         study.set_error_code(None)
         study.store_error_code()
         study.get_study_from_db()
