@@ -6,7 +6,9 @@ from sumstats_service.resources.error_classes import *
 import sumstats_service.resources.payload as pl
 import sumstats_service.resources.study_service as st
 import sumstats_service.resources.validate_payload as vp
-
+import sumstats_service.resources.ssh_client as sshc
+import os
+import time
 
 def create_href(method_name, params=None):
     params = params or {}
@@ -30,7 +32,46 @@ def store_validation_results_in_db(validation_response):
         study.store_validation_statuses()
 
 def validate_files_from_payload(callback_id, content):
-    return vp.validate_files_from_payload(callback_id, content)
+    if config.VALIDATE_WITH_SSH is True:
+        ssh = sshc.SSHClient(host=config.COMPUTE_FARM_LOGIN_NODE, username=config.COMPUTE_FARM_USERNAME)
+        par_dir = os.path.join(config.STORAGE_PATH, callback_id)
+        outfile = os.path.join(par_dir, 'validation.json')
+        memory = 4000
+        bsub_com = 'singularity exec docker://{image}:{tag} validate-payload -cid {cid} -out {outfile} -payload \'{content}\''.format(
+                image=config.SINGULARITY_IMAGE, tag=config.SINGULARITY_TAG, cid=callback_id, outfile=outfile, content=content)
+        command = 'export {sp}; mkdir -p {pd}; bsub -q {q} -oo stdout -eo stderr -M {mem} -R "rusage[mem={mem}]" "{bsub_com}"'.format(
+                sp=config.STORAGE_PATH, pd=par_dir, q=config.COMPUTE_FARM_QUEUE, mem=memory, bsub_com=bsub_com)
+        stdin, stdout, stderr = ssh.exec_command(make_dirs_command)
+        jobid = ssh.parse_jobid(stdout)
+        results = None
+        if jobid is None:
+            print("command didn't return a jobid")
+        else:
+            while not results: 
+                time.sleep(8)
+                status = ssh.get_job_status(jobid)
+                if status == 'DONE':
+                    results = ssh.get_file_content(outfile)
+                if status in ['PEND', 'RUN']:
+                    continue
+                if status == 'EXIT':
+                    break
+                    # check reason - reallocate mem
+                else:
+                    print(status)
+                    break
+        attempts = 1
+
+        if results:
+            return json.dumps(results)
+        else:
+            error_response = vp.construct_failure_response
+            return json.dumps(error_message)
+    else:
+        # maintain this for the sandbox which cannot ssh ebi farm
+        return vp.validate_files_from_payload(callback_id, content)
+    
+    
     # result = None
     # attempts = 1
     # ssh.submit(validate_with_singularity, cid, content)

@@ -1,4 +1,5 @@
 import paramiko
+import re
 
 class SSHClient():
     def __init__(self, host, username):
@@ -18,6 +19,22 @@ class SSHClient():
 
     def get_job_status(jobid):
         poll_command = 'bjobs -o "STAT" -noheader {}'.format(jobid)
-        return self.exec_command(poll_command)
-        
+        stdin, stdout, stderr = self.exec_command(poll_command)
+        status = stdout.read().decode().rstrip()
+        return status
 
+    @staticmethod
+    def parse_jobid(stdout):
+        stdout_str =  stdout.read().decode()
+        if "Job" in stdout_str:
+            return re.search(r"Job <([0-9]+)>.*", stdout_str).group(1)
+        else:
+            return None
+
+    def get_exit_reason(self):
+        pass
+
+    def get_file_content(self, file_path):
+        with open(file_path, 'r') as f:
+            content = f.read()
+            return content

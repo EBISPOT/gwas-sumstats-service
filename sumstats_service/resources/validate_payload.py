@@ -13,7 +13,6 @@ def validate_files_from_payload(callback_id, content, out=None):
     if out:
         with open(args.out, 'w') as out:
             out.write(result)
-
     return json.dumps(response)
 
 
@@ -21,6 +20,23 @@ def construct_validation_response(callback_id, payload):
     validation_list = []
     for study in payload.study_obj_list:
         validation_report = create_validation_report(study)
+        validation_list.append(validation_report)
+    response = {"callbackID": str(callback_id),
+                "validationList": validation_list
+                }
+    return response
+
+
+def construct_failure_response(callback_id, payload):
+    validation_list = []
+    for study in payload.study_obj_list:
+        validation_report = {
+              "id": study.study_id,
+              "retrieved": "",
+              "dataValid": "",
+              "errorCode": "An error occurred in the validation process, please contact us"
+              }
+
         validation_list.append(validation_report)
     response = {"callbackID": str(callback_id),
                 "validationList": validation_list

@@ -6,7 +6,7 @@ metadata:
   lables:
     version: {{.Values.image.tag}}
 spec:
-  replicas: {{.Values.replicaCount}}  
+  replicas: {{.Values.worker.replicaCount}}  
   selector:
     matchLabels:
       app: {{.Values.worker.name}}
@@ -37,6 +37,18 @@ spec:
           value: {{.Values.image.env.celeryUser}}
         - name: CELERY_PASSWORD
           value: {{.Values.image.env.celeryPwd}}
+        - name: STORAGE_PATH
+          value: {{.Values.image.env.storagePath}}
+        - name: VALIDATE_WITH_SSH
+          value: {{.Values.image.env.validateSSH}}
+        - name: COMPUTE_FARM_LOGIN_NODE
+          value: {{.Values.image.env.computeFarmLogin}}
+        - name: COMPUTE_FARM_USERNAME
+          value: {{.Values.image.env.computeFarmUser}}
+        - name: SINGULARITY_IMAGE
+          value: {{.Values.image.repository}}
+        - name: SINGULARITY_TAG
+          value: {{.Values.image.tag}}
       volumes:
       - name: log
         persistentVolumeClaim:

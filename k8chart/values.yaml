@@ -18,6 +18,11 @@ image:
   env:
     celeryUser: "username"
     celeryPwd: "password"
+    storagePath: "./data"
+    validateSSH: False
+    computeFarmLogin: ""
+    computeFarmUser: ""
+    
 
 volume:
   log:

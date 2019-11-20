@@ -7,7 +7,12 @@ LOGGING_PATH = "./logs"
 BROKER = "amqp"
 BROKER_HOST = "rabbitmq"
 BROKER_PORT = 5672
-
+VALIDATE_WITH_SSH = os.environ.get('VALIDATE_WITH_SSH') if os.environ.get('VALIDATE_WITH_SSH') else True
+COMPUTE_FARM_LOGIN_NODE = os.environ.get('COMPUTE_FARM_LOGIN_NODE') if os.environ.get('COMPUTE_FARM_LOGIN_NODE') else None
+COMPUTE_FARM_USERNAME = os.environ.get('COMPUTE_FARM_USERNAME') if os.environ.get('COMPUTE_FARM_USERNAME') else None
+COMPUTE_FARM_QUEUE = 'production-rh74'
+SINGULARITY_IMAGE = os.environ.get('SINGULARITY_IMAGE') if os.environ.get('SINGULARITY_IMAGE') else 'ebispot/gwas-sumstats-service'
+SINGULARITY_TAG = os.environ.get('SINGULARITY_TAG') if os.environ.get('SINGULARITY_TAG') else 'latest'
 
 DB_SCHEMA = """
             PRAGMA foreign_keys = ON;
