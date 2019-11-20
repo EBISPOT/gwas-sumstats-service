@@ -4,12 +4,16 @@ import argparse
 import sys
 
 
-def validate_files_from_payload(callback_id, content):
+def validate_files_from_payload(callback_id, content, out=None):
     payload = pl.Payload(callback_id=callback_id, payload=content)
     payload.create_study_obj_list()
     payload.set_callback_id_for_studies()
     payload.validate_payload()
     response = construct_validation_response(callback_id, payload)
+    if out:
+        with open(args.out, 'w') as out:
+            out.write(result)
+
     return json.dumps(response)
 
 
@@ -42,9 +46,7 @@ def main():
 
     args = argparser.parse_args()
 
-    result = validate_files_from_payload(args.cid, json.loads(args.payload))
-    with open(args.out, 'w') as out:
-        out.write(result)
+    validate_files_from_payload(args.cid, json.loads(args.payload), args.out)
 
 
 if __name__ == '__main__':

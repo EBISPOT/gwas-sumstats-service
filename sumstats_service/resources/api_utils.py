@@ -31,6 +31,19 @@ def store_validation_results_in_db(validation_response):
 
 def validate_files_from_payload(callback_id, content):
     return vp.validate_files_from_payload(callback_id, content)
+    # result = None
+    # attempts = 1
+    # ssh.submit(validate_with_singularity, cid, content)
+    # ssh.poll_for_status(jobid)
+    # if DONE:
+    #     result = ssh.get_result(callback_id)
+    # elif PEND or RUN:
+    #     ssh.poll_for_status(jobid)
+    # else:
+    #     
+    #     ssh.resubmit() # while loop everything until attempts == 2?
+    #     attempts += 1
+
 
 
 def validate_metadata(callback_id):
