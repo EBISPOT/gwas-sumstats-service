@@ -18,7 +18,11 @@ spec:
       containers:
       - name: {{.Values.worker.name}}
         image: "{{.Values.image.repository}}:{{.Values.image.tag}}"
+        {{ if .Values.image.env.validateSSH }}
         command: {{.Values.worker.celeryCmd}}
+        {{ else }}
+        command: {{.Values.worker.celeryCmdPostOnly}}        
+        {{ end }}
         imagePullPolicy: {{.Values.image.pullPolicy}}
         resources:
           requests:

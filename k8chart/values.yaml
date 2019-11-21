@@ -51,6 +51,7 @@ service:
 worker:
   name: gwas-ss-worker
   celeryCmd: '["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=debug", "--queues=preval,postval"]'
+  celeryCmdPostOnly:  '["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=debug", "--queues=postval"]'
   replicaCount: 1
 
 ingress:
