@@ -7,7 +7,7 @@ class SSHClient():
         self.username = username
         self.client = paramiko.SSHClient()
         self.client.load_system_host_keys()
-        self.client.connect(self.host, self.username)
+        self.client.connect(self.host, username=self.username)
 
     def exec_command(self, command):
         stdin, stdout, stderr = self.client.exec_command(command)
@@ -17,7 +17,7 @@ class SSHClient():
         submit_command = 'bsub -q {q} -M {mem} -R "rusage[mem={mem}]" \'{com}\''.format(q=queue, mem=mem, com=command)
         return self.exec_command(submit_command)
 
-    def get_job_status(jobid):
+    def get_job_status(self, jobid):
         poll_command = 'bjobs -o "STAT" -noheader {}'.format(jobid)
         stdin, stdout, stderr = self.exec_command(poll_command)
         status = stdout.read().decode().rstrip()
@@ -35,6 +35,11 @@ class SSHClient():
         pass
 
     def get_file_content(self, file_path):
-        with open(file_path, 'r') as f:
-            content = f.read()
-            return content
+        command = 'cat {}'.format(file_path)
+        stdin, stdout, stderr = self.exec_command(command)
+        content = stdout.read().decode().rstrip()
+        return content
+
+    def close_connection(self):
+        self.client.close()
+        

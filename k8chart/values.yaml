@@ -4,8 +4,6 @@
 
 
 replicaCount: 1
-worker:
-  replicaCount: 3
 
 image:
   repository: ebispot/gwas-sumstats-service
@@ -19,7 +17,7 @@ image:
     celeryUser: "username"
     celeryPwd: "password"
     storagePath: "./data"
-    validateSSH: False
+    validateSSH: true
     computeFarmLogin: ""
     computeFarmUser: ""
     
@@ -53,6 +51,7 @@ service:
 worker:
   name: gwas-ss-worker
   celeryCmd: '["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=debug", "--queues=preval,postval"]'
+  replicaCount: 3
 
 ingress:
   enabled: false

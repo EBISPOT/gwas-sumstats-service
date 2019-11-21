@@ -32,16 +32,17 @@ def store_validation_results_in_db(validation_response):
         study.store_validation_statuses()
 
 def validate_files_from_payload(callback_id, content):
-    if config.VALIDATE_WITH_SSH is True:
+    if config.VALIDATE_WITH_SSH:
         ssh = sshc.SSHClient(host=config.COMPUTE_FARM_LOGIN_NODE, username=config.COMPUTE_FARM_USERNAME)
         par_dir = os.path.join(config.STORAGE_PATH, callback_id)
         outfile = os.path.join(par_dir, 'validation.json')
         memory = 4000
+        content = json.dumps(content).translate(str.maketrans({'"':  '\\"'}))
         bsub_com = 'singularity exec docker://{image}:{tag} validate-payload -cid {cid} -out {outfile} -payload \'{content}\''.format(
                 image=config.SINGULARITY_IMAGE, tag=config.SINGULARITY_TAG, cid=callback_id, outfile=outfile, content=content)
         command = 'export {sp}; mkdir -p {pd}; bsub -q {q} -oo stdout -eo stderr -M {mem} -R "rusage[mem={mem}]" "{bsub_com}"'.format(
                 sp=config.STORAGE_PATH, pd=par_dir, q=config.COMPUTE_FARM_QUEUE, mem=memory, bsub_com=bsub_com)
-        stdin, stdout, stderr = ssh.exec_command(make_dirs_command)
+        stdin, stdout, stderr = ssh.exec_command(command)
         jobid = ssh.parse_jobid(stdout)
         results = None
         if jobid is None:
@@ -61,31 +62,15 @@ def validate_files_from_payload(callback_id, content):
                     print(status)
                     break
         attempts = 1
-
+        ssh.close_connection()
         if results:
-            return json.dumps(results)
+            return results
         else:
-            error_response = vp.construct_failure_response
-            return json.dumps(error_message)
+            return vp.construct_failure_response
     else:
         # maintain this for the sandbox which cannot ssh ebi farm
         return vp.validate_files_from_payload(callback_id, content)
     
-    
-    # result = None
-    # attempts = 1
-    # ssh.submit(validate_with_singularity, cid, content)
-    # ssh.poll_for_status(jobid)
-    # if DONE:
-    #     result = ssh.get_result(callback_id)
-    # elif PEND or RUN:
-    #     ssh.poll_for_status(jobid)
-    # else:
-    #     
-    #     ssh.resubmit() # while loop everything until attempts == 2?
-    #     attempts += 1
-
-
 
 def validate_metadata(callback_id):
     metadata_valid = []

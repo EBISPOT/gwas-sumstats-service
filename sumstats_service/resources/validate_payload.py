@@ -11,8 +11,8 @@ def validate_files_from_payload(callback_id, content, out=None):
     payload.validate_payload()
     response = construct_validation_response(callback_id, payload)
     if out:
-        with open(args.out, 'w') as out:
-            out.write(result)
+        with open(out, 'w') as out:
+            out.write(json.dumps(response))
     return json.dumps(response)
 
 

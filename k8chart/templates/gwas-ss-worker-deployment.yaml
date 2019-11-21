@@ -6,7 +6,7 @@ metadata:
   lables:
     version: {{.Values.image.tag}}
 spec:
-  replicas: {{.Values.worker.replicaCount}}  
+  replicas: {{.Values.worker.replicaCount}}
   selector:
     matchLabels:
       app: {{.Values.worker.name}}
@@ -40,7 +40,7 @@ spec:
         - name: STORAGE_PATH
           value: {{.Values.image.env.storagePath}}
         - name: VALIDATE_WITH_SSH
-          value: {{.Values.image.env.validateSSH}}
+          value: "{{.Values.image.env.validateSSH}}"
         - name: COMPUTE_FARM_LOGIN_NODE
           value: {{.Values.image.env.computeFarmLogin}}
         - name: COMPUTE_FARM_USERNAME
