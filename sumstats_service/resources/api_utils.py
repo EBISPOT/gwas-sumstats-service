@@ -32,7 +32,7 @@ def store_validation_results_in_db(validation_response):
         study.store_validation_statuses()
 
 def validate_files_from_payload(callback_id, content):
-    if config.VALIDATE_WITH_SSH:
+    if config.VALIDATE_WITH_SSH == 'true':
         ssh = sshc.SSHClient(host=config.COMPUTE_FARM_LOGIN_NODE, username=config.COMPUTE_FARM_USERNAME)
         par_dir = os.path.join(config.STORAGE_PATH, callback_id)
         outfile = os.path.join(par_dir, 'validation.json')
