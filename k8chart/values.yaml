@@ -12,9 +12,15 @@ image:
   containerPort: 8000
   logMountPath: "/sumstats_service/logs"
   dataMountPath: "/sumstats_service/data"
+  sshMountPath: "/root/.ssh"
   env:
     celeryUser: "username"
     celeryPwd: "password"
+    storagePath: "./data"
+    validateSSH: true
+    computeFarmLogin: ""
+    computeFarmUser: ""
+    
 
 volume:
   log:
@@ -28,6 +34,10 @@ volume:
       storage: 10Gi
     accessModes: ReadWriteOnce
 
+secrets:
+  sshName: ssh-keys
+
+
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
@@ -40,7 +50,8 @@ service:
 
 worker:
   name: gwas-ss-worker
-  celeryCmd: '["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=debug", "--queues=postval"]'
+  celeryCmd: '["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=debug", "--queues=preval,postval"]'
+  replicaCount: 3
 
 ingress:
   enabled: false

@@ -147,7 +147,7 @@ class TestDB(unittest.TestCase):
         sq = sqlClient(self.testDB)
         sq.create_conn()
         response = sq.get_error_message_from_code(1)
-        self.assertEqual(response, "URL not found")
+        self.assertEqual(response, "The summary statistics file cannot be found")
         response = sq.get_error_message_from_code(0)
         self.assertIsNone(response)
 

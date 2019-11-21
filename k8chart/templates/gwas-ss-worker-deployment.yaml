@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{.Values.worker.name}}
@@ -6,7 +6,10 @@ metadata:
   lables:
     version: {{.Values.image.tag}}
 spec:
-  replicas: {{.Values.replicaCount}}
+  replicas: {{.Values.worker.replicaCount}}
+  selector:
+    matchLabels:
+      app: {{.Values.worker.name}}
   template:
     metadata:
       labels:
@@ -26,11 +29,26 @@ spec:
           name: log
         - mountPath: {{.Values.image.dataMountPath}}
           name: data
+        - mountPath: {{.Values.image.sshMountPath}}
+          name: ssh
+          readOnly: true
         env:
         - name: CELERY_USER
           value: {{.Values.image.env.celeryUser}}
         - name: CELERY_PASSWORD
           value: {{.Values.image.env.celeryPwd}}
+        - name: STORAGE_PATH
+          value: {{.Values.image.env.storagePath}}
+        - name: VALIDATE_WITH_SSH
+          value: "{{.Values.image.env.validateSSH}}"
+        - name: COMPUTE_FARM_LOGIN_NODE
+          value: {{.Values.image.env.computeFarmLogin}}
+        - name: COMPUTE_FARM_USERNAME
+          value: {{.Values.image.env.computeFarmUser}}
+        - name: SINGULARITY_IMAGE
+          value: {{.Values.image.repository}}
+        - name: SINGULARITY_TAG
+          value: {{.Values.image.tag}}
       volumes:
       - name: log
         persistentVolumeClaim:
@@ -38,4 +56,7 @@ spec:
       - name: data
         persistentVolumeClaim:
            claimName: {{ .Values.volume.data.ClaimName }}
-
+      - name: ssh
+        secret: 
+           secretName: {{ .Values.secrets.sshName }}
+           defaultMode: 0600

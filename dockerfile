@@ -6,7 +6,7 @@ WORKDIR $INSTALL_PATH
 
 COPY requirements.txt requirements.txt
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc python-dev libmagic-dev \
+    && apt-get install -y --no-install-recommends gcc openssh-client python-dev libmagic-dev \
     && rm -rf /var/lib/apt/lists/* \
     && pip install -r requirements.txt \
     && apt-get purge -y --auto-remove gcc python-dev
@@ -14,7 +14,7 @@ RUN apt-get update \
 
 COPY . .
 
-RUN pip install .
+RUN pip install -e .
 
 # Expose port:
 EXPOSE 8000
@@ -26,3 +26,9 @@ ENV CELERY_USER "guest"
 ENV CELERY_PASSWORD "guest"
 ENV QUEUE_HOST "rabbitmq.rabbitmq"
 ENV QUEUE_PORT 5672
+ENV STORAGE_PATH "./data"
+ENV VALIDATE_WITH_SSH ""
+ENV COMPUTE_FARM_LOGIN_NODE ""
+ENV COMPUTE_FARM_USERNAME ""
+ENV SINGULARITY_IMAGE "ebispot/gwas-sumstats-service"
+ENV SINGULARITY_TAG "latest"
