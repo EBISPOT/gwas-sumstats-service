@@ -13,6 +13,8 @@ COMPUTE_FARM_USERNAME = os.environ.get('COMPUTE_FARM_USERNAME') if os.environ.ge
 COMPUTE_FARM_QUEUE = 'production-rh74'
 SINGULARITY_IMAGE = os.environ.get('SINGULARITY_IMAGE') if os.environ.get('SINGULARITY_IMAGE') else 'ebispot/gwas-sumstats-service'
 SINGULARITY_TAG = os.environ.get('SINGULARITY_TAG') if os.environ.get('SINGULARITY_TAG') else 'latest'
+HTTP_PROXY = os.environ.get('HTTP_PROXY') if os.environ.get('HTTP_PROXY') else None
+HTTPS_PROXY = os.environ.get('HTTPS_PROXY') if os.environ.get('HTTPS_PROXY') else None
 
 DB_SCHEMA = """
             PRAGMA foreign_keys = ON;

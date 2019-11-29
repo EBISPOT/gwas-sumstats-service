@@ -20,6 +20,8 @@ image:
     validateSSH: true
     computeFarmLogin: ""
     computeFarmUser: ""
+    httpProxy: ""
+    httpsProxy: ""
     
 
 volume:
