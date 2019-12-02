@@ -22,6 +22,8 @@ image:
     computeFarmUser: ""
     httpProxy: ""
     httpsProxy: ""
+    cachePath: ""
+    userHome: ""
     
 
 volume:
