@@ -58,6 +58,8 @@ This handles the uploaded summary statistics files, validates them, reports erro
 ## Deploy with helm (kubernetes)
 - First, deploy rabbitmq using helm 
   - `helm install --name rabbitmq --namespace rabbitmq --set rabbitmq.username=<user>,service.type=NodePort,service.nodePort=<port> stable/rabbitmq`
+- create a kubernetes secret for the ssh keys so the service can perform remote tasks
+  - `kubectl --kubeconfig=<path to config> -n <namespace> create secret generic ssh-keys --from-file=id_rsa=<path/to/id_rsa> --from-file=id_rsa.pub=/path/to/id_rsa.pub> --from-file=known_hosts=/path/to/known_hosts`
 - deploy the sumstats service
   - `helm install --name gwas-sumstats k8chart/ --wait`
 - Start a celery worker from docker
