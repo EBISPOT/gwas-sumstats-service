@@ -38,10 +38,10 @@ def validate_files_from_payload(callback_id, content):
         outfile = os.path.join(par_dir, 'validation.json')
         memory = 4000
         content = json.dumps(content).translate(str.maketrans({'"':  '\\"'}))
-        bsub_com = 'singularity exec docker://{image}:{tag} validate-payload -cid {cid} -out {outfile} -payload \'{content}\''.format(
-                image=config.SINGULARITY_IMAGE, tag=config.SINGULARITY_TAG, cid=callback_id, outfile=outfile, content=content)
-        command = 'export {sp}; mkdir -p {pd}; bsub -q {q} -oo stdout -eo stderr -M {mem} -R "rusage[mem={mem}]" "{bsub_com}"'.format(
-                sp=config.STORAGE_PATH, pd=par_dir, q=config.COMPUTE_FARM_QUEUE, mem=memory, bsub_com=bsub_com)
+        bsub_com = 'singularity exec docker://{image}:{tag} validate-payload -cid {cid} -out {outfile} -storepath {sp} -payload \'{content}\''.format(
+                image=config.SINGULARITY_IMAGE, tag=config.SINGULARITY_TAG, cid=callback_id, outfile=outfile, sp=config.STORAGE_PATH, content=content)
+        command = 'export http_proxy={hp}; export https_proxy={hsp}; mkdir -p {pd}; bsub -oo {pd}/stdout -eo {pd}/stderr -M {mem} -R "rusage[mem={mem}]" "{bsub_com}"'.format(
+                pd=par_dir, q=config.COMPUTE_FARM_QUEUE, mem=memory, bsub_com=bsub_com, hp=config.HTTP_PROXY, hsp=config.HTTPS_PROXY)
         stdin, stdout, stderr = ssh.exec_command(command)
         jobid = ssh.parse_jobid(stdout)
         results = None

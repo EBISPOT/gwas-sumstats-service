@@ -2,6 +2,7 @@ import json
 import sumstats_service.resources.payload as pl
 import argparse
 import sys
+import config
 
 
 def validate_files_from_payload(callback_id, content, out=None):
@@ -59,8 +60,11 @@ def main():
     argparser.add_argument("-cid", help='The callback ID', required=True)
     argparser.add_argument("-payload", help='JSON payload (input)', required=True)
     argparser.add_argument("-out", help='JSON output file (e.g. SOME_ID.json)', required=False, default='validation.json')
-
+    argparser.add_argument("-storepath", help='The storage path you want the data written to e.g. /path/to/data', required=False, default=config.STORAGE_PATH)
+    
     args = argparser.parse_args()
+    if args.storepath:
+        config.STORAGE_PATH = args.storepath
 
     validate_files_from_payload(args.cid, json.loads(args.payload), args.out)
 
