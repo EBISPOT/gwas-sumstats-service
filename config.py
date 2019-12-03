@@ -15,7 +15,7 @@ SINGULARITY_IMAGE = os.environ.get('SINGULARITY_IMAGE') if os.environ.get('SINGU
 SINGULARITY_TAG = os.environ.get('SINGULARITY_TAG') if os.environ.get('SINGULARITY_TAG') else 'latest'
 HTTP_PROXY = os.environ.get('HTTP_PROXY') if os.environ.get('HTTP_PROXY') else None
 HTTPS_PROXY = os.environ.get('HTTPS_PROXY') if os.environ.get('HTTPS_PROXY') else None
-CACHE_PATH = os.environ.get('SINGULARITY_CACHEDIR') if os.environ.get('SINGULARITY_CACHEDIR') else None
+CACHE_PATH = os.environ.get('CACHE_PATH') if os.environ.get('CACHE_PATH') else None
 USERHOME = os.environ.get('USERHOME') if os.environ.get('USERHOME') else None
 
 
