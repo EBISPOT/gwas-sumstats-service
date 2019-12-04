@@ -13,6 +13,7 @@ image:
   logMountPath: "/sumstats_service/logs"
   dataMountPath: "/sumstats_service/data"
   sshMountPath: "/root/.ssh"
+  globusTokenPath: "/sumstats_service/sumstats_service/resources"
   env:
     celeryUser: "username"
     celeryPwd: "password"
@@ -42,6 +43,7 @@ volume:
 
 secrets:
   sshName: ssh-keys
+  globus: globus
 
 
 imagePullSecrets: []

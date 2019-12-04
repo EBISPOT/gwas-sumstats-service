@@ -32,6 +32,9 @@ spec:
           name: log
         - mountPath: {{.Values.image.dataMountPath}}
           name: data
+        - mountPath: {{.Values.image.globusTokenPath}}
+          name: globus
+          readOnly: true
         env:
         - name: CELERY_USER
           value: {{.Values.image.env.celeryUser}}
@@ -52,4 +55,8 @@ spec:
       - name: data
         persistentVolumeClaim:
            claimName: {{ .Values.volume.data.ClaimName }}
+      - name: globus
+        secret: 
+           secretName: {{ .Values.secrets.globus }}
+           defaultMode: 0600
 
