@@ -3,7 +3,7 @@ import json
 import sys
 import webbrowser
 import config
-
+import globus_sdk
 from globus_sdk import (NativeAppAuthClient, TransferClient,
                         RefreshTokenAuthorizer, ConfidentialAppAuthClient)
 from globus_sdk.exc import GlobusAPIError
@@ -80,10 +80,12 @@ def dir_contents(transfer, unique_id):
     # print out a directory listing from an endpoint
     contents = []
 
-    for entry in transfer.operation_ls(config.GWAS_ENDPOINT_ID, path='/~/' + unique_id):
-        contents.append(entry['name'] + ('/' if entry['type'] == 'dir' else ''))
+    try:
+        for entry in transfer.operation_ls(config.GWAS_ENDPOINT_ID, path='/~/' + unique_id):
+            contents.append(entry['name'] + ('/' if entry['type'] == 'dir' else ''))
+    except globus_sdk.exc.TransferAPIError:
+            contents.append('error, no directory named ' + unique_id)
     return contents
-
 
 def check_user(transfer, email):
     # prepare_call(transfer)
