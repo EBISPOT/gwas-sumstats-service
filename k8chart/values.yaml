@@ -22,6 +22,10 @@ image:
     computeFarmUser: ""
     httpProxy: ""
     httpsProxy: ""
+    gwasEndpointID: ""
+    globusSecret: ""
+    nativeClientID: ""
+    clientID: ""
     
 
 volume:

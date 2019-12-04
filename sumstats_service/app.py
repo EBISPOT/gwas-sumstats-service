@@ -5,6 +5,7 @@ from flask import Flask, make_response, Response, jsonify, request
 import sumstats_service.resources.api_endpoints as endpoints
 import sumstats_service.resources.api_utils as au
 from sumstats_service.resources.error_classes import *
+import sumstats_service.resources.globus as globus
 from celery import Celery
 import os
 import logging
@@ -29,6 +30,8 @@ app.url_map.strict_slashes = False
 celery = Celery('app', broker=app.config['CELERY_BROKER_URL'], backend=app.config['CELERY_RESULT_BACKEND'])
 celery.conf.update(app.config)
     
+
+# --- Errors --- #
 
 @app.errorhandler(APIException)
 def handle_custom_api_exception(error):
@@ -55,6 +58,8 @@ def internal_server_error(error):
     return make_response(jsonify({'message': 'Internal Server Error.', 'status': 500, 'error': 'Internal Server Error'})
 , 500)
 
+
+# --- Sumstats service --- #
 
 @app.route('/')
 def root():
@@ -95,7 +100,33 @@ def delete_sumstats(callback_id):
                     mimetype="application/json")
 
 
-# Celery tasks
+# --- Globus methods --- #
+
+@app.route('/v1/sum-stats/globus/mkdir', methods=['POST'])
+def make_dir():
+    req_data = request.get_json()
+    unique_id = req_data['unique_id']
+    email = req_data['email']
+    resp = {'unique_id': unique_id,
+            'email': email}
+
+    if globus.list_dir(unique_id) is not None:
+        return '{"status": "ok"}'
+    else:
+        globus.mkdir(unique_id, email)
+        return '{"status": "ok"}'
+    return make_response(jsonify(resp), 200)
+
+
+@app.route('/v1/sum-stats/globus/ls/<unique_id>')
+def get_dir_contents(unique_id):
+    resp = {'unique_id': unique_id}
+    data = globus.list_dir(unique_id)
+    resp['data'] = data
+    return make_response(jsonify(resp), 200)
+
+
+# --- Celery tasks --- #
 
 @celery.task(queue='preval', options={'queue': 'preval'})
 def validate_files_in_background(callback_id, content):

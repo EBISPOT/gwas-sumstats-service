@@ -16,6 +16,20 @@ SINGULARITY_TAG = os.environ.get('SINGULARITY_TAG') if os.environ.get('SINGULARI
 HTTP_PROXY = os.environ.get('HTTP_PROXY') if os.environ.get('HTTP_PROXY') else None
 HTTPS_PROXY = os.environ.get('HTTPS_PROXY') if os.environ.get('HTTPS_PROXY') else None
 
+# --- Globus config --- #
+
+TOKEN_FILE = 'refresh-tokens.json'
+REDIRECT_URI = 'https://auth.globus.org/v2/web/auth-code'
+SCOPES = ('openid email profile '
+          'urn:globus:auth:scope:transfer.api.globus.org:all')
+
+GWAS_ENDPOINT_ID = os.environ.get('GWAS_ENDPOINT_ID') if os.environ.get('GWAS_ENDPOINT_ID') else None
+GLOBUS_SECRET = os.environ.get('GLOBUS_SECRET') if os.environ.get('GLOBUS_SECRET') else None
+NATIVE_CLIENT_ID = os.environ.get('NATIVE_CLIENT_ID') if os.environ.get('NATIVE_CLIENT_ID') else None
+CLIENT_ID = os.environ.get('CLIENT_ID') if os.environ.get('CLIENT_ID') else None
+
+
+# --- SQLite schema --- # 
 
 DB_SCHEMA = """
             PRAGMA foreign_keys = ON;
