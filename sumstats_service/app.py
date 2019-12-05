@@ -109,11 +109,10 @@ def make_dir():
     email = req_data['email']
     resp = {'unique_id': unique_id,
             'email': email}
-    if not globus.list_dir(unique_id): # if not already exists
+    print(resp)
+    if globus.list_dir(unique_id) is None: # if not already exists
         globus.mkdir(unique_id, email)
-    return Response(response=jsonify({"status": "ok"}),
-                    status=201,
-                    mimetype="application/json")
+    return make_response(jsonify({"status": "ok"}), 201)
 
 
 @app.route('/v1/sum-stats/globus/ls/<unique_id>')
