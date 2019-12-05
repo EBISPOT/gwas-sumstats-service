@@ -34,6 +34,7 @@ spec:
           name: data
         - mountPath: {{.Values.image.globusTokenPath}}
           name: globus
+          subPath: refresh-tokens.json
           readOnly: true
         env:
         - name: CELERY_USER

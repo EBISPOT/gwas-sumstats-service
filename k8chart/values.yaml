@@ -13,7 +13,7 @@ image:
   logMountPath: "/sumstats_service/logs"
   dataMountPath: "/sumstats_service/data"
   sshMountPath: "/root/.ssh"
-  globusTokenPath: "/sumstats_service/sumstats_service/resources"
+  globusTokenPath: "/sumstats_service/sumstats_service/resources/refresh-tokens.json"
   env:
     celeryUser: "username"
     celeryPwd: "password"
