@@ -84,7 +84,7 @@ def dir_contents(transfer, unique_id):
         for entry in transfer.operation_ls(config.GWAS_ENDPOINT_ID, path='/~/' + unique_id):
             contents.append(entry['name'] + ('/' if entry['type'] == 'dir' else ''))
     except globus_sdk.exc.TransferAPIError:
-            contents.append('error, no directory named ' + unique_id)
+        return None       
     return contents
 
 def check_user(transfer, email):
