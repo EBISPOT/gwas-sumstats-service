@@ -57,6 +57,12 @@ spec:
           value: {{.Values.image.env.httpProxy}}
         - name: HTTPS_PROXY
           value: {{.Values.image.env.httpsProxy}}
+        - name: FTP_SERVER
+          value: {{.Values.image.ftpServer}}
+        - name: FTP_USERNAME
+          value: {{.Values.image.env.ftpUser}}
+        - name: FTP_PASSWORD
+          value: {{.Values.image.env.ftpPassword}}
       volumes:
       - name: log
         persistentVolumeClaim:

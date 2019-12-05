@@ -5,7 +5,8 @@ VALID_POST = {
                     "filePath": "https://valid_file.tsv",
                     "md5":"a1195761f082f8cbc2f5a560743077cc",
                     "assembly":"GRCh38",
-                    "readme":"some text"
+                    "readme":"some text",
+                    "entryUUID":"789xyz"
                    },
                    {
                     "id": "xyz321",

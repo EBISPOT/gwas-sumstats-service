@@ -1,32 +1,44 @@
 import os
 
 
+def _env_variable_else(env_var_name, default):
+    return os.environ.get(env_var_name) if os.environ.get(env_var_name) else default
+
 DB_PATH = "./data/sumstats_meta.db"
-STORAGE_PATH = os.environ.get('STORAGE_PATH') if os.environ.get('STORAGE_PATH') else "./data"
+STORAGE_PATH = _env_variable_else('STORAGE_PATH', './data')
 LOGGING_PATH = "./logs"
+
+# --- Rabbit and Celery --- #
+
 BROKER = "amqp"
 BROKER_HOST = "rabbitmq"
 BROKER_PORT = 5672
-VALIDATE_WITH_SSH = os.environ.get('VALIDATE_WITH_SSH') if os.environ.get('VALIDATE_WITH_SSH') else False
-COMPUTE_FARM_LOGIN_NODE = os.environ.get('COMPUTE_FARM_LOGIN_NODE') if os.environ.get('COMPUTE_FARM_LOGIN_NODE') else None
-COMPUTE_FARM_USERNAME = os.environ.get('COMPUTE_FARM_USERNAME') if os.environ.get('COMPUTE_FARM_USERNAME') else None
-COMPUTE_FARM_QUEUE = 'production-rh74'
-SINGULARITY_IMAGE = os.environ.get('SINGULARITY_IMAGE') if os.environ.get('SINGULARITY_IMAGE') else 'ebispot/gwas-sumstats-service'
-SINGULARITY_TAG = os.environ.get('SINGULARITY_TAG') if os.environ.get('SINGULARITY_TAG') else 'latest'
-HTTP_PROXY = os.environ.get('HTTP_PROXY') if os.environ.get('HTTP_PROXY') else None
-HTTPS_PROXY = os.environ.get('HTTPS_PROXY') if os.environ.get('HTTPS_PROXY') else None
 
-# --- Globus config --- #
+# --- Remote --- #
+
+VALIDATE_WITH_SSH = _env_variable_else('VALIDATE_WITH_SSH', False)
+COMPUTE_FARM_LOGIN_NODE = _env_variable_else('COMPUTE_FARM_LOGIN_NODE', None)
+COMPUTE_FARM_USERNAME = _env_variable_else('COMPUTE_FARM_USERNAME', None)
+COMPUTE_FARM_QUEUE = 'production-rh74'
+HTTP_PROXY = _env_variable_else('HTTP_PROXY', None)
+HTTPS_PROXY = _env_variable_else('HTTPS_PROXY', None)
+SINGULARITY_IMAGE = _env_variable_else('SINGULARITY_IMAGE', 'ebispot/gwas-sumstats-service')
+SINGULARITY_TAG = _env_variable_else('SINGULARITY_TAG', 'latest')
+
+# --- File transfer (FTP nad Globus) config --- #
+
+FTP_SERVER = _env_variable_else('FTP_SERVER', None)
+FTP_USERNAME =  _env_variable_else('FTP_USERNAME', None)
+FTP_PASSWORD = _env_variable_else('FTP_PASSWORD', None)
 
 TOKEN_FILE = 'refresh-tokens.json'
 REDIRECT_URI = 'https://auth.globus.org/v2/web/auth-code'
 SCOPES = ('openid email profile '
           'urn:globus:auth:scope:transfer.api.globus.org:all')
-
-GWAS_ENDPOINT_ID = os.environ.get('GWAS_ENDPOINT_ID') if os.environ.get('GWAS_ENDPOINT_ID') else None
-GLOBUS_SECRET = os.environ.get('GLOBUS_SECRET') if os.environ.get('GLOBUS_SECRET') else None
-NATIVE_CLIENT_ID = os.environ.get('NATIVE_CLIENT_ID') if os.environ.get('NATIVE_CLIENT_ID') else None
-CLIENT_ID = os.environ.get('CLIENT_ID') if os.environ.get('CLIENT_ID') else None
+GWAS_ENDPOINT_ID = _env_variable_else('GWAS_ENDPOINT_ID', None)
+GLOBUS_SECRET = _env_variable_else('GLOBUS_SECRET', None)
+NATIVE_CLIENT_ID = _env_variable_else('NATIVE_CLIENT_ID', None)
+CLIENT_ID = _env_variable_else('CLIENT_ID', None)
 
 
 # --- SQLite schema --- # 
@@ -44,6 +56,7 @@ DB_SCHEMA = """
             dataValid INT CHECK (dataValid IN (0,1)),
             errorCode INT,
             readme TEXT,
+            entryUUID TEXT,
             FOREIGN KEY(errorCode) REFERENCES errors(id)
             );
 

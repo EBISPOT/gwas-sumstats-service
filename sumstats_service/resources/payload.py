@@ -37,11 +37,11 @@ class Payload:
         if data is None:
             raise RequestedNotFound("Couldn't find resource with callback id: {}".format(self.callback_id))
         for row in data:
-            study_id, callback_id, file_path, md5, assembly, retrieved, data_valid, error_code, readme = row
+            study_id, callback_id, file_path, md5, assembly, retrieved, data_valid, error_code, readme, entryUUID = row
             study = st.Study(study_id=study_id, callback_id=callback_id,
                              file_path=file_path, md5=md5,
                              assembly=assembly, retrieved=retrieved,
-                             data_valid=data_valid, error_code=error_code, readme=readme)
+                             data_valid=data_valid, error_code=error_code, readme=readme, entryUUID=entryUUID)
             self.study_obj_list.append(study)
         return self.study_obj_list
 
@@ -54,10 +54,9 @@ class Payload:
 
     def create_study_obj_list(self):
         for item in self.payload['requestEntries']:
-            study_id, file_path, md5, assembly, readme = self.parse_new_study_json(item)
-            study = st.Study(study_id=study_id,
-                             file_path=file_path, md5=md5,
-                             assembly=assembly, readme=readme)
+            study_id, file_path, md5, assembly, readme, entryUUID = self.parse_new_study_json(item)
+            study = st.Study(study_id=study_id, file_path=file_path, md5=md5,
+                             assembly=assembly, readme=readme, entryUUID=entryUUID)
             self.study_obj_list.append(study)
         return True
 
@@ -107,6 +106,7 @@ class Payload:
         {
            "id": "xyz321",
            "filePath": "file/path.tsv",
+           "entryUUID": "abc789",
            "md5":"b1d7e0a58d36502d59d036a17336ddf5",
            "assembly":"38",
            "readme":"optional text"
@@ -117,7 +117,8 @@ class Payload:
         md5 = study_dict['md5'] if 'md5' in study_dict else None
         assembly = study_dict['assembly'] if 'assembly' in study_dict else None
         readme = study_dict['readme'] if 'readme' in study_dict else None     
-        return (study_id, file_path, md5, assembly, readme)
+        entryUUID = study_dict['entryUUID'] if 'entryUUID' in study_dict else None        
+        return (study_id, file_path, md5, assembly, readme, entryUUID)
 
     def remove_payload_directory(self):
         fh.remove_payload(self.callback_id)

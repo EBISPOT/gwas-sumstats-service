@@ -12,6 +12,7 @@ import logging
 import validate.validator as val
 import pathlib
 from sumstats_service.resources.error_classes import *
+import ftplib
 
 
 logging.basicConfig(level=logging.DEBUG, format='(%(levelname)s): %(message)s')
@@ -19,13 +20,14 @@ logger = logging.getLogger(__name__)
 
 
 class SumStatFile:
-    def __init__(self, file_path=None, callback_id=None, study_id=None, md5exp=None, readme=None):
+    def __init__(self, file_path=None, callback_id=None, study_id=None, md5exp=None, readme=None, entryUUID=None):
         self.file_path = file_path
         self.callback_id = callback_id
         self.study_id = study_id
         self.md5exp = md5exp
         self.logfile = None
         self.readme = readme
+        self.entryUUID = entryUUID
 
     def set_logfile(self):
         for handler in logger.handlers[:]:  # remove all old handlers
@@ -43,37 +45,48 @@ class SumStatFile:
             pass
 
     def retrieve(self):
-        try:
-            logger.debug("Fetching file from URL: {}".format(self.file_path))        
-            self.make_parent_dir()
-            self.set_store_path()
-            url_parts = parse_url(self.file_path)
-            if url_parts is False:
+        download_status = False
+        self.make_parent_dir()
+        self.set_store_path()
+
+        # if Globus uploaded:
+        if self.entryUUID:
+            logger.debug("Fetching file {} from ftp, parent path: {}".format(self.file_path, self.entryUUID))  
+            source_path = os.path.join(self.entryUUID, self.file_path)
+            download_status = download_from_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=source_path, dest=self.store_path)
+
+        # else check to see if URL we can use
+        else:
+            try:
+                logger.debug("Fetching file from URL: {}".format(self.file_path))        
+                url_parts = parse_url(self.file_path)
+                if url_parts is False:
+                    return False
+                # check if gdrive
+                logger.debug(get_net_loc(self.file_path))
+                if "drive.google" in get_net_loc(self.file_path):
+                    logger.debug("gdrive file")
+                    download_status = self.download_from_gdrive()
+                elif "dropbox" in  get_net_loc(self.file_path):
+                    logger.debug("dropbox file")
+                    download_status = self.download_from_dropbox()
+                elif "http" in url_parts.scheme:
+                    logger.debug("http download")
+                    download_status = download_with_requests(self.file_path, self.store_path)
+                else:
+                    logger.debug("not http download")
+                    download_status = download_with_urllib(self.file_path, self.store_path)
+            except Exception as e:
+                logger.error(e)
                 return False
-            # check if gdrive
-            logger.debug(get_net_loc(self.file_path))
-            if "drive.google" in get_net_loc(self.file_path):
-                logger.debug("gdrive file")
-                download_status = self.download_from_gdrive()
-            elif "dropbox" in  get_net_loc(self.file_path):
-                logger.debug("dropbox file")
-                download_status = self.download_from_dropbox()
-            elif "http" in url_parts.scheme:
-                logger.debug("http download")
-                download_status = download_with_requests(self.file_path, self.store_path)
-            else:
-                logger.debug("not http download")
-                download_status = download_with_urllib(self.file_path, self.store_path)
-            if download_status == True:
-                ext = self.get_ext()
-                path_with_ext = self.store_path + ext
-                os.rename(self.store_path, path_with_ext)
-                self.store_path =  path_with_ext
-                logger.debug("store path is {}".format(self.store_path))
-            return download_status # True or False
-        except Exception as e:
-            logger.error(e)
-            return False
+
+        if download_status == True:
+            ext = self.get_ext()
+            path_with_ext = self.store_path + ext
+            os.rename(self.store_path, path_with_ext)
+            self.store_path =  path_with_ext
+            logger.debug("store path is {}".format(self.store_path))
+        return download_status # True or False
 
     def set_parent_path(self):
         self.parent_path = os.path.join(config.STORAGE_PATH, self.callback_id)
@@ -232,6 +245,7 @@ def download_with_requests(url, localpath):
 def get_net_loc(url):
     return urlparse(url).netloc
 
+
 def get_gdrive_id(url):
     file_id = None
     url_parse = parse_url(url)
@@ -245,6 +259,7 @@ def get_gdrive_id(url):
     if not file_id:
         logger.error("Gdrive URL given but no id given")
     return file_id
+
 
 def download_file_from_google_drive(id, destination):
     def get_confirm_token(response):
@@ -268,4 +283,23 @@ def download_file_from_google_drive(id, destination):
         params = { 'id' : id, 'confirm' : token }
         response = session.get(URL, params = params, stream = True)
     save_response_content(response, destination)
+
+
+def download_from_ftp(server, user, password, source, dest):
+    try:
+        ftp = ftplib.FTP(server)
+        ftp.login(user, password)
+        if ftp.nlst(source):
+            with open(dest, "wb") as f:
+                ftp.retrbinary("RETR " + source, f.write)
+                ftp.quit()
+                return True
+        else:
+            logger.error("couldn't find {}".format(source))
+            ftp.quit()
+            return False
+    except ftplib.all_errors as e:
+            logger.error(e)
+            return False
+
     
