@@ -53,7 +53,7 @@ deploy_staging:
     - RABBITPWD=$(kubectl --namespace rabbitmq get secret rabbitmq -o jsonpath="{.data.rabbitmq-password}" | base64 -d)
     - helm init
     - helm delete --purge gwas-sumstats-service || true
-    - helm install --name gwas-sumstats-service --set k8Namespace=gwas,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_SHA,image.env.celeryUser=$RABBITUSER,image.env.celeryPwd=$RABBITPWD,image.env.validateSSH=false,image.env.gwasEndpointID=$GWAS_ENDPOINT_ID,image.env.globusSecret=$GLOBUS_SECRET,image.env.nativeClientID=$NATIVE_CLIENT_ID,image.env.clientID=$CLIENT_ID,image.env.ftpServer=$FTP_SERVER,image.env.ftpUser=$FTP_USERNAME,image.env.ftpPassword=$FTP_PASSWORD ./k8chart/ --wait
+    - helm install --name gwas-sumstats-service --set k8Namespace=gwas,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_SHA,image.env.celeryUser=$RABBITUSER,image.env.celeryPwd=$RABBITPWD,image.env.validateSSH=false,image.env.gwasEndpointID=$GWAS_ENDPOINT_ID,image.env.globusSecret=$GLOBUS_SECRET,image.env.nativeClientID=$NATIVE_CLIENT_ID,image.env.clientID=$CLIENT_ID,image.env.ftpServer=$FTP_SERVER,image.env.ftpUser=$FTP_USERNAME,image.env.ftpPassword=$FTP_PASSWORD,image.env.mongoURI=$SANDBOX_MONGO_URI ./k8chart/ --wait
   environment:
     name: sandbox
   only:
@@ -69,7 +69,7 @@ deploy_fallback:
     - RABBITPWD=$(kubectl --namespace rabbitmq get secret rabbitmq -o jsonpath="{.data.rabbitmq-password}" | base64 -d)
     - helm init
     - helm delete --purge gwas-sumstats-service || true
-    - helm install --name gwas-sumstats-service --set k8Namespace=gwas,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_SHA,image.env.celeryUser=$RABBITUSER,image.env.celeryPwd=$RABBITPWD,image.env.storagePath=$STORAGE_PATH,image.env.computeFarmLogin=$HX_LOGIN_NODE,image.env.computeFarmUser=$CLUSTER_USERNAME,image.env.httpProxy=$HX_HTTP_PROXY,image.env.httpsProxy=$HX_HTTPS_PROXY,image.env.gwasEndpointID=$GWAS_ENDPOINT_ID,image.env.globusSecret=$GLOBUS_SECRET,image.env.nativeClientID=$NATIVE_CLIENT_ID,image.env.clientID=$CLIENT_ID,image.env.ftpServer=$FTP_SERVER,image.env.ftpUser=$FTP_USERNAME,image.env.ftpPassword=$FTP_PASSWORD ./k8chart/ --wait
+    - helm install --name gwas-sumstats-service --set k8Namespace=gwas,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_SHA,image.env.celeryUser=$RABBITUSER,image.env.celeryPwd=$RABBITPWD,image.env.storagePath=$STORAGE_PATH,image.env.computeFarmLogin=$HX_LOGIN_NODE,image.env.computeFarmUser=$CLUSTER_USERNAME,image.env.httpProxy=$HX_HTTP_PROXY,image.env.httpsProxy=$HX_HTTPS_PROXY,image.env.gwasEndpointID=$GWAS_ENDPOINT_ID,image.env.globusSecret=$GLOBUS_SECRET,image.env.nativeClientID=$NATIVE_CLIENT_ID,image.env.clientID=$CLIENT_ID,image.env.ftpServer=$FTP_SERVER,image.env.ftpUser=$FTP_USERNAME,image.env.ftpPassword=$FTP_PASSWORD,image.env.mongoURI=$PROD_MONGO_URI ./k8chart/ --wait
   environment:
     name: fallback
   when: manual
@@ -87,7 +87,7 @@ deploy_prod:
     - RABBITPWD=$(kubectl --namespace rabbitmq get secret rabbitmq -o jsonpath="{.data.rabbitmq-password}" | base64 -d)
     - helm init
     - helm delete --purge gwas-sumstats-service || true
-    - helm install --name gwas-sumstats-service --set k8Namespace=gwas,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_SHA,image.env.celeryUser=$RABBITUSER,image.env.celeryPwd=$RABBITPWD,image.env.storagePath=$STORAGE_PATH,image.env.computeFarmLogin=$HH_LOGIN_NODE,image.env.computeFarmUser=$CLUSTER_USERNAME,image.env.httpProxy=$HH_HTTP_PROXY,image.env.httpsProxy=$HH_HTTPS_PROXY,image.env.gwasEndpointID=$GWAS_ENDPOINT_ID,image.env.globusSecret=$GLOBUS_SECRET,image.env.nativeClientID=$NATIVE_CLIENT_ID,image.env.clientID=$CLIENT_ID,image.env.ftpServer=$FTP_SERVER,image.env.ftpUser=$FTP_USERNAME,image.env.ftpPassword=$FTP_PASSWORD ./k8chart/ --wait
+    - helm install --name gwas-sumstats-service --set k8Namespace=gwas,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_SHA,image.env.celeryUser=$RABBITUSER,image.env.celeryPwd=$RABBITPWD,image.env.storagePath=$STORAGE_PATH,image.env.computeFarmLogin=$HH_LOGIN_NODE,image.env.computeFarmUser=$CLUSTER_USERNAME,image.env.httpProxy=$HH_HTTP_PROXY,image.env.httpsProxy=$HH_HTTPS_PROXY,image.env.gwasEndpointID=$GWAS_ENDPOINT_ID,image.env.globusSecret=$GLOBUS_SECRET,image.env.nativeClientID=$NATIVE_CLIENT_ID,image.env.clientID=$CLIENT_ID,image.env.ftpServer=$FTP_SERVER,image.env.ftpUser=$FTP_USERNAME,image.env.ftpPassword=$FTP_PASSWORD,image.env.mongoURI=$PROD_MONGO_URI ./k8chart/ --wait
   environment:
     name: production
   when: manual

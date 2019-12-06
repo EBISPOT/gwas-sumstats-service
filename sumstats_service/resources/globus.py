@@ -10,7 +10,8 @@ from globus_sdk import (NativeAppAuthClient, TransferClient,
                         RefreshTokenAuthorizer, ConfidentialAppAuthClient)
 from globus_sdk.exc import GlobusAPIError
 from sumstats_service.resources.globus_utils import is_remote_session, enable_requests_logging
-
+from pymongo import MongoClient
+from bson.objectid import ObjectId
 
 
 get_input = getattr(__builtins__, 'raw_input', input)
@@ -33,7 +34,7 @@ def init():
     tokens = None
     try:
         # if we already have tokens, load and use them
-        tokens = load_tokens_from_file(config.TOKEN_FILE)
+        tokens = load_tokens_from_db()
     except:
         pass
 
@@ -42,7 +43,7 @@ def init():
         tokens = do_native_app_authentication(config.CLIENT_ID, config.REDIRECT_URI, config.SCOPES)
 
         try:
-            save_tokens_to_file(config.TOKEN_FILE, tokens)
+            save_tokens_to_db(tokens)
         except:
             pass
 
@@ -155,19 +156,28 @@ def create_dir(transfer, uid, email):
     return endpoint_id
 
 
-def load_tokens_from_file(filepath):
+def load_tokens_from_db():
     """Load a set of saved tokens."""
-    script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
-    with open(os.path.join(script_dir, filepath), 'r') as f:
-        tokens = json.load(f)
+    mongo_client = MongoClient(config.MONGO_URI) 
+    globus_db = mongo_client['globus-tokens']
+    globus_db_collection = globus_db['tokens']
+    tokens = globus_db_collection.find_one({})
     return tokens
 
 
-def save_tokens_to_file(filepath, tokens):
+def save_tokens_to_db(tokens):
     """Save a set of tokens for later use."""
-    script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
-    with open(os.path.join(script_dir, filepath), 'w') as f:
-        json.dump(tokens, f)
+    mongo_client = MongoClient(config.MONGO_URI) 
+    globus_db = mongo_client['globus-tokens']
+    globus_db_collection = globus_db['tokens']
+    resp = globus_db_collection.find_one({})
+    if resp:
+        globus_db_collection.replace_one('_id':resp["_id"]}, tokens)
+    else:
+        globus_db_collection.insert(tokens, check_keys=False)
+#    script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
+#    with open(os.path.join(script_dir, filepath), 'w') as f:
+#        json.dump(tokens, f)
 
 
 def update_tokens_file_on_refresh(token_response):
@@ -175,7 +185,7 @@ def update_tokens_file_on_refresh(token_response):
     Callback function passed into the RefreshTokenAuthorizer.
     Will be invoked any time a new access token is fetched.
     """
-    save_tokens_to_file(config.TOKEN_FILE, token_response.by_resource_server)
+    save_tokens_to_db(token_response.by_resource_server)
 
 
 def do_native_app_authentication(client_id, redirect_uri,
