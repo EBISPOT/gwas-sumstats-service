@@ -1,7 +1,9 @@
 import os
 import json
 import sys
+import urllib
 import webbrowser
+from urllib.parse import unquote
 import config
 import globus_sdk
 from globus_sdk import (NativeAppAuthClient, TransferClient,
@@ -44,11 +46,20 @@ def init():
         except:
             pass
 
-    auth_tokens = tokens['auth.globus.org']
+    #auth_tokens = tokens['auth.globus.org']
     transfer_tokens = tokens['transfer.api.globus.org']
 
     auth_client = ConfidentialAppAuthClient(config.NATIVE_CLIENT_ID, config.GLOBUS_SECRET)
-    # auth_client = NativeAppAuthClient(client_id=config.NATIVE_CLIENT_ID)
+    refresh_client = NativeAppAuthClient(client_id=config.CLIENT_ID)
+    refresh_authorizer = RefreshTokenAuthorizer(
+        transfer_tokens['refresh_token'],
+        refresh_client,
+        access_token=transfer_tokens['access_token'],
+        expires_at=transfer_tokens['expires_at_seconds'],
+        on_refresh=update_tokens_file_on_refresh)
+
+    refresh_transfer = TransferClient(authorizer=refresh_authorizer)
+    prepare_call(refresh_transfer)
 
     authorizer = RefreshTokenAuthorizer(
         transfer_tokens['refresh_token'],
@@ -86,6 +97,25 @@ def dir_contents(transfer, unique_id):
     except globus_sdk.exc.TransferAPIError:
         return None       
     return contents
+
+
+def get_upload_status(transfer, unique_id, files):
+    return_files = {}
+    for file in files:
+        return_files[file] = False
+    for task in transfer.task_list(filter='status:SUCCEEDED/type:TRANSFER'):
+#        print(task)
+#        for event in transfer.task_event_list(task_id=task['task_id']):
+#            print(event)
+        for event in transfer.task_successful_transfers(task_id=task['task_id']):
+            print(event)
+            path = event['destination_path']
+            decoded = unquote(path)
+            for file in files:
+                if '/' + unique_id +'/' in path and file in unquote(path):
+                    return_files[file] = True
+    return return_files
+
 
 def check_user(transfer, email):
     # prepare_call(transfer)
