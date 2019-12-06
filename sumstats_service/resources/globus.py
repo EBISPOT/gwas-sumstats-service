@@ -172,7 +172,7 @@ def save_tokens_to_db(tokens):
     globus_db_collection = globus_db['tokens']
     resp = globus_db_collection.find_one({})
     if resp:
-        globus_db_collection.replace_one('_id':resp["_id"]}, tokens)
+        globus_db_collection.replace_one('_id': resp["_id"]}, tokens)
     else:
         globus_db_collection.insert(tokens, check_keys=False)
 #    script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
