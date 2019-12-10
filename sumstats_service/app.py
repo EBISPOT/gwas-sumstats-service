@@ -107,6 +107,7 @@ def make_dir():
     req_data = request.get_json()
     unique_id = req_data['unique_id']
     email = req_data['email']
+    endpoint_id = None
     if globus.list_dir(unique_id) is None: # if not already exists
         endpoint_id = globus.mkdir(unique_id, email)
     resp = {'unique_id': unique_id,
