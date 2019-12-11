@@ -16,7 +16,7 @@ from bson.objectid import ObjectId
 
 get_input = getattr(__builtins__, 'raw_input', input)
 # uncomment the next line to enable debug logging for network requests
-# enable_requests_logging()
+enable_requests_logging()
 
 
 def mkdir(unique_id, email_address):
