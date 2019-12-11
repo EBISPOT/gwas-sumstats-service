@@ -106,7 +106,7 @@ class Payload:
         {
            "id": "xyz321",
            "filePath": "file/path.tsv",
-           "entryUUID": "abc789",
+           "uniqueID": "abc789",
            "md5":"b1d7e0a58d36502d59d036a17336ddf5",
            "assembly":"38",
            "readme":"optional text"
@@ -117,7 +117,7 @@ class Payload:
         md5 = study_dict['md5'] if 'md5' in study_dict else None
         assembly = study_dict['assembly'] if 'assembly' in study_dict else None
         readme = study_dict['readme'] if 'readme' in study_dict else None     
-        entryUUID = study_dict['entryUUID'] if 'entryUUID' in study_dict else None        
+        entryUUID = study_dict['uniqueID'] if 'uniqueID' in study_dict else None        
         return (study_id, file_path, md5, assembly, readme, entryUUID)
 
     def remove_payload_directory(self):
