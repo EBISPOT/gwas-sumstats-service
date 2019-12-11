@@ -105,13 +105,12 @@ def delete_sumstats(callback_id):
 @app.route('/v1/sum-stats/globus/mkdir', methods=['POST'])
 def make_dir():
     req_data = request.get_json()
-    unique_id = req_data['unique_id']
+    unique_id = req_data['uniqueID']
     email = req_data['email']
-    endpoint_id = None
+    globus_origin_id = None
     if globus.list_dir(unique_id) is None: # if not already exists
-        endpoint_id = globus.mkdir(unique_id, email)
-    resp = {'unique_id': unique_id,
-            'endpoint_id': endpoint_id}
+        globus_origin_id = globus.mkdir(unique_id, email)
+    resp = {'globusOriginID': globus_origin_id}
     return make_response(jsonify(resp), 201)
 
 
