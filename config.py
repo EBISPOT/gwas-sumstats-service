@@ -37,8 +37,8 @@ SCOPES = ('openid email profile '
           'urn:globus:auth:scope:transfer.api.globus.org:all')
 GWAS_ENDPOINT_ID = _env_variable_else('GWAS_ENDPOINT_ID', None)
 GLOBUS_SECRET = _env_variable_else('GLOBUS_SECRET', None)
-NATIVE_CLIENT_ID = _env_variable_else('NATIVE_CLIENT_ID', None)
 CLIENT_ID = _env_variable_else('CLIENT_ID', None)
+TRANSFER_CLIENT_ID = _env_variable_else('TRANSFER_CLIENT_ID', None)
 MONGO_URI = _env_variable_else('MONGO_URI', None)
 
 # --- SQLite schema --- # 

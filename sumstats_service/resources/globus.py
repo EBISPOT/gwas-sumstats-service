@@ -40,37 +40,28 @@ def init():
 
     if not tokens:
         # if we need to get tokens, start the Native App authentication process
-        tokens = do_native_app_authentication(config.CLIENT_ID, config.REDIRECT_URI, config.SCOPES)
+        tokens = do_native_app_authentication(config.TRANSFER_CLIENT_ID, config.REDIRECT_URI, config.SCOPES)
 
         try:
             save_tokens_to_db(tokens)
         except:
             pass
 
-    #auth_tokens = tokens['auth.globus.org']
+    auth_tokens = tokens['auth.globus.org']
     transfer_tokens = tokens['transfer.api.globus.org']
 
-    auth_client = ConfidentialAppAuthClient(config.NATIVE_CLIENT_ID, config.GLOBUS_SECRET)
-    refresh_client = NativeAppAuthClient(client_id=config.CLIENT_ID)
-    refresh_authorizer = RefreshTokenAuthorizer(
-        transfer_tokens['refresh_token'],
-        refresh_client,
-        access_token=transfer_tokens['access_token'],
-        expires_at=transfer_tokens['expires_at_seconds'],
-        on_refresh=update_tokens_file_on_refresh)
-
-    refresh_transfer = TransferClient(authorizer=refresh_authorizer)
-    prepare_call(refresh_transfer)
+    client = NativeAppAuthClient(client_id=config.TRANSFER_CLIENT_ID)
 
     authorizer = RefreshTokenAuthorizer(
         transfer_tokens['refresh_token'],
-        auth_client,
+        client,
         access_token=transfer_tokens['access_token'],
         expires_at=transfer_tokens['expires_at_seconds'],
         on_refresh=update_tokens_file_on_refresh)
 
     transfer = TransferClient(authorizer=authorizer)
     prepare_call(transfer)
+
     return transfer
 
 
@@ -118,9 +109,9 @@ def get_upload_status(transfer, unique_id, files):
     return return_files
 
 
-def check_user(transfer, email):
-    # prepare_call(transfer)
-    user_info = transfer.authorizer.auth_client.get_identities(usernames=email)
+def check_user(email):
+    auth_client = ConfidentialAppAuthClient(config.CLIENT_ID, config.GLOBUS_SECRET)
+    user_info = auth_client.get_identities(usernames=email)
     identity_id = user_info.data['identities'][0]['id']
     return
 
@@ -140,7 +131,8 @@ def create_dir(transfer, uid, email):
     create_result = transfer.create_shared_endpoint(shared_ep_data)
     endpoint_id = create_result.data['id']
     # get user info
-    user_info = transfer.authorizer.auth_client.get_identities(usernames=email)
+    auth_client = ConfidentialAppAuthClient(config.CLIENT_ID, config.GLOBUS_SECRET)
+    user_info = auth_client.get_identities(usernames=email)
     identity_id = user_info.data['identities'][0]['id']
 
     # add user to endpoint
@@ -195,15 +187,10 @@ def do_native_app_authentication(client_id, redirect_uri,
     dict of tokens keyed by service name.
     """
     client = NativeAppAuthClient(client_id=client_id)
-#    client = ConfidentialAppAuthClient(client_id, config.GLOBUS_SECRET)
 
     # pass refresh_tokens=True to request refresh tokens
-    client.oauth2_start_flow(requested_scopes=requested_scopes,
-                             redirect_uri=redirect_uri,
-                             refresh_tokens=True)
-
+    client.oauth2_start_flow(refresh_tokens=True)
     url = client.oauth2_get_authorize_url()
-
     print('Native App Authorization URL: \n{}'.format(url))
 
     if not is_remote_session():

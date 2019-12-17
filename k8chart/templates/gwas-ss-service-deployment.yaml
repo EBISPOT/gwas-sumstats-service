@@ -41,8 +41,8 @@ spec:
           value: {{.Values.image.env.gwasEndpointID}}
         - name: GLOBUS_SECRET
           value: {{.Values.image.env.globusSecret}}
-        - name: NATIVE_CLIENT_ID
-          value: {{.Values.image.env.nativeClientID}}
+        - name: TRANSFER_CLIENT_ID
+          value: {{.Values.image.env.transferClientID}}
         - name: CLIENT_ID
           value: {{.Values.image.env.clientID}}
         - name: MONGO_URI

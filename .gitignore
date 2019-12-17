@@ -25,3 +25,5 @@ htmlcov
 # secrets
 ./secrets
 refresh-tokens.json
+
+tox.ini
