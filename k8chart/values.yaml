@@ -24,7 +24,7 @@ image:
     httpsProxy: ""
     gwasEndpointID: ""
     globusSecret: ""
-    nativeClientID: ""
+    transferClientID: ""
     clientID: ""
     ftpServer: ""
     ftpUser: ""
