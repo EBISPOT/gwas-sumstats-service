@@ -47,7 +47,6 @@ def init():
         except:
             pass
 
-    auth_tokens = tokens['auth.globus.org']
     transfer_tokens = tokens['transfer.api.globus.org']
 
     client = NativeAppAuthClient(client_id=config.TRANSFER_CLIENT_ID)
