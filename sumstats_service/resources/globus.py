@@ -125,7 +125,10 @@ def create_dir(transfer, uid, email):
         "host_path": '/~/' + uid,
         "display_name": 'ebi#gwas#' + uid,
         # optionally specify additional endpoint fields
-        "description": 'ebi#gwas#' + uid
+        "description": 'ebi#gwas#' + uid,
+        "owner_string": "GWAS Catalog",
+        "contact_email": "gwas-dev@ebi.ac.uk",
+        "organization": "EBI"
     }
     create_result = transfer.create_shared_endpoint(shared_ep_data)
     endpoint_id = create_result.data['id']
