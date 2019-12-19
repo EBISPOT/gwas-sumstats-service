@@ -30,6 +30,9 @@ image:
     ftpUser: ""
     ftpPassword: ""
     mongoURI: ""
+    mongoUser: ""
+    mongoPassword: ""
+    mongoDB: ""
     
 
 volume:

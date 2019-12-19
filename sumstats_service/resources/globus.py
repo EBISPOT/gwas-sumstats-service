@@ -152,18 +152,18 @@ def create_dir(transfer, uid, email):
 
 def load_tokens_from_db():
     """Load a set of saved tokens."""
-    mongo_client = MongoClient(config.MONGO_URI) 
-    globus_db = mongo_client['globus-tokens']
-    globus_db_collection = globus_db['tokens']
+    mongo_client = MongoClient(config.MONGO_URI, username=config.MONGO_USER, password=config.MONGO_PASSWORD) 
+    globus_db = mongo_client[config.MONGO_DB] # 'globus-tokens'
+    globus_db_collection = globus_db['globus-tokens']
     tokens = globus_db_collection.find_one({})
     return tokens
 
 
 def save_tokens_to_db(tokens):
     """Save a set of tokens for later use."""
-    mongo_client = MongoClient(config.MONGO_URI) 
-    globus_db = mongo_client['globus-tokens']
-    globus_db_collection = globus_db['tokens']
+    mongo_client = MongoClient(config.MONGO_URI, username=config.MONGO_USER, password=config.MONGO_PASSWORD) 
+    globus_db = mongo_client[config.MONGO_DB] # 'globus-tokens'
+    globus_db_collection = globus_db['globus-tokens']
     resp = globus_db_collection.find_one({})
     if resp:
         globus_db_collection.replace_one({'_id': resp["_id"]}, tokens)

@@ -25,6 +25,14 @@ HTTPS_PROXY = _env_variable_else('HTTPS_PROXY', None)
 SINGULARITY_IMAGE = _env_variable_else('SINGULARITY_IMAGE', 'ebispot/gwas-sumstats-service')
 SINGULARITY_TAG = _env_variable_else('SINGULARITY_TAG', 'latest')
 
+# --- MONGO DB --- #
+
+MONGO_URI = _env_variable_else('MONGO_URI', None)
+MONGO_USER = _env_variable_else('MONGO_USER', None)
+MONGO_PASSWORD = _env_variable_else('MONGO_PASSWORD', None)
+MONGO_DB = _env_variable_else('MONGO_DB', None)
+
+
 # --- File transfer (FTP nad Globus) config --- #
 
 FTP_SERVER = _env_variable_else('FTP_SERVER', None)
@@ -39,7 +47,6 @@ GWAS_ENDPOINT_ID = _env_variable_else('GWAS_ENDPOINT_ID', None)
 GLOBUS_SECRET = _env_variable_else('GLOBUS_SECRET', None)
 CLIENT_ID = _env_variable_else('CLIENT_ID', None)
 TRANSFER_CLIENT_ID = _env_variable_else('TRANSFER_CLIENT_ID', None)
-MONGO_URI = _env_variable_else('MONGO_URI', None)
 
 # --- SQLite schema --- # 
 
