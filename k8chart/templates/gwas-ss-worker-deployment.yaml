@@ -53,10 +53,10 @@ spec:
           value: {{.Values.image.repository}}
         - name: SINGULARITY_TAG
           value: {{.Values.image.tag}}
-        - name: HTTP_PROXY
-          value: {{.Values.image.env.httpProxy}}
-        - name: HTTPS_PROXY
-          value: {{.Values.image.env.httpsProxy}}
+        - name: REMOTE_HTTP_PROXY
+          value: {{.Values.image.env.remoteHttpProxy}}
+        - name: REMOTE_HTTPS_PROXY
+          value: {{.Values.image.env.remoteHttpsProxy}}
         - name: FTP_SERVER
           value: {{.Values.image.ftpServer}}
         - name: FTP_USERNAME

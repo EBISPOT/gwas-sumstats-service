@@ -20,8 +20,8 @@ VALIDATE_WITH_SSH = _env_variable_else('VALIDATE_WITH_SSH', False)
 COMPUTE_FARM_LOGIN_NODE = _env_variable_else('COMPUTE_FARM_LOGIN_NODE', None)
 COMPUTE_FARM_USERNAME = _env_variable_else('COMPUTE_FARM_USERNAME', None)
 COMPUTE_FARM_QUEUE = 'production-rh74'
-HTTP_PROXY = _env_variable_else('HTTP_PROXY', None)
-HTTPS_PROXY = _env_variable_else('HTTPS_PROXY', None)
+REMOTE_HTTP_PROXY = _env_variable_else('REMOTE_HTTP_PROXY', None)
+REMOTE_HTTPS_PROXY = _env_variable_else('REMOTE_HTTPS_PROXY', None)
 SINGULARITY_IMAGE = _env_variable_else('SINGULARITY_IMAGE', 'ebispot/gwas-sumstats-service')
 SINGULARITY_TAG = _env_variable_else('SINGULARITY_TAG', 'latest')
 

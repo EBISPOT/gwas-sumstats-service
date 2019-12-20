@@ -20,8 +20,8 @@ image:
     validateSSH: true
     computeFarmLogin: ""
     computeFarmUser: ""
-    httpProxy: ""
-    httpsProxy: ""
+    remoteHttpProxy: ""
+    remoteHttpsProxy: ""
     gwasEndpointID: ""
     globusSecret: ""
     transferClientID: ""
@@ -33,6 +33,8 @@ image:
     mongoUser: ""
     mongoPassword: ""
     mongoDB: ""
+    httpProxy: ""
+    httpsProxy: ""
     
 
 volume:
