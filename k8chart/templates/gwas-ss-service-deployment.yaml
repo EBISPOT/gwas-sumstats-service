@@ -54,9 +54,9 @@ spec:
         - name: MONGO_DB
           value: {{.Values.image.env.mongoDB}}
         - name: HTTP_PROXY
-          value: {{.Values.image.env.HttpProxy}}
+          value: {{.Values.image.env.httpProxy}}
         - name: HTTPS_PROXY
-          value: {{.Values.image.env.HttpsProxy}} 
+          value: {{.Values.image.env.httpsProxy}} 
       volumes:
       - name: log
         persistentVolumeClaim:
