@@ -66,7 +66,8 @@ def init():
 
 def prepare_call(transfer):
     try:
-        transfer.endpoint_autoactivate(config.GWAS_ENDPOINT_ID)
+        response = transfer.endpoint_autoactivate(config.GWAS_ENDPOINT_ID)
+        print(response['code'])
     except GlobusAPIError as ex:
         print(ex)
         if ex.http_status == 401:
@@ -78,10 +79,8 @@ def prepare_call(transfer):
 
 
 def dir_contents(transfer, unique_id):
-    # prepare_call(transfer)
     # print out a directory listing from an endpoint
     contents = []
-
     try:
         for entry in transfer.operation_ls(config.GWAS_ENDPOINT_ID, path='/~/' + unique_id):
             contents.append(entry['name'] + ('/' if entry['type'] == 'dir' else ''))
