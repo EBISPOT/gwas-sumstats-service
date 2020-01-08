@@ -34,7 +34,8 @@ def init():
     tokens = None
     try:
         # if we already have tokens, load and use them
-        tokens = load_tokens_from_db()
+        #tokens = load_tokens_from_db()
+        tokens = json.loads('{"transfer.api.globus.org" : { "scope" : "urn:globus:auth:scope:transfer.api.globus.org:all", "access_token" : "AgKBqjMy0zmQKelnPYonVw08xM0Q0gkYaPpW0qd0py1WN0QaVgfeCQ8EP4aPkJxB2196wB7VWGj58mU1lBJ03IzzPw", "refresh_token" : "Ag0drVP9KzOrQjkkNxqE8aojqrklxjYeGxp1qvoXK2o7eKgK20s9UKPD7bNy8p3N1d3yaVdOl8OMay0qVNlkzawWXb6EO", "token_type" : "Bearer", "expires_at_seconds" : 1578654823, "resource_server" : "transfer.api.globus.org" }}')
     except:
         pass
 
@@ -66,8 +67,17 @@ def init():
 
 def prepare_call(transfer):
     try:
-        response = transfer.endpoint_autoactivate(config.GWAS_ENDPOINT_ID)
-        print(response['code'])
+        #if transfer.get_endpoint is not active
+        resp = transfer.get_endpoint(config.GWAS_ENDPOINT_ID)
+        # activate
+        if not resp['activated']:
+            script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
+            with open(os.path.join(script_dir, 'json_auth.txt'), 'r') as f:
+                data = json.load(f)
+            response = transfer.endpoint_activate(config.GWAS_ENDPOINT_ID, requirements_data=data)
+            print(response['code'])
+        elif resp['activated']:
+            print('activated')
     except GlobusAPIError as ex:
         print(ex)
         if ex.http_status == 401:
