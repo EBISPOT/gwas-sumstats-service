@@ -163,7 +163,7 @@ def load_tokens_from_db():
     mongo_client = MongoClient(config.MONGO_URI, username=config.MONGO_USER, password=config.MONGO_PASSWORD) 
     globus_db = mongo_client[config.MONGO_DB] # 'globus-tokens'
     globus_db_collection = globus_db['globus-tokens']
-    tokens = globus_db_collection.find_one({})
+    tokens = globus_db_collection.find_one({}, { '_id': 0 })
     return tokens
 
 
@@ -172,7 +172,7 @@ def load_requirements_data_from_db():
     mongo_client = MongoClient(config.MONGO_URI, username=config.MONGO_USER, password=config.MONGO_PASSWORD) 
     globus_db = mongo_client[config.MONGO_DB] # 'globus-tokens'
     globus_db_collection = globus_db['globus-requirements']
-    requirements_data = globus_db_collection.find_one({})
+    requirements_data = globus_db_collection.find_one({}, { '_id': 0 })
     return requirements_data
 
 
