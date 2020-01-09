@@ -34,15 +34,13 @@ def init():
     tokens = None
     try:
         # if we already have tokens, load and use them
-        #tokens = load_tokens_from_db()
-        tokens = json.loads('{"transfer.api.globus.org" : { "scope" : "urn:globus:auth:scope:transfer.api.globus.org:all", "access_token" : "AgKBqjMy0zmQKelnPYonVw08xM0Q0gkYaPpW0qd0py1WN0QaVgfeCQ8EP4aPkJxB2196wB7VWGj58mU1lBJ03IzzPw", "refresh_token" : "Ag0drVP9KzOrQjkkNxqE8aojqrklxjYeGxp1qvoXK2o7eKgK20s9UKPD7bNy8p3N1d3yaVdOl8OMay0qVNlkzawWXb6EO", "token_type" : "Bearer", "expires_at_seconds" : 1578654823, "resource_server" : "transfer.api.globus.org" }}')
+        tokens = load_tokens_from_db()
     except:
         pass
 
     if not tokens:
         # if we need to get tokens, start the Native App authentication process
         tokens = do_native_app_authentication(config.TRANSFER_CLIENT_ID, config.REDIRECT_URI, config.SCOPES)
-
         try:
             save_tokens_to_db(tokens)
         except:
@@ -71,10 +69,11 @@ def prepare_call(transfer):
         resp = transfer.get_endpoint(config.GWAS_ENDPOINT_ID)
         # activate
         if not resp['activated']:
-            script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
-            with open(os.path.join(script_dir, 'json_auth.txt'), 'r') as f:
-                data = json.load(f)
-            response = transfer.endpoint_activate(config.GWAS_ENDPOINT_ID, requirements_data=data)
+            #script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
+            #with open(os.path.join(script_dir, 'json_auth.txt'), 'r') as f:
+                #data = json.load(f)
+            requirements_data = load_requirements_data_from_db()
+            response = transfer.endpoint_activate(config.GWAS_ENDPOINT_ID, requirements_data=requirements_data)
             print(response['code'])
         elif resp['activated']:
             print('activated')
@@ -166,6 +165,15 @@ def load_tokens_from_db():
     globus_db_collection = globus_db['globus-tokens']
     tokens = globus_db_collection.find_one({})
     return tokens
+
+
+def load_requirements_data_from_db():
+    """Load requirements data."""
+    mongo_client = MongoClient(config.MONGO_URI, username=config.MONGO_USER, password=config.MONGO_PASSWORD) 
+    globus_db = mongo_client[config.MONGO_DB] # 'globus-tokens'
+    globus_db_collection = globus_db['globus-requirements']
+    requirements_data = globus_db_collection.find_one({})
+    return requirements_data
 
 
 def save_tokens_to_db(tokens):
