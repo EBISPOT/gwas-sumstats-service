@@ -41,7 +41,6 @@ def init():
     if not tokens:
         # if we need to get tokens, start the Native App authentication process
         tokens = do_native_app_authentication(config.TRANSFER_CLIENT_ID, config.REDIRECT_URI, config.SCOPES)
-
         try:
             save_tokens_to_db(tokens)
         except:
@@ -66,8 +65,18 @@ def init():
 
 def prepare_call(transfer):
     try:
-        response = transfer.endpoint_autoactivate(config.GWAS_ENDPOINT_ID)
-        print(response['code'])
+        #if transfer.get_endpoint is not active
+        resp = transfer.get_endpoint(config.GWAS_ENDPOINT_ID)
+        # activate
+        if not resp['activated']:
+            #script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
+            #with open(os.path.join(script_dir, 'json_auth.txt'), 'r') as f:
+                #data = json.load(f)
+            requirements_data = load_requirements_data_from_db()
+            response = transfer.endpoint_activate(config.GWAS_ENDPOINT_ID, requirements_data=requirements_data)
+            print(response['code'])
+        elif resp['activated']:
+            print('activated')
     except GlobusAPIError as ex:
         print(ex)
         if ex.http_status == 401:
@@ -156,6 +165,15 @@ def load_tokens_from_db():
     globus_db_collection = globus_db['globus-tokens']
     tokens = globus_db_collection.find_one({})
     return tokens
+
+
+def load_requirements_data_from_db():
+    """Load requirements data."""
+    mongo_client = MongoClient(config.MONGO_URI, username=config.MONGO_USER, password=config.MONGO_PASSWORD) 
+    globus_db = mongo_client[config.MONGO_DB] # 'globus-tokens'
+    globus_db_collection = globus_db['globus-requirements']
+    requirements_data = globus_db_collection.find_one({})
+    return requirements_data
 
 
 def save_tokens_to_db(tokens):
