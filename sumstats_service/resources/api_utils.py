@@ -9,6 +9,13 @@ import sumstats_service.resources.validate_payload as vp
 import sumstats_service.resources.ssh_client as sshc
 import os
 import time
+import logging
+
+
+logging.basicConfig(level=logging.DEBUG, format='(%(levelname)s): %(message)s')
+logger = logging.getLogger(__name__)
+
+
 
 def create_href(method_name, params=None):
     params = params or {}
@@ -33,17 +40,21 @@ def store_validation_results_in_db(validation_response):
 
 def validate_files_from_payload(callback_id, content):
     if config.VALIDATE_WITH_SSH == 'true':
+        logger.debug('Validate with ssh')
         ssh = sshc.SSHClient(host=config.COMPUTE_FARM_LOGIN_NODE, username=config.COMPUTE_FARM_USERNAME)
         par_dir = os.path.join(config.STORAGE_PATH, callback_id)
         outfile = os.path.join(par_dir, 'validation.json')
         memory = 4000
+        logger.debug('content:\n'.format(content))
         content = json.dumps(content).translate(str.maketrans({'"':  '\\"'}))
         bsub_com = 'singularity exec --bind {sp} docker://{image}:{tag} validate-payload -cid {cid} -out {outfile} -storepath {sp} -payload \'{content}\''.format(
                 image=config.SINGULARITY_IMAGE, tag=config.SINGULARITY_TAG, cid=callback_id, outfile=outfile, sp=config.STORAGE_PATH, content=content)
         command = 'export http_proxy={hp}; export https_proxy={hsp}; mkdir -p {pd}; bsub -oo {pd}/stdout -eo {pd}/stderr -M {mem} -R "rusage[mem={mem}]" "{bsub_com}"'.format(
                 pd=par_dir, q=config.COMPUTE_FARM_QUEUE, mem=memory, bsub_com=bsub_com, hp=config.REMOTE_HTTP_PROXY, hsp=config.REMOTE_HTTPS_PROXY)
+        logger.debug('command:\n'.format(command))
         stdin, stdout, stderr = ssh.exec_command(command)
         jobid = ssh.parse_jobid(stdout)
+        logger.debug('jobid:\n'.format(jobid))
         results = None
         if jobid is None:
             print("command didn't return a jobid")
@@ -69,6 +80,7 @@ def validate_files_from_payload(callback_id, content):
             return vp.construct_failure_response
     else:
         # maintain this for the sandbox which cannot ssh ebi farm
+        logger.debug('Validate without ssh')
         return vp.validate_files_from_payload(callback_id, content)
     
 
