@@ -58,7 +58,7 @@ spec:
         - name: REMOTE_HTTPS_PROXY
           value: {{.Values.image.env.remoteHttpsProxy}}
         - name: FTP_SERVER
-          value: {{.Values.image.ftpServer}}
+          value: {{.Values.image.env.ftpServer}}
         - name: FTP_USERNAME
           value: {{.Values.image.env.ftpUser}}
         - name: FTP_PASSWORD
