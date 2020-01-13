@@ -45,16 +45,16 @@ def validate_files_from_payload(callback_id, content):
         par_dir = os.path.join(config.STORAGE_PATH, callback_id)
         outfile = os.path.join(par_dir, 'validation.json')
         memory = 4000
-        logger.debug('content:\n'.format(content))
+        logger.debug('content:\n{}'.format(content))
         content = json.dumps(content).translate(str.maketrans({'"':  '\\"'}))
-        bsub_com = 'singularity exec --bind {sp} docker://{image}:{tag} validate-payload -cid {cid} -out {outfile} -storepath {sp} -payload \'{content}\''.format(
-                image=config.SINGULARITY_IMAGE, tag=config.SINGULARITY_TAG, cid=callback_id, outfile=outfile, sp=config.STORAGE_PATH, content=content)
+        bsub_com = 'singularity exec --bind {sp} docker://{image}:{tag} validate-payload -cid {cid} -out {outfile} -storepath {sp} -ftpserver {ftps} -ftpuser {ftpu} -ftppass {ftpp} -payload \'{content}\''.format(
+                image=config.SINGULARITY_IMAGE, tag=config.SINGULARITY_TAG, cid=callback_id, outfile=outfile, sp=config.STORAGE_PATH, ftps=config.FTP_SERVER, ftpu=config.FTP_USERNAME, ftpp=config.FTP_PASSWORD, content=content)
         command = 'export http_proxy={hp}; export https_proxy={hsp}; mkdir -p {pd}; bsub -oo {pd}/stdout -eo {pd}/stderr -M {mem} -R "rusage[mem={mem}]" "{bsub_com}"'.format(
                 pd=par_dir, q=config.COMPUTE_FARM_QUEUE, mem=memory, bsub_com=bsub_com, hp=config.REMOTE_HTTP_PROXY, hsp=config.REMOTE_HTTPS_PROXY)
-        logger.debug('command:\n'.format(command))
+        logger.debug('command:\n{}'.format(command))
         stdin, stdout, stderr = ssh.exec_command(command)
         jobid = ssh.parse_jobid(stdout)
-        logger.debug('jobid:\n'.format(jobid))
+        logger.debug('jobid[]:\n'.format(jobid))
         results = None
         if jobid is None:
             print("command didn't return a jobid")

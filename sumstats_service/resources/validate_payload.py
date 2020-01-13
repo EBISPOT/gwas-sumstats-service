@@ -61,10 +61,20 @@ def main():
     argparser.add_argument("-payload", help='JSON payload (input)', required=True)
     argparser.add_argument("-out", help='JSON output file (e.g. SOME_ID.json)', required=False, default='validation.json')
     argparser.add_argument("-storepath", help='The storage path you want the data written to e.g. /path/to/data', required=False, default=config.STORAGE_PATH)
+    argparser.add_argument("-ftpserver", help='The FTP server name where your files are', required=False, default=config.FTP_SERVER)
+    argparser.add_argument("-ftpuser", help='The FTP username', required=False, default=config.FTP_USERNAME)
+    argparser.add_argument("-ftppass", help='The FTP password', required=False, default=config.FTP_PASSWORD)
+    
     
     args = argparser.parse_args()
     if args.storepath:
         config.STORAGE_PATH = args.storepath
+    if args.ftpserver:
+        config.FTP_SERVER = args.ftpserver
+    if args.ftpuser:
+        config.FTP_USERNAME = args.ftpuser
+    if args.ftppass:
+        config.FTP_PASSWORD = args.ftppass
 
     validate_files_from_payload(args.cid, json.loads(args.payload), args.out)
 

@@ -125,7 +125,7 @@ def get_dir_contents(unique_id):
 # --- Celery tasks --- #
 
 @celery.task(queue='preval', options={'queue': 'preval'})
-def validate_files_in_background(callback_id, content):
+def validate_fi{"callbackID": "NkyuNT2i"}les_in_background(callback_id, content):
     results = au.validate_files_from_payload(callback_id, content)
     return results
     #store_validation_results.apply_async(args=[results], retry=True)
