@@ -128,7 +128,7 @@ def create_dir(transfer, uid, email):
     # create directory
     transfer.operation_mkdir(config.GWAS_ENDPOINT_ID, uid)
     # create shared endpoint
-    display_name = '-'.join([str(date.today()), uid.split('-')[0]])
+    display_name = '-'.join([str(date.today()), uid[0:8]])
     shared_ep_data = {
         "DATA_TYPE": "shared_endpoint",
         "host_endpoint": config.GWAS_ENDPOINT_ID,
