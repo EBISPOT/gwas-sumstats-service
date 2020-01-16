@@ -120,44 +120,45 @@ def get_upload_status(transfer, unique_id, files):
 def check_user(email):
     auth_client = ConfidentialAppAuthClient(config.CLIENT_ID, config.GLOBUS_SECRET)
     user_info = auth_client.get_identities(usernames=email)
-    identity_id = user_info.data['identities'][0]['id']
-    return
+    user_identity = user_info.data['identities']
+    identity_id = user_identity[0]['id'] if user_identity else None
+    return identity_id
 
 
 def create_dir(transfer, uid, email):
-    # create directory
-    transfer.operation_mkdir(config.GWAS_ENDPOINT_ID, uid)
-    # create shared endpoint
-    display_name = '-'.join([str(date.today()), uid[0:8]])
-    shared_ep_data = {
-        "DATA_TYPE": "shared_endpoint",
-        "host_endpoint": config.GWAS_ENDPOINT_ID,
-        "host_path": '/~/' + uid,
-        "display_name": 'ebi#gwas#' + display_name,
-        # optionally specify additional endpoint fields
-        "description": 'ebi#gwas#' + uid,
-        "owner_string": "GWAS Catalog",
-        "contact_email": "gwas-dev@ebi.ac.uk",
-        "organization": "EBI"
-    }
-    create_result = transfer.create_shared_endpoint(shared_ep_data)
-    endpoint_id = create_result.data['id']
-    # get user info
-    auth_client = ConfidentialAppAuthClient(config.CLIENT_ID, config.GLOBUS_SECRET)
-    user_info = auth_client.get_identities(usernames=email)
-    identity_id = user_info.data['identities'][0]['id']
+    identity_id = check_user(email)
+    if identity_id:
+        # create directory
+        transfer.operation_mkdir(config.GWAS_ENDPOINT_ID, uid)
+        # create shared endpoint
+        display_name = '-'.join([str(date.today()), uid[0:8]])
+        shared_ep_data = {
+            "DATA_TYPE": "shared_endpoint",
+            "host_endpoint": config.GWAS_ENDPOINT_ID,
+            "host_path": '/~/' + uid,
+            "display_name": 'ebi#gwas#' + display_name,
+            # optionally specify additional endpoint fields
+            "description": 'ebi#gwas#' + uid,
+            "owner_string": "GWAS Catalog",
+            "contact_email": "gwas-dev@ebi.ac.uk",
+            "organization": "EBI"
+        }
+        create_result = transfer.create_shared_endpoint(shared_ep_data)
+        endpoint_id = create_result.data['id']
 
-    # add user to endpoint
-    rule_data = {
-        "DATA_TYPE": "access",
-        "principal_type": "identity",
-        "principal": identity_id,
-        "path": '/',
-        "permissions": "rw",
-        "notify_email": email
-    }
-    transfer.add_endpoint_acl_rule(endpoint_id, rule_data)
-    return endpoint_id
+        # add user to endpoint
+        rule_data = {
+            "DATA_TYPE": "access",
+            "principal_type": "identity",
+            "principal": identity_id,
+            "path": '/',
+            "permissions": "rw",
+            "notify_email": email
+        }
+        transfer.add_endpoint_acl_rule(endpoint_id, rule_data)
+        return endpoint_id
+    else:
+        return None
 
 
 def load_tokens_from_db():

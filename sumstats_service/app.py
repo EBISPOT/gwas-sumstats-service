@@ -110,8 +110,12 @@ def make_dir():
     globus_origin_id = None
     if globus.list_dir(unique_id) is None: # if not already exists
         globus_origin_id = globus.mkdir(unique_id, email)
-    resp = {'globusOriginID': globus_origin_id}
-    return make_response(jsonify(resp), 201)
+    if globus_origin_id:
+        resp = {'globusOriginID': globus_origin_id}
+        return make_response(jsonify(resp), 201)
+    else:
+        resp = {'error': 'Account not linked to Globus, directory not created or shared'}
+        return make_response(jsonify(resp), 200)
 
 
 @app.route('/v1/sum-stats/globus/ls/<unique_id>')
