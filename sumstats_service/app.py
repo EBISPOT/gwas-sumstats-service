@@ -114,7 +114,7 @@ def make_dir():
         resp = {'globusOriginID': globus_origin_id}
         return make_response(jsonify(resp), 201)
     else:
-        resp = {'error': 'Account not linked to Globus, directory not created or shared'}
+        resp = {'error': 'Account not linked to Globus'}
         return make_response(jsonify(resp), 200)
 
 
