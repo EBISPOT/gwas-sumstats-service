@@ -1,8 +1,9 @@
 import re
 import config
 from sumstats_service.resources.error_classes import *
-from sumstats_service.resources.sqlite_client import sqlClient
+#from sumstats_service.resources.sqlite_client import sqlClient
 import sumstats_service.resources.file_handler as fh
+from sumstats_service.resources.mongo_client import mongoClient
 
 
 class Study:
@@ -47,23 +48,19 @@ class Study:
 
     def set_retrieved_status(self, status):
         self.retrieved = status
-        #sq = sqlClient(config.DB_PATH)
-        #sq.update_retrieved_status(self.study_id, status)
 
     def set_data_valid_status(self, status):
         self.data_valid = status
-        #sq = sqlClient(config.DB_PATH)
-        #sq.update_data_valid_status(self.study_id, status)
 
     def set_error_code(self, error_code):
         # error codes are in the error table (see the DB_SCHEMA)
         self.error_code = error_code
-        #sq = sqlClient(config.DB_PATH)
-        #sq.update_error_code(self.study_id, error_code)
 
     def remove(self):
-        sq = sqlClient(config.DB_PATH)
-        sq.delete_study_entry(self.study_id)
+        #sq = sqlClient(config.DB_PATH)
+        #sq.delete_study_entry(self.study_id)
+        mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
+        mdb.delete_study_entry(self.study_id)
 
     def store_validation_statuses(self):
         self.store_retrieved_status()
@@ -71,17 +68,23 @@ class Study:
         self.store_error_code()
 
     def store_retrieved_status(self):
-        sq = sqlClient(config.DB_PATH)
-        sq.update_retrieved_status(self.study_id, self.retrieved)
+        #sq = sqlClient(config.DB_PATH)
+        #sq.update_retrieved_status(self.study_id, self.retrieved)
+        mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
+        mdb.update_retrieved_status(self.study_id, self.retrieved)
 
     def store_data_valid_status(self):
-        sq = sqlClient(config.DB_PATH)
-        sq.update_data_valid_status(self.study_id, self.data_valid)
+        #sq = sqlClient(config.DB_PATH)
+        #sq.update_data_valid_status(self.study_id, self.data_valid)
+        mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
+        mdb.update_data_valid_status(self.study_id, self.data_valid)
 
     def store_error_code(self):
         # error codes are in the error table (see the DB_SCHEMA)
-        sq = sqlClient(config.DB_PATH)
-        sq.update_error_code(self.study_id, self.error_code)
+        #sq = sqlClient(config.DB_PATH)
+        #sq.update_error_code(self.study_id, self.error_code)
+        mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
+        mdb.update_error_code(self.study_id, self.error_code)
 
     def valid_md5(self):
         # check is alphanumeric
@@ -93,17 +96,32 @@ class Study:
         return False
 
     def get_study_from_db(self):
-        sq = sqlClient(config.DB_PATH)
-        study_metadata = sq.get_study_metadata(self.study_id)
+        #sq = sqlClient(config.DB_PATH)
+        #study_metadata = sq.get_study_metadata(self.study_id)
+        
+        mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
+        study_metadata = mdb.get_study_metadata(self.study_id)
+
         if study_metadata:
-            self.study_id, self.callback_id, self.file_path, self.md5, self.assembly, self.retrieved, self.data_valid, self.error_code, self.readme, self.entryUUID= study_metadata
+            self.study_id = set_var_from_dict(study_metadata, 'studyID', None)
+            self.callback_id = set_var_from_dict(study_metadata, 'callbackID', None)
+            self.file_path = set_var_from_dict(study_metadata, 'filePath', None)
+            self.md5 = set_var_from_dict(study_metadata, 'md5', None)
+            self.assembly = set_var_from_dict(study_metadata, 'assembly', None)
+            self.retrieved = set_var_from_dict(study_metadata, 'retrieved', None) 
+            self.data_valid = set_var_from_dict(study_metadata, 'dataValid', None)
+            self.error_code = set_var_from_dict(study_metadata, 'errorCode', None)
+            self.readme = set_var_from_dict(study_metadata, 'readme', None)
+            self.entryUUID = set_var_from_dict(study_metadata, 'entryUUID', None)
             self.set_error_text()
         return study_metadata
 
     def set_error_text(self):
-        sq = sqlClient(config.DB_PATH)        
+        #sq = sqlClient(config.DB_PATH)        
+        mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
+        
         if self.error_code:
-            self.error_text = sq.get_error_message_from_code(self.error_code)
+            self.error_text = mdb.get_error_message_from_code(self.error_code)
             # We may want a catch if the code is not seen in the database
         else:
             self.error_text = None
@@ -118,13 +136,14 @@ class Study:
                 self.readme,
                 self.entryUUID
                 ]
-        sq = sqlClient(config.DB_PATH)
-        sq.insert_new_study(data)
+        #sq = sqlClient(config.DB_PATH)
+        #sq.insert_new_study(data)
+        mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
+        mdb.insert_new_study(data)
 
 
     def valid_assembly(self):
-        valid_list = ["GRCh38", "GRCh37", "NCBI36", "NCBI35", "NCBI34"]
-        if self.assembly not in valid_list:
+        if self.assembly not in config.VALID_ASSEMBLIES:
             return False
         else:
             return True
@@ -162,7 +181,11 @@ class Study:
                 else:
                     self.set_retrieved_status(0)
                     self.set_error_code(1)
-        
+    
+    
+def set_var_from_dict(dictionary, var_name, default):
+    return dictionary[var_name] if var_name in dictionary else default
+ 
         
     
         

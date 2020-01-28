@@ -9,6 +9,8 @@ from tests.test_constants import *
 from sumstats_service.resources.sqlite_client import sqlClient
 import sumstats_service.resources.payload as pl
 import config
+from pymongo import MongoClient
+
 
 
 class TestAPP:
@@ -21,18 +23,20 @@ class TestAPP:
         sq.create_conn()
         sq.cur.executescript(config.DB_SCHEMA)
         self.valid_url = "file://{}".format(os.path.abspath("./tests/test_sumstats_file.tsv"))
-        
             
     def teardown_method(self, method):
         os.remove(self.testDB)
+        client = MongoClient(config.MONGO_URI)
+        client.drop_database(config.MONGO_DB)
 
     def test_index(self):
         tester = app.test_client(self)
         response = tester.get('/', content_type='html/json')
         study_link = response.get_json()['_links']['sumstats']['href']
         assert response.status_code == 200
+    
 
-    def test_get_200_based_on_good_callback_id(self):
+    def test_get_200_based_on_good_callback_id(self, ):
         valid_json = {
                "requestEntries": [
                    {

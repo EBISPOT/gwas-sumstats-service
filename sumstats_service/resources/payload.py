@@ -1,6 +1,7 @@
 import shortuuid
 import json
-from sumstats_service.resources.sqlite_client import sqlClient
+#from sumstats_service.resources.sqlite_client import sqlClient
+from sumstats_service.resources.mongo_client import mongoClient
 from sumstats_service.resources.error_classes import *
 import sumstats_service.resources.study_service as st
 import sumstats_service.resources.file_handler as fh
@@ -32,12 +33,26 @@ class Payload:
         return True
 
     def get_data_for_callback_id(self):
-        sq = sqlClient(config.DB_PATH)
-        data = sq.get_data_from_callback_id(self.callback_id)
+        #sq = sqlClient(config.DB_PATH)
+        #data = sq.get_data_from_callback_id(self.callback_id)
+        mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
+        data = mdb.get_data_from_callback_id(self.callback_id)
+        
         if data is None:
             raise RequestedNotFound("Couldn't find resource with callback id: {}".format(self.callback_id))
-        for row in data:
-            study_id, callback_id, file_path, md5, assembly, retrieved, data_valid, error_code, readme, entryUUID = row
+        for study_metadata in data:
+            #study_id, callback_id, file_path, md5, assembly, retrieved, data_valid, error_code, readme, entryUUID = row
+            study_id = st.set_var_from_dict(study_metadata, 'studyID', None)
+            callback_id = st.set_var_from_dict(study_metadata, 'callbackID', None)
+            file_path = st.set_var_from_dict(study_metadata, 'filePath', None)
+            md5 = st.set_var_from_dict(study_metadata, 'md5', None)
+            assembly = st.set_var_from_dict(study_metadata, 'assembly', None)
+            retrieved = st.set_var_from_dict(study_metadata, 'retrieved', None) 
+            data_valid = st.set_var_from_dict(study_metadata, 'dataValid', None)
+            error_code = st.set_var_from_dict(study_metadata, 'errorCode', None)
+            readme = st.set_var_from_dict(study_metadata, 'readme', None)
+            entryUUID = st.set_var_from_dict(study_metadata, 'entryUUID', None)
+
             study = st.Study(study_id=study_id, callback_id=callback_id,
                              file_path=file_path, md5=md5,
                              assembly=assembly, retrieved=retrieved,
@@ -77,8 +92,9 @@ class Payload:
 
     def generate_callback_id(self):
         randid = shortuuid.uuid()[:8]
-        sq = sqlClient(config.DB_PATH)
-        while sq.get_data_from_callback_id(randid) is not None:
+        #sq = sqlClient(config.DB_PATH)
+        mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
+        while mdb.get_data_from_callback_id(randid) is not None:
             randid = shortuuid.uuid()[:8]
         self.callback_id = randid
 

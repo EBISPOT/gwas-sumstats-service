@@ -5,6 +5,7 @@ from tests.test_constants import *
 import sumstats_service.resources.payload as pl
 from sumstats_service.resources.error_classes import *
 from sumstats_service.resources.sqlite_client import sqlClient
+from pymongo import MongoClient
 
 
 class TestPayload(unittest.TestCase):
@@ -22,6 +23,8 @@ class TestPayload(unittest.TestCase):
 
     def tearDown(self):
         os.remove(self.testDB)
+        client = MongoClient(config.MONGO_URI)
+        client.drop_database(config.MONGO_DB)
 
     def test_generate_callback_id(self):
         payload = pl.Payload()
