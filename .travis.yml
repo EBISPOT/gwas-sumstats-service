@@ -7,9 +7,6 @@ branches:
 services: 
   - rabbitmq
   - mongodb
-before_script:
-  - sleep 15
-  - mongo mongod 
 addons:
   apt:
     packages:
