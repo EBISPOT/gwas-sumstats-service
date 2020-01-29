@@ -152,8 +152,7 @@ def create_dir(transfer, uid, email):
             "principal_type": "identity",
             "principal": identity_id,
             "path": '/',
-            "permissions": "rw",
-            "notify_email": email
+            "permissions": "rw"
         }
         transfer.add_endpoint_acl_rule(endpoint_id, rule_data)
         return endpoint_id
