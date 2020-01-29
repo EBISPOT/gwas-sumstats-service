@@ -4,7 +4,9 @@ python:
 branches:
   only:
   - master
-services: rabbitmq
+services: 
+  - rabbitmq
+  - mongodb
 addons:
   apt:
     packages:

@@ -3,6 +3,8 @@ import os
 import config
 from sumstats_service.resources.sqlite_client import sqlClient
 import sumstats_service.resources.study_service as st
+from pymongo import MongoClient
+
 
 
 class TestStudyService(unittest.TestCase):
@@ -26,6 +28,9 @@ class TestStudyService(unittest.TestCase):
 
     def tearDown(self):
         os.remove(self.testDB)
+        client = MongoClient(config.MONGO_URI)
+        client.drop_database(config.MONGO_DB)
+
 
     def test_valid_study_id(self):
         study = st.Study(study_id=self.study_id, file_path=self.file_path, md5=self.md5, assembly=self.assembly)
@@ -40,27 +45,27 @@ class TestStudyService(unittest.TestCase):
         study.create_entry_for_study()
         check = study.get_study_from_db()
         self.assertIsNotNone(check)
-        self.assertEqual(check[0], self.study_id)
+        self.assertEqual(check['studyID'], self.study_id)
 
     def test_update_retrieved_status(self):
         study = st.Study(study_id=self.study_id, file_path=self.file_path, md5=self.md5, assembly=self.assembly)
         study.create_entry_for_study()
         check = study.get_study_from_db()
-        self.assertIsNone(check[5])
+        self.assertTrue('retrieved' not in check)
         study.set_retrieved_status(1)
         study.store_retrieved_status()
         check = study.get_study_from_db()
-        self.assertEqual(check[5], 1)
+        self.assertEqual(check['retrieved'], 1)
 
     def test_update_data_valid_status(self):
         study = st.Study(study_id=self.study_id, file_path=self.file_path, md5=self.md5, assembly=self.assembly)
         study.create_entry_for_study()
         check = study.get_study_from_db()
-        self.assertIsNone(check[6])
+        self.assertTrue('dataValid' not in check)
         study.set_data_valid_status(1)
         study.store_data_valid_status()
         check = study.get_study_from_db()
-        self.assertEqual(check[6], 1)
+        self.assertEqual(check['dataValid'], 1)
 
     def test_get_statuses(self):
         study = st.Study(study_id=self.study_id, file_path=self.file_path, md5=self.md5, assembly=self.assembly)

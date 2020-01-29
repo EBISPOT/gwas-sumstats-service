@@ -28,8 +28,8 @@ SINGULARITY_TAG = _env_variable_else('SINGULARITY_TAG', 'latest')
 # --- MONGO DB --- #
 
 MONGO_URI = _env_variable_else('MONGO_URI', None)
-MONGO_USER = _env_variable_else('MONGO_USER', None)
-MONGO_PASSWORD = _env_variable_else('MONGO_PASSWORD', None)
+MONGO_USER = _env_variable_else('MONGO_USER', '')
+MONGO_PASSWORD = _env_variable_else('MONGO_PASSWORD', '')
 MONGO_DB = _env_variable_else('MONGO_DB', None)
 
 
@@ -81,3 +81,12 @@ DB_SCHEMA = """
             COMMIT;
             """
 
+VALIDATION_ERRORS = [
+                        {'id': 1, 'errorText': 'The summary statistics file cannot be found'},
+                        {'id': 2, 'errorText': 'The md5sum of the summary statistics file does not match the one provided'},
+                        {'id': 3, 'errorText': 'Summary statistics file validation failed, please run the validator on your file to see the errors (available here: https://pypi.org/project/ss-validate/)'},
+                        {'id': 4, 'errorText': 'Missing mandatory field, you must provide (i) file path/URL, (ii) md5 sum and (iii) genome assembly for each file'},
+                        {'id': 5, 'errorText': 'Genome assembly invalid - please see documentation for valid assemblies'}
+                    ]
+
+VALID_ASSEMBLIES = ["GRCh38", "GRCh37", "NCBI36", "NCBI35", "NCBI34"]
