@@ -10,8 +10,8 @@ class mongoClient():
         self.password = password
         self.client = MongoClient(self.uri, username=self.username, password=self.password)
         self.database = self.client[database]
-        self.study_collection = self.database['study-meta']
-        self.error_collection = self.database['errors']
+        self.study_collection = self.database['sumstats-study-meta']
+        self.error_collection = self.database['sumstats-errors']
 
     """ generic methods"""
 
