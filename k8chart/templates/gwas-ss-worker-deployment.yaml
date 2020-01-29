@@ -63,6 +63,14 @@ spec:
           value: {{.Values.image.env.ftpUser}}
         - name: FTP_PASSWORD
           value: {{.Values.image.env.ftpPassword}}
+        - name: MONGO_URI
+          value: {{.Values.image.env.mongoURI}}
+        - name: MONGO_USER
+          value: {{.Values.image.env.mongoUser}}
+        - name: MONGO_PASSWORD
+          value: {{.Values.image.env.mongoPassword}}
+        - name: MONGO_DB
+          value: {{.Values.image.env.mongoDB}}
       volumes:
       - name: log
         persistentVolumeClaim:
