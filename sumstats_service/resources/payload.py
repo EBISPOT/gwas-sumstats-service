@@ -146,7 +146,7 @@ class Payload:
         if not author_name:
             raise BadUserRequest("authorName not provided")
         if not pmid:
-            raise BadUserRequest("pmID not provided")
+            raise BadUserRequest("pmid not provided")
         if not gcst_list:
             raise BadUserRequest("studyList not provided")
 

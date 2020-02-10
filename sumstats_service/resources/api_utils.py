@@ -120,6 +120,11 @@ def remove_payload_files(callback_id):
     payload.remove_payload_directory()
 
 
+def publish_sumstats(callback_id):
+    pass
+    
+
+
 def construct_get_payload_response(callback_id):
     payload = pl.Payload(callback_id=callback_id)
     payload.get_data_for_callback_id()
