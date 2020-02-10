@@ -33,15 +33,12 @@ class Payload:
         return True
 
     def get_data_for_callback_id(self):
-        #sq = sqlClient(config.DB_PATH)
-        #data = sq.get_data_from_callback_id(self.callback_id)
         mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
         data = mdb.get_data_from_callback_id(self.callback_id)
         
         if data is None:
             raise RequestedNotFound("Couldn't find resource with callback id: {}".format(self.callback_id))
         for study_metadata in data:
-            #study_id, callback_id, file_path, md5, assembly, retrieved, data_valid, error_code, readme, entryUUID = row
             study_id = st.set_var_from_dict(study_metadata, 'studyID', None)
             callback_id = st.set_var_from_dict(study_metadata, 'callbackID', None)
             file_path = st.set_var_from_dict(study_metadata, 'filePath', None)
@@ -52,11 +49,14 @@ class Payload:
             error_code = st.set_var_from_dict(study_metadata, 'errorCode', None)
             readme = st.set_var_from_dict(study_metadata, 'readme', None)
             entryUUID = st.set_var_from_dict(study_metadata, 'entryUUID', None)
+            author_name = st.set_var_from_dict(study_metadata, 'authorName', None)
+            pmid = st.set_var_from_dict(study_metadata, 'pmid', None)
+            gcst = st.set_var_from_dict(study_metadata, 'gcst', None)
 
-            study = st.Study(study_id=study_id, callback_id=callback_id,
-                             file_path=file_path, md5=md5,
-                             assembly=assembly, retrieved=retrieved,
-                             data_valid=data_valid, error_code=error_code, readme=readme, entryUUID=entryUUID)
+            study = st.Study(study_id=study_id, callback_id=callback_id, file_path=file_path, 
+                            md5=md5, assembly=assembly, retrieved=retrieved,
+                            data_valid=data_valid, error_code=error_code, readme=readme, 
+                            entryUUID=entryUUID, author_name=author_name, pmid=pmid, gcst=gcst)
             self.study_obj_list.append(study)
         return self.study_obj_list
 
@@ -136,7 +136,53 @@ class Payload:
         entryUUID = study_dict['entryUUID'] if 'entryUUID' in study_dict else None        
         return (study_id, file_path, md5, assembly, readme, entryUUID)
 
+    
+
     def remove_payload_directory(self):
         fh.remove_payload(self.callback_id)
+
+    def update_publication_details(self, publication_content):
+        author_name, pmid, gcst_list = self.parse_publication_content(publication_content)
+        if not author_name:
+            raise BadUserRequest("authorName not provided")
+        if not pmid:
+            raise BadUserRequest("pmid not provided")
+        if not gcst_list:
+            raise BadUserRequest("studyList not provided")
+
+        for i in gcst_list:
+            if i["id"] not in [study.study_id for study in self.study_obj_list]:
+                raise BadUserRequest("study id not found: {}".format(i["id"]))
+            for study in self.study_obj_list:
+                if str(study.study_id) == str(i["id"]):
+                    study.set_author_name(author_name)
+                    study.set_pmid(pmid)
+                    study.set_gcst(i["gcst"])
+                    study.store_publication_details()
+                    break
+
+    @staticmethod
+    def parse_publication_content(publication_content):
+        """
+        Expecting:
+        {
+            "pmid": "1234567",
+            "authorName": "BlogsJ",
+            "studyList": [
+                {
+                    "id": "xyz321",
+                    "gcst": "GCST_123456"
+                },
+                {
+                    "id": "abc123",
+                    "gcst": "GCST_2345667"
+                }
+            ]
+        }
+        """
+        author_name = publication_content['authorName'] if 'authorName' in publication_content else None
+        pmid = publication_content['pmid'] if 'pmid' in publication_content else None
+        gcst_list = publication_content['studyList'] if 'studyList' in publication_content else None
+        return (author_name, pmid, gcst_list)
 
 

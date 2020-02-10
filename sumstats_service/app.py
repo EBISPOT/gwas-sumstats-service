@@ -100,6 +100,17 @@ def delete_sumstats(callback_id):
                     mimetype="application/json")
 
 
+@app.route('/v1/sum-stats/<string:callback_id>', methods=['PUT'])
+def update_sumstats(callback_id):
+    content = request.get_json(force=True)
+    resp = endpoints.update_sumstats(callback_id=callback_id, content=content)
+    if resp:
+        publish_sumstats.apply_async(args=[callback_id], retry=True)
+    return Response(response=resp,
+                    status=200,
+                    mimetype="application/json")
+
+
 # --- Globus methods --- #
 
 @app.route('/v1/sum-stats/globus/mkdir', methods=['POST'])
@@ -132,7 +143,6 @@ def get_dir_contents(unique_id):
 def validate_files_in_background(callback_id, content):
     results = au.validate_files_from_payload(callback_id, content)
     return results
-    #store_validation_results.apply_async(args=[results], retry=True)
 
 
 @celery.task(queue='postval', options={'queue': 'postval'})
@@ -143,6 +153,11 @@ def store_validation_results(results):
 @celery.task(queue='preval', options={'queue': 'preval'})
 def remove_payload_files(callback_id):
     au.remove_payload_files(callback_id)
+
+
+@celery.task(queue='preval', options={'queue': 'preval'})
+def publish_sumstats(callback_id):
+    au.publish_sumstats(callback_id)
 
 
 if __name__ == '__main__':

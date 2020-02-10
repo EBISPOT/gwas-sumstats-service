@@ -60,6 +60,14 @@ class mongoClient():
         data['errorCode'] = error_code
         self.replace_one(self.study_collection, objectid, data)
 
+    def update_publication_details(self, study, author_name, pmid, gcst):
+        data = self.get_study_metadata(study)
+        objectid = data['_id']
+        data['authorName'] = author_name
+        data['pmid'] = pmid
+        data['gcst'] = gcst
+        self.replace_one(self.study_collection, objectid, data)
+
     def get_study_count(self):
         return self.study_collection.count_documents({})
 

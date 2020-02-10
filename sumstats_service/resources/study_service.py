@@ -9,8 +9,9 @@ from sumstats_service.resources.mongo_client import mongoClient
 class Study:
     def __init__(self, study_id, file_path=None,
                  md5=None, assembly=None, callback_id=None,
-                 retrieved=None, data_valid=None,
-                 status=None, error_code=None, readme=None, entryUUID=None):
+                 retrieved=None, data_valid=None, status=None, 
+                 error_code=None, readme=None, entryUUID=None,
+                 author_name=None, pmid=None, gcst=None):
         self.study_id = study_id
         self.file_path = file_path
         self.md5 = md5
@@ -22,7 +23,9 @@ class Study:
         self.error_text = None
         self.readme = readme
         self.entryUUID = entryUUID
-        
+        self.author_name = author_name
+        self.pmid = pmid
+        self.gcst = gcst
 
     def valid_study_id(self):
         if re.match('^[a-zA-Z0-9]+$', self.study_id) and len(self.study_id) > 3:
@@ -52,13 +55,23 @@ class Study:
     def set_data_valid_status(self, status):
         self.data_valid = status
 
+    def set_author_name(self, author_name):
+        self.author_name = author_name
+
+    def set_pmid(self, pmid):
+        self.pmid = pmid
+
+    def set_gcst(self, gcst):
+        self.gcst = gcst
+
+    def get_gcst(self):
+        return self.gcst
+
     def set_error_code(self, error_code):
         # error codes are in the error table (see the DB_SCHEMA)
         self.error_code = error_code
 
     def remove(self):
-        #sq = sqlClient(config.DB_PATH)
-        #sq.delete_study_entry(self.study_id)
         mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
         mdb.delete_study_entry(self.study_id)
 
@@ -68,23 +81,21 @@ class Study:
         self.store_error_code()
 
     def store_retrieved_status(self):
-        #sq = sqlClient(config.DB_PATH)
-        #sq.update_retrieved_status(self.study_id, self.retrieved)
         mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
         mdb.update_retrieved_status(self.study_id, self.retrieved)
 
     def store_data_valid_status(self):
-        #sq = sqlClient(config.DB_PATH)
-        #sq.update_data_valid_status(self.study_id, self.data_valid)
         mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
         mdb.update_data_valid_status(self.study_id, self.data_valid)
 
     def store_error_code(self):
         # error codes are in the error table (see the DB_SCHEMA)
-        #sq = sqlClient(config.DB_PATH)
-        #sq.update_error_code(self.study_id, self.error_code)
         mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
         mdb.update_error_code(self.study_id, self.error_code)
+
+    def store_publication_details(self):
+        mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
+        mdb.update_publication_details(self.study_id, self.author_name, self.pmid, self.gcst)
 
     def valid_md5(self):
         # check is alphanumeric
@@ -113,6 +124,9 @@ class Study:
             self.error_code = set_var_from_dict(study_metadata, 'errorCode', None)
             self.readme = set_var_from_dict(study_metadata, 'readme', None)
             self.entryUUID = set_var_from_dict(study_metadata, 'entryUUID', None)
+            self.author_name = set_var_from_dict(study_metadata, 'authorName', None)
+            self.pmid = set_var_from_dict(study_metadata, 'pmid', None)
+            self.gcst = set_var_from_dict(study_metadata, 'gcst', None)
             self.set_error_text()
         return study_metadata
 
