@@ -35,6 +35,7 @@ image:
     mongoDB: ""
     httpProxy: ""
     httpsProxy: ""
+    stagingPath: "./staging"
     
 
 volume:

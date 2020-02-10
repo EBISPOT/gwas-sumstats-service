@@ -120,9 +120,13 @@ def remove_payload_files(callback_id):
     payload.remove_payload_directory()
 
 
-def publish_sumstats(callback_id):
-    pass
-    
+def publish_sumstats(study_list):
+    for s in study_list['study_list']:
+        study = st.Study(study_id=s['id'], file_path=s['file_path'],
+                        assembly=s['assembly'], callback_id=s['callback_id'],
+                        readme=s['readme'], entryUUID=s['entryUUID'],
+                        author_name=s['author_name'], pmid=s['pmid'], gcst=s['gcst'])
+        study.move_files_to_staging()
 
 
 def construct_get_payload_response(callback_id):
@@ -144,8 +148,24 @@ def update_payload(callback_id, content):
     payload = pl.Payload(callback_id=callback_id)
     payload.get_data_for_callback_id()
     payload.update_publication_details(content)
-    updated_content = construct_get_payload_response(callback_id)
-    return updated_content
+    study_list = []
+    for study in payload.study_obj_list:
+        study_report = {
+                        "id": study.study_id,
+                        "gcst": study.gcst,
+                        "pmid": study.pmid,
+                        "file_path": study.file_path,
+                        "assembly": study.assembly,
+                        "callback_id": study.callback_id,
+                        "readme": study.readme,
+                        "entryUUID": study.entryUUID,
+                        "author_name": study.author_name
+                       }
+        study_list.append(study_report)
+    response = {"callbackID": str(callback_id),
+                "studyList": study_list}
+    return response
+
 
 def create_study_report(study):
     report = {

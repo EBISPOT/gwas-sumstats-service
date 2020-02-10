@@ -179,7 +179,8 @@ class Study:
             if not self.valid_assembly():
                 self.set_error_code(5)
             else:
-                ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id, md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID)
+                ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id, 
+                        md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID)
                 if ssf.retrieve() is True:
                     self.set_retrieved_status(1)
                     if not ssf.md5_ok():
@@ -195,6 +196,15 @@ class Study:
                 else:
                     self.set_retrieved_status(0)
                     self.set_error_code(1)
+    
+    
+    def move_file_to_staging(self):
+        dir_name = '_'.join([self.author_name, str(self.pmid), self.gcst])
+        sumstats_file_name = self.gcst + '_build' + str(self.assembly)
+        ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, 
+                study_id=self.study_id, readme=self.readme, entryUUID=self.entryUUID, 
+                staging_dir_name=dir_name, staging_file_name=sumstats_file_name)
+        ssf.move_file_to_staging()
     
     
 def set_var_from_dict(dictionary, var_name, default):
