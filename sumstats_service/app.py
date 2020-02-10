@@ -105,9 +105,8 @@ def update_sumstats(callback_id):
     content = request.get_json(force=True)
     resp = endpoints.update_sumstats(callback_id=callback_id, content=content)
     if resp:
-        publish_sumstats.apply_async(args=[callback_id], retry=True)
-    return Response(response=resp,
-                    status=200,
+        publish_sumstats.apply_async(args=[resp], retry=True)
+    return Response(status=200,
                     mimetype="application/json")
 
 
@@ -156,8 +155,8 @@ def remove_payload_files(callback_id):
 
 
 @celery.task(queue='preval', options={'queue': 'preval'})
-def publish_sumstats(callback_id):
-    au.publish_sumstats(callback_id)
+def publish_sumstats(resp):
+    au.publish_sumstats(resp)
 
 
 if __name__ == '__main__':

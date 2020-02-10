@@ -92,7 +92,6 @@ class Payload:
 
     def generate_callback_id(self):
         randid = shortuuid.uuid()[:8]
-        #sq = sqlClient(config.DB_PATH)
         mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
         while mdb.get_data_from_callback_id(randid) is not None:
             randid = shortuuid.uuid()[:8]
@@ -141,6 +140,7 @@ class Payload:
     def remove_payload_directory(self):
         fh.remove_payload(self.callback_id)
 
+    
     def update_publication_details(self, publication_content):
         author_name, pmid, gcst_list = self.parse_publication_content(publication_content)
         if not author_name:

@@ -27,4 +27,4 @@ def create_studies(content):
 
 def update_sumstats(callback_id, content):
     updated_content = au.update_payload(callback_id, content)
-    return json.dumps(updated_content)
+    return updated_content

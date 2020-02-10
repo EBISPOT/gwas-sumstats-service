@@ -20,7 +20,9 @@ logger = logging.getLogger(__name__)
 
 
 class SumStatFile:
-    def __init__(self, file_path=None, callback_id=None, study_id=None, md5exp=None, readme=None, entryUUID=None):
+    def __init__(self, file_path=None, callback_id=None, study_id=None, 
+                md5exp=None, readme=None, entryUUID=None,
+                staging_dir_name=None, staging_file_name=None):
         self.file_path = file_path
         self.callback_id = callback_id
         self.study_id = study_id
@@ -28,6 +30,9 @@ class SumStatFile:
         self.logfile = None
         self.readme = readme
         self.entryUUID = entryUUID
+        self.staging_dir_name = staging_dir_name
+        self.staging_file_name = staging_file_name
+
 
     def set_logfile(self):
         for handler in logger.handlers[:]:  # remove all old handlers
@@ -186,6 +191,24 @@ class SumStatFile:
             else:
                 logger.error("Unable to determine file type/extension setting to .tsv")
                 return ".tsv"
+
+
+    def move_file_to_staging(self):
+        source_file =  self.get_store_path()
+        file_ext = self.get_ext()
+        source_readme =  os.path.join(self.parent_path, str(self.study_id)) + ".README"
+        dest_dir = os.path.join(config.STAGING_PATH, self.staging_dir_name)
+        dest_file = os.path.join(dest_dir, self.staging_file_name) + file_ext
+        dest_readme = os.path.join(dest_dir, "README.txt") 
+        try:
+            os.makedirs(dest_dir)
+        except FileExistsError:
+            pass
+        os.rename(source_file, dest_file)
+        os.rename(source_readme, dest_readme)
+        return True
+
+
 
 
 def md5_check(file):
