@@ -70,7 +70,7 @@ This handles the uploaded summary statistics files, validates them, reports erro
 
 ### Example POST method
 ```
-curl -i -H "Content-Type: application/json" -X POST -d '{"requestEntries":[{"id":"abc123","filePath":"https://raw.githubusercontent.com/EBISPOT/gwas-sumstats-service/master/tests/test_sumstats_file.tsv","md5":"a1195761f082f8cbc2f5a560743077cc","assembly":"GRCh38", "readme":"optional text"},{"id":"bcd234","filePath":"https://raw.githubusercontent.com/EBISPOT/gwas-sumstats-service/master/tests/test_sumstats_file.tsv","md5":"a1195761f082f8cbc","assembly":"GRCh38"}]}' http://localhost:8000/v1/sum-stats
+curl -i -H "Content-Type: application/json" -X POST -d '{"requestEntries":[{"id":"abc123","filePath":"https://raw.githubusercontent.com/EBISPOT/gwas-sumstats-service/master/tests/test_sumstats_file.tsv","md5":"a1195761f082f8cbc2f5a560743077cc","assembly":"GRCh38", "readme":"optional text", "entryUUID": "globusdir"},{"id":"bcd234","filePath":"https://raw.githubusercontent.com/EBISPOT/gwas-sumstats-service/master/tests/test_sumstats_file.tsv","md5":"a1195761f082f8cbc","assembly":"GRCh38", "entryUUID": "globusdir"}]}' http://localhost:8000/v1/sum-stats
 
 HTTP/1.0 201 CREATED
 Content-Type: application/json

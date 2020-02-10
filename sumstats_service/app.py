@@ -100,6 +100,15 @@ def delete_sumstats(callback_id):
                     mimetype="application/json")
 
 
+@app.route('/v1/sum-stats/<string:callback_id>', methods=['PUT'])
+def update_sumstats(callback_id):
+    content = request.get_json(force=True)
+    resp = endpoints.update_sumstats(callback_id=callback_id, content=content)
+    return Response(response=resp,
+                    status=200,
+                    mimetype="application/json")
+
+
 # --- Globus methods --- #
 
 @app.route('/v1/sum-stats/globus/mkdir', methods=['POST'])

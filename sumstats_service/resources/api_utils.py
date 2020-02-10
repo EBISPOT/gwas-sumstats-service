@@ -44,7 +44,7 @@ def validate_files_from_payload(callback_id, content):
         ssh = sshc.SSHClient(host=config.COMPUTE_FARM_LOGIN_NODE, username=config.COMPUTE_FARM_USERNAME)
         par_dir = os.path.join(config.STORAGE_PATH, callback_id)
         outfile = os.path.join(par_dir, 'validation.json')
-        memory = 4000
+        memory = 16000
         logger.debug('content:\n{}'.format(content))
         content = json.dumps(content).translate(str.maketrans({'"':  '\\"'}))
         bsub_com = 'singularity exec --bind {sp} docker://{image}:{tag} validate-payload -cid {cid} -out {outfile} -storepath {sp} -ftpserver {ftps} -ftpuser {ftpu} -ftppass {ftpp} -payload \'{content}\''.format(
@@ -120,7 +120,6 @@ def remove_payload_files(callback_id):
     payload.remove_payload_directory()
 
 
-
 def construct_get_payload_response(callback_id):
     payload = pl.Payload(callback_id=callback_id)
     payload.get_data_for_callback_id()
@@ -135,10 +134,19 @@ def construct_get_payload_response(callback_id):
                 }
     return response
 
+
+def update_payload(callback_id, content):
+    payload = pl.Payload(callback_id=callback_id)
+    payload.get_data_for_callback_id()
+    payload.update_publication_details(content)
+    updated_content = construct_get_payload_response(callback_id)
+    return updated_content
+
 def create_study_report(study):
     report = {
               "id": study.study_id,
               "status": study.get_status(),
-              "error": study.get_error_report()
+              "error": study.get_error_report(),
+              "gcst": study.get_gcst()
               }
     return report
