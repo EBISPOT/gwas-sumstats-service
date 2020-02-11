@@ -205,17 +205,19 @@ class SumStatFile:
             os.makedirs(dest_dir)
         except FileExistsError:
             pass
-        os.rename(source_readme, dest_readme)
-        
-        source_file = glob(self.store_path + ".*")[0]
-        file_ext = self.get_ext()
-        source_file = self.store_path
-        dest_file = os.path.join(dest_dir, self.staging_file_name) + file_ext
-
-        os.rename(source_file, dest_file)
+        try:
+            os.rename(source_readme, dest_readme)
+        except FileNotFoundError:
+            pass
+        try:
+            self.store_path = glob(self.store_path + ".*[!log]")[0]
+            file_ext = self.get_ext()
+            dest_file = os.path.join(dest_dir, self.staging_file_name) + file_ext
+            os.rename(self.store_path, dest_file)
+        except (IndexError, FileNotFoundError, OSError) as e:
+            logger.error("Error: {}\nCould not rename file from {} --> {}".format(e, self.store_path, dest_file))
+            return False
         return True
-
-
 
 
 def md5_check(file):
