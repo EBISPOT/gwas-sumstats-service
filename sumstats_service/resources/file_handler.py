@@ -1,4 +1,5 @@
 import os
+from glob import glob
 import urllib
 from urllib.parse import urlparse, parse_qs, urlunparse
 import requests
@@ -121,7 +122,7 @@ class SumStatFile:
     def get_store_path(self):
         if not self.store_path:
             self.set_store_path()
-            self.get_ext()
+            ext = self.get_ext()
             path_with_ext = self.store_path + ext
             self.store_path =  path_with_ext
         return self.store_path
@@ -196,18 +197,22 @@ class SumStatFile:
     def move_file_to_staging(self):
         self.set_parent_path()
         self.set_store_path()
-        source_file =  self.get_store_path()
-        file_ext = self.get_ext()
-        source_readme =  os.path.join(self.parent_path, str(self.study_id)) + ".README"
+        # We know the readme name exactly, but we don't know the extension of the sumstats file
         dest_dir = os.path.join(config.STAGING_PATH, self.staging_dir_name)
-        dest_file = os.path.join(dest_dir, self.staging_file_name) + file_ext
+        source_readme =  os.path.join(self.parent_path, str(self.study_id)) + ".README"
         dest_readme = os.path.join(dest_dir, "README.txt") 
         try:
             os.makedirs(dest_dir)
         except FileExistsError:
             pass
-        os.rename(source_file, dest_file)
         os.rename(source_readme, dest_readme)
+        
+        source_file = glob(self.store_path + ".*")[0]
+        file_ext = self.get_ext()
+        source_file = self.store_path
+        dest_file = os.path.join(dest_dir, self.staging_file_name) + file_ext
+
+        os.rename(source_file, dest_file)
         return True
 
 
