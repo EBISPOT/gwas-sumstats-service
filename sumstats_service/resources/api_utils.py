@@ -121,7 +121,7 @@ def remove_payload_files(callback_id):
 
 
 def publish_sumstats(study_list):
-    for s in study_list['study_list']:
+    for s in study_list['studyList']:
         study = st.Study(study_id=s['id'], file_path=s['file_path'],
                         assembly=s['assembly'], callback_id=s['callback_id'],
                         readme=s['readme'], entryUUID=s['entryUUID'],
