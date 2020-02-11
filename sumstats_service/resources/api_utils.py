@@ -126,7 +126,7 @@ def publish_sumstats(study_list):
                         assembly=s['assembly'], callback_id=s['callback_id'],
                         readme=s['readme'], entryUUID=s['entryUUID'],
                         author_name=s['author_name'], pmid=s['pmid'], gcst=s['gcst'])
-        study.move_files_to_staging()
+        study.move_file_to_staging()
 
 
 def construct_get_payload_response(callback_id):
