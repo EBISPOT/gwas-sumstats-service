@@ -194,6 +194,7 @@ class SumStatFile:
 
 
     def move_file_to_staging(self):
+        self.set_parent_path()
         self.set_store_path()
         source_file =  self.get_store_path()
         file_ext = self.get_ext()
