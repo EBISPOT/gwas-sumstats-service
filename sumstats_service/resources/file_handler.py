@@ -207,7 +207,7 @@ class SumStatFile:
             pass
         os.rename(source_readme, dest_readme)
         
-        source_file = glob(os.path.join(self.store_path + ".*"))[0]
+        source_file = glob(self.store_path + ".*")[0]
         file_ext = self.get_ext()
         source_file = self.store_path
         dest_file = os.path.join(dest_dir, self.staging_file_name) + file_ext
