@@ -16,7 +16,6 @@ logging.basicConfig(level=logging.DEBUG, format='(%(levelname)s): %(message)s')
 logger = logging.getLogger(__name__)
 
 
-
 def create_href(method_name, params=None):
     params = params or {}
     params['_external'] = True
