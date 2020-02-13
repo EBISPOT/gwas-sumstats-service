@@ -199,13 +199,13 @@ class SumStatFile:
         self.set_store_path()
         # We know the readme name exactly, but we don't know the extension of the sumstats file
         source_readme =  os.path.join(self.parent_path, str(self.study_id)) + ".README"
-        upload_to_ftp(server, user, password, source_readme, self.staging_dir_name, "README.txt")
+        upload_to_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=source_readme, dest_dir=self.staging_dir_name, dest_file="README.txt")
         try:
             self.store_path = glob(self.store_path + ".*[!log]")[0]
             if self.store_path:
                 file_ext = self.get_ext()
                 dest_file = self.staging_file_name + file_ext
-                upload_to_ftp(server, user, password, self.store_path, self.staging_dir_name, dest_file)
+                upload_to_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=self.store_path, dest_dir=self.staging_dir_name, dest_file=dest_file)
             else:
                 logger.error("Error: {}\nCould not locate file for {}".format(self.study_id))
                 return False

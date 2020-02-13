@@ -7,7 +7,7 @@ def _env_variable_else(env_var_name, default):
 DB_PATH = "./data/sumstats_meta.db"
 STORAGE_PATH = _env_variable_else('STORAGE_PATH', './data')
 LOGGING_PATH = "./logs"
-STAGING_PATH = _env_variable_else('STAGING_PATH', './staging')
+STAGING_PATH = _env_variable_else('STAGING_PATH', 'depo_ss_staging')
 
 
 # --- Rabbit and Celery --- #
