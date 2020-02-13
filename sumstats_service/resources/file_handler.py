@@ -195,6 +195,8 @@ class SumStatFile:
 
 
     def move_file_to_staging(self):
+        self.staging_dir_name = str(self.staging_dir_name.replace(' ', ''))
+        self.staging_file_name = str(self.staging_file_name.replace(' ', ''))
         self.set_parent_path()
         self.set_store_path()
         # We know the readme name exactly, but we don't know the extension of the sumstats file
@@ -205,6 +207,7 @@ class SumStatFile:
             if self.store_path:
                 file_ext = self.get_ext()
                 dest_file = self.staging_file_name + file_ext
+                logger.info("syncing file: {} --> {}/{}".format(self.store_path, self.staging_dir_name, dest_file))
                 upload_to_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=self.store_path, dest_dir=self.staging_dir_name, dest_file=dest_file)
             else:
                 logger.error("Error: {}\nCould not locate file for {}".format(self.study_id))
