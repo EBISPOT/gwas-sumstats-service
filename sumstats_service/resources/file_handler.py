@@ -198,24 +198,19 @@ class SumStatFile:
         self.set_parent_path()
         self.set_store_path()
         # We know the readme name exactly, but we don't know the extension of the sumstats file
-        dest_dir = os.path.join(config.STAGING_PATH, self.staging_dir_name)
         source_readme =  os.path.join(self.parent_path, str(self.study_id)) + ".README"
-        dest_readme = os.path.join(dest_dir, "README.txt") 
-        try:
-            os.makedirs(dest_dir)
-        except FileExistsError:
-            pass
-        try:
-            os.rename(source_readme, dest_readme)
-        except FileNotFoundError:
-            pass
+        upload_to_ftp(server, user, password, source_readme, self.staging_dir_name, "README.txt")
         try:
             self.store_path = glob(self.store_path + ".*[!log]")[0]
-            file_ext = self.get_ext()
-            dest_file = os.path.join(dest_dir, self.staging_file_name) + file_ext
-            os.rename(self.store_path, dest_file)
+            if self.store_path:
+                file_ext = self.get_ext()
+                dest_file = self.staging_file_name + file_ext
+                upload_to_ftp(server, user, password, self.store_path, self.staging_dir_name, dest_file)
+            else:
+                logger.error("Error: {}\nCould not locate file for {}".format(self.study_id))
+                return False
         except (IndexError, FileNotFoundError, OSError) as e:
-            logger.error("Error: {}\nCould not rename file from {} --> {}".format(e, self.store_path, dest_file))
+            logger.error("Error: {}\nCould not move file {} to staging".format(e, self.store_path))
             return False
         return True
 
@@ -334,4 +329,25 @@ def download_from_ftp(server, user, password, source, dest):
             logger.error(e)
             return False
 
-    
+
+def upload_to_ftp(server, user, password, source, dest_dir, dest_file):
+    try:
+        ftp = ftplib.FTP(server)
+        ftp.login(user, password)
+        ftp.cwd(config.STAGING_PATH)
+        filelist = []
+        ftp.retrlines('LIST',filelist.append)
+        dir_exists = False
+        for f in filelist: 
+            if f.split()[-1] == dest_dir and f.upper().startswith('D'):
+                dir_exists = True
+        if not dir_exists:
+            ftp.mkd(dest_dir)
+        with open(source, "rb") as f:
+            dest = os.path.join(dest_dir, dest_file)
+            ftp.storbinary("STOR " + dest, f)
+            ftp.quit()
+            return True
+    except ftplib.all_errors as e:
+            logger.error(e)
+            return False    
