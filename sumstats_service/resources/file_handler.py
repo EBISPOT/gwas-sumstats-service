@@ -180,19 +180,23 @@ class SumStatFile:
 
 
     def get_dialect(self, csv_file):
-        detect = csv.Sniffer().sniff(csv_file.readline()).delimiter
-        if str(detect) == '\t':
-            return ".tsv"
-        elif str(detect) == ',':
-            return ".csv"
-        else:
-            ext = pathlib.Path(self.file_path).suffix
-            if ext:
-                return ext
-            else:
-                logger.error("Unable to determine file type/extension setting to .tsv")
+        try:
+            detect = csv.Sniffer().sniff(csv_file.readline()).delimiter
+            if str(detect) == '\t':
                 return ".tsv"
-
+            elif str(detect) == ',':
+                return ".csv"
+            else:
+                ext = pathlib.Path(self.file_path).suffix
+                if ext:
+                    return ext
+                else:
+                    logger.error("Unable to determine file type/extension setting to .tsv")
+                    return ".tsv"
+        except Exception as e:
+            logger.error(e)
+            logger.error("Guessing extension, setting to .tsv")
+            return ".tsv"
 
     def move_file_to_staging(self):
         self.staging_dir_name = str(self.staging_dir_name.replace(' ', ''))
