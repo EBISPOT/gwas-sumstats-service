@@ -91,4 +91,4 @@ VALIDATION_ERRORS = [
                         {'id': 5, 'errorText': 'Genome assembly invalid - please see documentation for valid assemblies'}
                     ]
 
-VALID_ASSEMBLIES = ["GRCh38", "GRCh37", "NCBI36", "NCBI35", "NCBI34"]
+VALID_ASSEMBLIES = ["GRCh38", "GRCh37", "NCBI36", "NCBI35", "NCBI34", "NR"]
