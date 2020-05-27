@@ -199,7 +199,7 @@ class Study:
     
     
     def move_file_to_staging(self):
-        dirname = self.gcst
+        dir_name = self.gcst
         if self.author_name and self.pmid:
             dir_name = '_'.join([self.author_name, str(self.pmid), self.gcst])
         sumstats_file_name = self.gcst + '_build' + str(self.assembly)
