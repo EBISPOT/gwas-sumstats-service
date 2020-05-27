@@ -143,10 +143,12 @@ class Payload:
     
     def update_publication_details(self, publication_content):
         author_name, pmid, gcst_list = self.parse_publication_content(publication_content)
-        if not author_name:
-            raise BadUserRequest("authorName not provided")
-        if not pmid:
-            raise BadUserRequest("pmid not provided")
+        # removing constaint below as unpublished works won't have these.
+        # may move to gcst only.
+        #if not author_name:
+        #    raise BadUserRequest("authorName not provided")
+        #if not pmid:
+        #    raise BadUserRequest("pmid not provided")
         if not gcst_list:
             raise BadUserRequest("studyList not provided")
 
