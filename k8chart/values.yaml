@@ -11,7 +11,6 @@ image:
   pullPolicy: Always
   containerPort: 8000
   logMountPath: "/sumstats_service/logs"
-  dataMountPath: "/sumstats_service/data"
   sshMountPath: "/root/.ssh"
   env:
     celeryUser: "username"
@@ -41,14 +40,6 @@ image:
 volume:
   log:
     ClaimName: gwas-depo-logs
-  data:
-    ClaimName: gwas-ss-data
-    VolumeName: gwas-ss-service-data
-    type: persistentVolumeClaim
-    storageClassName: standard
-    capacity:
-      storage: 10Gi
-    accessModes: ReadWriteOnce
 
 secrets:
   sshName: ssh-keys

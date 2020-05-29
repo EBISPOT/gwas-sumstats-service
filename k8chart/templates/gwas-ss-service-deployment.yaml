@@ -30,8 +30,6 @@ spec:
         volumeMounts:
         - mountPath: {{.Values.image.logMountPath}}
           name: log
-        - mountPath: {{.Values.image.dataMountPath}}
-          name: data
         env:
         - name: CELERY_USER
           value: {{.Values.image.env.celeryUser}}
@@ -61,6 +59,3 @@ spec:
       - name: log
         persistentVolumeClaim:
            claimName: {{ .Values.volume.log.ClaimName }}
-      - name: data
-        persistentVolumeClaim:
-           claimName: {{ .Values.volume.data.ClaimName }}
