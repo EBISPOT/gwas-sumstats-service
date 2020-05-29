@@ -1,7 +1,6 @@
 import re
 import config
 from sumstats_service.resources.error_classes import *
-#from sumstats_service.resources.sqlite_client import sqlClient
 import sumstats_service.resources.file_handler as fh
 from sumstats_service.resources.mongo_client import mongoClient
 
@@ -107,9 +106,6 @@ class Study:
         return False
 
     def get_study_from_db(self):
-        #sq = sqlClient(config.DB_PATH)
-        #study_metadata = sq.get_study_metadata(self.study_id)
-        
         mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
         study_metadata = mdb.get_study_metadata(self.study_id)
 
@@ -131,7 +127,6 @@ class Study:
         return study_metadata
 
     def set_error_text(self):
-        #sq = sqlClient(config.DB_PATH)        
         mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
         
         if self.error_code:
@@ -150,8 +145,6 @@ class Study:
                 self.readme,
                 self.entryUUID
                 ]
-        #sq = sqlClient(config.DB_PATH)
-        #sq.insert_new_study(data)
         mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
         mdb.insert_new_study(data)
 

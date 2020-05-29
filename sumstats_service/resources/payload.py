@@ -1,6 +1,5 @@
 import shortuuid
 import json
-#from sumstats_service.resources.sqlite_client import sqlClient
 from sumstats_service.resources.mongo_client import mongoClient
 from sumstats_service.resources.error_classes import *
 import sumstats_service.resources.study_service as st
