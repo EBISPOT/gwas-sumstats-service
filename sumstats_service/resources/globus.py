@@ -232,7 +232,7 @@ def do_native_app_authentication(client_id, redirect_uri,
 def rename_file(dest_dir, source, dest):
     transfer = init()
     try:
-        dir_ls = tr.operation_ls(config.GWAS_ENDPOINT_ID, path=dest_dir)
+        dir_ls = transfer.operation_ls(config.GWAS_ENDPOINT_ID, path=dest_dir)
         files = [os.path.join(dest_dir, f["name"]) for f in dir_ls]
         if dest not in files:
             transfer.operation_rename(config.GWAS_ENDPOINT_ID, source, dest)
