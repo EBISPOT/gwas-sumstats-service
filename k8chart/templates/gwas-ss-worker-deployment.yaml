@@ -73,6 +73,16 @@ spec:
           value: {{.Values.image.env.mongoPassword}}
         - name: MONGO_DB
           value: {{.Values.image.env.mongoDB}}
+        - name: HTTP_PROXY
+          value: {{.Values.image.env.httpProxy}}
+        - name: HTTPS_PROXY
+          value: {{.Values.image.env.httpsProxy}}
+        - name: GLOBUS_SECRET
+          value: {{.Values.image.env.globusSecret}}
+        - name: TRANSFER_CLIENT_ID
+          value: {{.Values.image.env.transferClientID}}
+        - name: CLIENT_ID
+          value: {{.Values.image.env.clientID}}
       volumes:
       - name: log
         persistentVolumeClaim:
