@@ -194,8 +194,8 @@ class Study:
     
     def move_file_to_staging(self):
         dir_name = self.gcst
-        if self.author_name and self.pmid:
-            dir_name = '_'.join([self.author_name, str(self.pmid), self.gcst])
+        #if self.author_name and self.pmid:
+        #    dir_name = '_'.join([self.author_name, str(self.pmid), self.gcst])
         sumstats_file_name = self.gcst + '_build' + str(self.assembly)
         ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, 
                 study_id=self.study_id, readme=self.readme, entryUUID=self.entryUUID, 
