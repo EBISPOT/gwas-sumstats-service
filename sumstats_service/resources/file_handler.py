@@ -234,7 +234,7 @@ class SumStatFile:
         # close down globus endpoint
 
 
-    def move_files_to_staging(self):
+    def move_file_to_staging(self):
         # ftp mv from validated to staging
         try:        
             self.set_valid_parent_path()
