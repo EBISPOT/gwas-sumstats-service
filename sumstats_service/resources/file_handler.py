@@ -371,9 +371,6 @@ def download_file_from_google_drive(id, destination):
     save_response_content(response, destination)
 
 
-
-
-
 def download_from_ftp(server, user, password, source, dest):
     try:
         ftp = ftplib.FTP(server)
