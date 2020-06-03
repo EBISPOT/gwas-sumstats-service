@@ -83,6 +83,8 @@ spec:
           value: {{.Values.image.env.transferClientID}}
         - name: CLIENT_ID
           value: {{.Values.image.env.clientID}}
+        - name: GWAS_ENDPOINT_ID
+          value: {{.Values.image.env.gwasEndpointID}}
       volumes:
       - name: log
         persistentVolumeClaim:
