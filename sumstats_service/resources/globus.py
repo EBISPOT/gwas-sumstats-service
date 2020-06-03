@@ -9,7 +9,7 @@ import config
 import globus_sdk
 from globus_sdk import (NativeAppAuthClient, TransferClient,
                         RefreshTokenAuthorizer, ConfidentialAppAuthClient)
-from globus_sdk.exc import GlobusAPIError
+from globus_sdk.exc import GlobusAPIError, TransferAPIError
 from sumstats_service.resources.globus_utils import is_remote_session, enable_requests_logging
 from pymongo import MongoClient
 from bson.objectid import ObjectId
@@ -20,7 +20,7 @@ get_input = getattr(__builtins__, 'raw_input', input)
 enable_requests_logging()
 
 
-def mkdir(unique_id, email_address):
+def mkdir(unique_id, email_address=None):
     transfer = init()
     endpoint_id = create_dir(transfer, unique_id, email_address)
     return endpoint_id
@@ -125,39 +125,43 @@ def check_user(email):
     return identity_id
 
 
-def create_dir(transfer, uid, email):
-    identity_id = check_user(email)
-    if identity_id:
-        # create directory
-        transfer.operation_mkdir(config.GWAS_ENDPOINT_ID, uid)
-        # create shared endpoint
-        display_name = '-'.join([str(date.today()), uid[0:8]])
-        shared_ep_data = {
-            "DATA_TYPE": "shared_endpoint",
-            "host_endpoint": config.GWAS_ENDPOINT_ID,
-            "host_path": '/~/' + uid,
-            "display_name": 'ebi#gwas#' + display_name,
-            # optionally specify additional endpoint fields
-            "description": 'ebi#gwas#' + uid,
-            "owner_string": "GWAS Catalog",
-            "contact_email": "gwas-dev@ebi.ac.uk",
-            "organization": "EBI"
-        }
-        create_result = transfer.create_shared_endpoint(shared_ep_data)
-        endpoint_id = create_result.data['id']
+def create_dir(transfer, uid, email=None):
+    if email:
+        identity_id = check_user(email)
+        if identity_id:
+            # create directory
+            transfer.operation_mkdir(config.GWAS_ENDPOINT_ID, uid)
+            # create shared endpoint
+            display_name = '-'.join([str(date.today()), uid[0:8]])
+            shared_ep_data = {
+                "DATA_TYPE": "shared_endpoint",
+                "host_endpoint": config.GWAS_ENDPOINT_ID,
+                "host_path": '/~/' + uid,
+                "display_name": 'ebi#gwas#' + display_name,
+                # optionally specify additional endpoint fields
+                "description": 'ebi#gwas#' + uid,
+                "owner_string": "GWAS Catalog",
+                "contact_email": "gwas-dev@ebi.ac.uk",
+                "organization": "EBI"
+            }
+            create_result = transfer.create_shared_endpoint(shared_ep_data)
+            endpoint_id = create_result.data['id']
 
-        # add user to endpoint
-        rule_data = {
-            "DATA_TYPE": "access",
-            "principal_type": "identity",
-            "principal": identity_id,
-            "path": '/',
-            "permissions": "rw"
-        }
-        transfer.add_endpoint_acl_rule(endpoint_id, rule_data)
-        return endpoint_id
+            # add user to endpoint
+            rule_data = {
+                "DATA_TYPE": "access",
+                "principal_type": "identity",
+                "principal": identity_id,
+                "path": '/',
+                "permissions": "rw"
+            }
+            transfer.add_endpoint_acl_rule(endpoint_id, rule_data)
+            return endpoint_id
+        else:
+            return None
     else:
-        return None
+        transfer.operation_mkdir(config.GWAS_ENDPOINT_ID, uid)
+
 
 
 def load_tokens_from_db():
@@ -223,6 +227,21 @@ def do_native_app_authentication(client_id, redirect_uri,
 
     # return a set of tokens, organized by resource server name
     return token_response.by_resource_server
+
+
+def rename_file(dest_dir, source, dest):
+    transfer = init()
+    try:
+        dir_ls = tr.operation_ls(config.GWAS_ENDPOINT_ID, path=dest_dir)
+        files = [os.path.join(dest_dir, f["name"]) for f in dir_ls]
+        if dest not in files:
+            transfer.operation_rename(config.GWAS_ENDPOINT_ID, source, dest)
+    except TransferAPIError as e:
+        print(e)
+        return False
+    return True
+
+
 
 
 def main():

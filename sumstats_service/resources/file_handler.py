@@ -13,6 +13,7 @@ import logging
 import validate.validator as val
 import pathlib
 from sumstats_service.resources.error_classes import *
+import sumstats_service.resources.globus as globus
 import ftplib
 
 
@@ -100,6 +101,14 @@ class SumStatFile:
     def set_store_path(self):
         if self.study_id: 
                self.store_path = os.path.join(self.parent_path, str(self.study_id))
+
+    def set_valid_parent_path(self):
+        if self.study_id: 
+               self.valid_parent_path = os.path.join(config.VALIDATED_PATH, self.callback_id)
+
+    def set_valid_path(self):
+        if self.study_id: 
+               self.valid_path = os.path.join(self.valid_parent_path, str(self.study_id))
 
     def download_from_dropbox(self):
         url = self.file_path
@@ -198,28 +207,66 @@ class SumStatFile:
             logger.error("Guessing extension, setting to .tsv")
             return ".tsv"
 
-    def move_file_to_staging(self):
-        self.staging_dir_name = str(self.staging_dir_name.replace(' ', ''))
-        self.staging_file_name = str(self.staging_file_name.replace(' ', ''))
+
+    def tidy_files(self):
+        # copy files to validated path on ftp 
+        # clean up any files on the the nfs
         self.set_parent_path()
         self.set_store_path()
         # We know the readme name exactly, but we don't know the extension of the sumstats file
         source_readme =  os.path.join(self.parent_path, str(self.study_id)) + ".README"
-        upload_to_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=source_readme, dest_dir=self.staging_dir_name, dest_file="README.txt")
+        upload_to_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=source_readme, parent_dir=config.VALIDATED_PATH, dest_dir=self.callback_id, dest_file="README.txt")
         try:
             self.store_path = glob(self.store_path + ".*[!log]")[0]
             if self.store_path:
                 file_ext = self.get_ext()
-                dest_file = self.staging_file_name + file_ext
-                logger.info("syncing file: {} --> {}/{}".format(self.store_path, self.staging_dir_name, dest_file))
-                upload_to_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=self.store_path, dest_dir=self.staging_dir_name, dest_file=dest_file)
+                dest_file = self.study_id + file_ext
+                logger.info("syncing file: {} --> {}/{}".format(self.store_path, config.VALIDATED_PATH, os.path.join(self.callback_id, dest_file)))
+                upload_to_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=self.store_path, parent_dir=config.VALIDATED_PATH, dest_dir=self.callback_id, dest_file=dest_file)
             else:
                 logger.error("Error: {}\nCould not locate file for {}".format(self.study_id))
                 return False
         except (IndexError, FileNotFoundError, OSError) as e:
-            logger.error("Error: {}\nCould not move file {} to staging".format(e, self.store_path))
+            logger.error("Error: {}\nCould not move file {} to validated".format(e, self.store_path))
             return False
         return True
+        # TODO clear up the files on the store path
+
+
+    def move_files_to_staging(self):
+        # ftp mv from validated to staging
+        try:        
+            self.set_valid_parent_path()
+            self.set_valid_path()
+            source_file = self.valid_path
+            source_file_ext = "".join(pathlib.Path(source_file).suffixes)
+            source_readme = os.path.join(self.valid_parent_path, "README.txt")
+
+            self.staging_dir_name = str(self.staging_dir_name.replace(' ', ''))
+            self.staging_file_name = str(self.staging_file_name.replace(' ', '')) + source_file_ext
+
+            dest_dir = os.path.join(config.STAGING_PATH, self.staging_dir_name)
+            dest_file = os.path.join(dest_dir, self.staging_file_name)
+            
+            # move with globus
+            # move readme
+            mv_file_with_globus(source=source_readme, dest_dir=dest_dir, dest_file=os.path.join(dest_dir, "README.txt"))
+            # move sumstats file
+            mv_file_with_globus(source=source_readme, dest_dir=dest_dir, dest_file=dest_file)
+        except (IndexError, FileNotFoundError, OSError) as e:
+            logger.error("Error: {}\nCould not move file {} to staging, callback ID: {}".format(e, self.staging_file_name, self.callback_id)
+            return False
+        return True
+
+
+def mv_file_with_globus(dest_dir, source, dest):
+    #create the new dir
+    try:
+        globus.mkdir(unique_id=dest_dir)
+    except:
+        pass
+    status = globus.rename_file(dest_dir, source, dest)
+    return status
 
 
 def md5_check(file):
@@ -319,6 +366,9 @@ def download_file_from_google_drive(id, destination):
     save_response_content(response, destination)
 
 
+
+
+
 def download_from_ftp(server, user, password, source, dest):
     try:
         ftp = ftplib.FTP(server)
@@ -337,11 +387,11 @@ def download_from_ftp(server, user, password, source, dest):
             return False
 
 
-def upload_to_ftp(server, user, password, source, dest_dir, dest_file):
+def upload_to_ftp(server, user, password, source, parent_dir, dest_dir, dest_file):
     try:
         ftp = ftplib.FTP(server)
         ftp.login(user, password)
-        ftp.cwd(config.STAGING_PATH)
+        ftp.cwd(parent_dir)
         filelist = []
         ftp.retrlines('LIST',filelist.append)
         dir_exists = False
