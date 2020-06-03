@@ -231,6 +231,7 @@ class SumStatFile:
             return False
         return True
         # TODO clear up the files on the store path
+        # close down globus endpoint
 
 
     def move_files_to_staging(self):
@@ -254,7 +255,7 @@ class SumStatFile:
             # move sumstats file
             mv_file_with_globus(source=source_readme, dest_dir=dest_dir, dest_file=dest_file)
         except (IndexError, FileNotFoundError, OSError) as e:
-            logger.error("Error: {}\nCould not move file {} to staging, callback ID: {}".format(e, self.staging_file_name, self.callback_id)
+            logger.error("Error: {}\nCould not move file {} to staging, callback ID: {}".format(e, self.staging_file_name, self.callback_id))
             return False
         return True
 
