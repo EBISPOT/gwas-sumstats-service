@@ -183,6 +183,7 @@ class Study:
                         if ssf.validate_file():
                             self.set_data_valid_status(1)
                             ssf.write_readme_file()
+                            ssf.tidy_files() if config.VALIDATE_WITH_SSH else None
                         else:
                             self.set_data_valid_status(0)
                             self.set_error_code(3)
