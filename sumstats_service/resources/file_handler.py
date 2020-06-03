@@ -251,9 +251,13 @@ class SumStatFile:
             
             # move with globus
             # move readme
-            mv_file_with_globus(source=source_readme, dest_dir=dest_dir, dest_file=os.path.join(dest_dir, "README.txt"))
+            readme_status = mv_file_with_globus(source=source_readme, dest_dir=dest_dir, dest_file=os.path.join(dest_dir, "README.txt"))
             # move sumstats file
-            mv_file_with_globus(source=source_readme, dest_dir=dest_dir, dest_file=dest_file)
+            file_status = mv_file_with_globus(source=source_readme, dest_dir=dest_dir, dest_file=dest_file)
+            if readme_status is False:
+                logger.error("Error could not move {}".format(str(os.path.join(dest_dir, "README.txt"))))
+            if file_status is False:
+                logger.error("Error could not move {}".format(dest_file))
         except (IndexError, FileNotFoundError, OSError) as e:
             logger.error("Error: {}\nCould not move file {} to staging, callback ID: {}".format(e, self.staging_file_name, self.callback_id))
             return False
