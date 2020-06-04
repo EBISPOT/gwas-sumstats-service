@@ -242,7 +242,7 @@ class SumStatFile:
             source_readme = os.path.join(self.valid_parent_path, "README.txt")
 
             self.staging_dir_name = str(self.staging_dir_name.replace(' ', ''))
-            self.staging_file_name = str(self.staging_file_name.replace(' ', '')) + source_file_ext
+            self.staging_file_name = str(self.staging_file_name.replace(' ', '')) 
 
             dest_dir = os.path.join(config.STAGING_PATH, self.staging_dir_name)
 
