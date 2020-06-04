@@ -239,20 +239,21 @@ class SumStatFile:
         try:        
             self.set_valid_parent_path()
             self.set_valid_path()
-            source_file = self.valid_path 
             source_readme = os.path.join(self.valid_parent_path, "README.txt")
 
             self.staging_dir_name = str(self.staging_dir_name.replace(' ', ''))
             self.staging_file_name = str(self.staging_file_name.replace(' ', '')) + source_file_ext
 
             dest_dir = os.path.join(config.STAGING_PATH, self.staging_dir_name)
-            dest_file = os.path.join(dest_dir, self.staging_file_name)
-            
+
+            source_file, ext = get_source_file_from_id(source_dir, self.valid_path)
+            dest_file = os.path.join(dest_dir, self.staging_file_name + ext)
+
             # move with globus
             # move readme
-            readme_status = mv_file_with_globus(source_dir=self.valid_parent_path, source=source_readme, dest_dir=dest_dir, dest=os.path.join(dest_dir, "README.txt"))
+            readme_status = mv_file_with_globus(source=source_readme, dest_dir=dest_dir, dest=os.path.join(dest_dir, "README.txt"))
             # move sumstats file
-            file_status = mv_file_with_globus(source_dir=self.valid_parent_path, source=source_file, dest_dir=dest_dir, dest=dest_file)
+            file_status = mv_file_with_globus(source=source_file, dest_dir=dest_dir, dest=dest_file)
             if readme_status is False:
                 logger.error("Error could not move {}".format(str(os.path.join(dest_dir, "README.txt"))))
             if file_status is False:
@@ -262,16 +263,10 @@ class SumStatFile:
             return False
         return True
 
-
-def mv_file_with_globus(source_dir, dest_dir, source, dest):
-    #create the new dir
-    try:
-        globus.mkdir(unique_id=dest_dir)
-    except:
-        pass
+def get_source_file_from_id(source_dir, source):
     files = globus.list_files(source_dir)
     source_with_ext = None
-    dest_with_ext = None
+    ext = None
     if files:
         for f in files:
             file_ext = "".join(pathlib.Path(f).suffixes)
@@ -279,14 +274,18 @@ def mv_file_with_globus(source_dir, dest_dir, source, dest):
             logger.debug("source: {}, file: {}".format(source, f))
             if source == file_no_ext:
                 source_with_ext = f
-                dest_with_ext = dest + file_ext
+                ext = file_ext
                 break
-        if source_with_ext:
-            status = globus.rename_file(dest_dir, source_with_ext, dest_with_ext)
-        else:
-            return False
-    else:
-        return False
+    return (source_with_ext, ext)
+
+
+def mv_file_with_globus(dest_dir, source, dest):
+    #create the new dir
+    try:
+        globus.mkdir(unique_id=dest_dir)
+    except:
+        pass
+    status = globus.rename_file(dest_dir, source, dest)
     return status
 
 
