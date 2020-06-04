@@ -246,7 +246,7 @@ class SumStatFile:
 
             dest_dir = os.path.join(config.STAGING_PATH, self.staging_dir_name)
 
-            source_file, ext = get_source_file_from_id(source_dir, self.valid_path)
+            source_file, ext = get_source_file_from_id(self.valid_parent_path, self.valid_path)
             dest_file = os.path.join(dest_dir, self.staging_file_name + ext)
 
             # move with globus
