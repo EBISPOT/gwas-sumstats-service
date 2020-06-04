@@ -239,8 +239,7 @@ class SumStatFile:
         try:        
             self.set_valid_parent_path()
             self.set_valid_path()
-            source_file = self.valid_path
-            source_file_ext = "".join(pathlib.Path(source_file).suffixes)
+            source_file = self.valid_path 
             source_readme = os.path.join(self.valid_parent_path, "README.txt")
 
             self.staging_dir_name = str(self.staging_dir_name.replace(' ', ''))
@@ -270,7 +269,21 @@ def mv_file_with_globus(dest_dir, source, dest):
         globus.mkdir(unique_id=dest_dir)
     except:
         pass
-    status = globus.rename_file(dest_dir, source, dest)
+    files = globus.list_files(dest_dir)
+    source_with_ext = None
+    dest_with_ext = None
+    for f in files:
+        file_ext = "".join(pathlib.Path(f).suffixes)
+        file_no_ext = f.replace(file_ext, "")
+        logger.debug("source: {}, file: {}".format(source, f))
+        if source == file_no_ext:
+            source_with_ext = f
+            dest_with_ext = dest + file_ext
+            break
+    if source_with_ext:
+        status = globus.rename_file(dest_dir, source_with_ext, dest_with_ext)
+    else:
+        return False
     return status
 
 
