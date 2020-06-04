@@ -239,8 +239,7 @@ class SumStatFile:
         try:        
             self.set_valid_parent_path()
             self.set_valid_path()
-            source_file = self.valid_path
-            source_file_ext = "".join(pathlib.Path(source_file).suffixes)
+            source_file = self.valid_path 
             source_readme = os.path.join(self.valid_parent_path, "README.txt")
 
             self.staging_dir_name = str(self.staging_dir_name.replace(' ', ''))
@@ -251,9 +250,9 @@ class SumStatFile:
             
             # move with globus
             # move readme
-            readme_status = mv_file_with_globus(source=source_readme, dest_dir=dest_dir, dest=os.path.join(dest_dir, "README.txt"))
+            readme_status = mv_file_with_globus(source_dir=self.valid_parent_path, source=source_readme, dest_dir=dest_dir, dest=os.path.join(dest_dir, "README.txt"))
             # move sumstats file
-            file_status = mv_file_with_globus(source=source_file, dest_dir=dest_dir, dest=dest_file)
+            file_status = mv_file_with_globus(source_dir=self.valid_parent_path, source=source_file, dest_dir=dest_dir, dest=dest_file)
             if readme_status is False:
                 logger.error("Error could not move {}".format(str(os.path.join(dest_dir, "README.txt"))))
             if file_status is False:
@@ -264,13 +263,30 @@ class SumStatFile:
         return True
 
 
-def mv_file_with_globus(dest_dir, source, dest):
+def mv_file_with_globus(source_dir, dest_dir, source, dest):
     #create the new dir
     try:
         globus.mkdir(unique_id=dest_dir)
     except:
         pass
-    status = globus.rename_file(dest_dir, source, dest)
+    files = globus.list_files(source_dir)
+    source_with_ext = None
+    dest_with_ext = None
+    if files:
+        for f in files:
+            file_ext = "".join(pathlib.Path(f).suffixes)
+            file_no_ext = f.replace(file_ext, "")
+            logger.debug("source: {}, file: {}".format(source, f))
+            if source == file_no_ext:
+                source_with_ext = f
+                dest_with_ext = dest + file_ext
+                break
+        if source_with_ext:
+            status = globus.rename_file(dest_dir, source_with_ext, dest_with_ext)
+        else:
+            return False
+    else:
+        return False
     return status
 
 

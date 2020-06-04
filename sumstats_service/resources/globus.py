@@ -241,6 +241,18 @@ def rename_file(dest_dir, source, dest):
         return False
     return True
 
+def list_files(directory):
+    transfer = init()
+    files = []
+    try:
+        dir_ls = transfer.operation_ls(config.GWAS_ENDPOINT_ID, path=directory)
+        files = [os.path.join(directory, f["name"]) for f in dir_ls]
+    except TransferAPIError as e:
+        print(e)
+    return files
+
+
+
 
 
 
