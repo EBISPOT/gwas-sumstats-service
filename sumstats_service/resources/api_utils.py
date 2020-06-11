@@ -44,11 +44,13 @@ def validate_files_from_payload(callback_id, content):
         par_dir = os.path.join(config.STORAGE_PATH, callback_id)
         outfile = os.path.join(par_dir, 'validation.json')
         memory = 16000
+        ssh.mkdir(par_dir)
+        payload_path = os.path.join(par_dir, "payload.json")
+        ssh.write_data_to_file(json.dumps(content), payload_path)
         logger.debug('content:\n{}'.format(content))
-        content = json.dumps(content).translate(str.maketrans({'"':  '\\"'}))
-        bsub_com = 'singularity exec --bind {sp} docker://{image}:{tag} validate-payload -cid {cid} -out {outfile} -storepath {sp} -validated_path {vp} -ftpserver {ftps} -ftpuser {ftpu} -ftppass {ftpp} -payload \'{content}\''.format(
-                image=config.SINGULARITY_IMAGE, tag=config.SINGULARITY_TAG, cid=callback_id, outfile=outfile, sp=config.STORAGE_PATH, vp=config.VALIDATED_PATH, ftps=config.FTP_SERVER, ftpu=config.FTP_USERNAME, ftpp=config.FTP_PASSWORD, content=content)
-        command = 'export http_proxy={hp}; export https_proxy={hsp}; export VALIDATE_WITH_SSH={ssh}; mkdir -p {pd}; bsub -oo {pd}/stdout -eo {pd}/stderr -M {mem} -R "rusage[mem={mem}]" "{bsub_com}"'.format(
+        bsub_com = 'singularity exec --bind {sp} docker://{image}:{tag} validate-payload -cid {cid} -out {outfile} -storepath {sp} -validated_path {vp} -ftpserver {ftps} -ftpuser {ftpu} -ftppass {ftpp} -payload {plp}'.format(
+                image=config.SINGULARITY_IMAGE, tag=config.SINGULARITY_TAG, cid=callback_id, outfile=outfile, sp=config.STORAGE_PATH, vp=config.VALIDATED_PATH, ftps=config.FTP_SERVER, ftpu=config.FTP_USERNAME, ftpp=config.FTP_PASSWORD, plp=payload_path)
+        command = 'export http_proxy={hp}; export https_proxy={hsp}; export VALIDATE_WITH_SSH={ssh}; bsub -oo {pd}/stdout -eo {pd}/stderr -M {mem} -R "rusage[mem={mem}]" "{bsub_com}"'.format(
                 pd=par_dir, q=config.COMPUTE_FARM_QUEUE, mem=memory, bsub_com=bsub_com, hp=config.REMOTE_HTTP_PROXY, hsp=config.REMOTE_HTTPS_PROXY, ssh=config.VALIDATE_WITH_SSH)
         logger.debug('command:\n{}'.format(command))
         stdin, stdout, stderr = ssh.exec_command(command)
