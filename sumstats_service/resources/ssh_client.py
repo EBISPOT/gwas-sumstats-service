@@ -23,6 +23,19 @@ class SSHClient():
         status = stdout.read().decode().rstrip()
         return status
 
+    def write_data_to_file(self, data, filepath):
+        sftp = self.client.open_sftp()
+        with sftp.open(filepath, "w") as f:
+            f.write(data)
+
+    def mkdir(self, dirname):
+        sftp = self.client.open_sftp()
+        try:
+            sftp.mkdir(dirname)
+        except IOError:
+            pass
+
+
     @staticmethod
     def parse_jobid(stdout):
         stdout_str =  stdout.read().decode()

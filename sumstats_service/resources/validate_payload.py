@@ -3,6 +3,7 @@ import sumstats_service.resources.payload as pl
 import argparse
 import sys
 import config
+import os
 
 
 def validate_files_from_payload(callback_id, content, out=None):
@@ -55,6 +56,21 @@ def create_validation_report(study):
     return report
 
 
+def is_json(string):
+  try:
+    json_object = json.loads(string)
+  except ValueError as e:
+    return False
+  return True
+
+def is_path(string):
+    try:
+        path_object = os.path.isfile(string)
+        return path_object
+    except TypeError as e:
+        return False
+
+
 def main():
     argparser = argparse.ArgumentParser()
     argparser.add_argument("-cid", help='The callback ID', required=True)
@@ -79,7 +95,15 @@ def main():
     if args.ftppass:
         config.FTP_PASSWORD = args.ftppass
 
-    validate_files_from_payload(args.cid, json.loads(args.payload), args.out)
+    if is_path(args.payload):
+        with open(args.payload, "r") as f:
+            content = json.load(f)
+    else:
+        # if content is given as json string
+        content = json.loads(args.payload)
+
+
+    validate_files_from_payload(args.cid, content, args.out)
 
 
 if __name__ == '__main__':
