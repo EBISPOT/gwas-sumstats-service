@@ -1,7 +1,6 @@
 import os
-import json
+import re
 import sys
-import urllib
 from datetime import date
 import webbrowser
 from urllib.parse import unquote
@@ -12,7 +11,6 @@ from globus_sdk import (NativeAppAuthClient, TransferClient,
 from globus_sdk.exc import GlobusAPIError, TransferAPIError
 from sumstats_service.resources.globus_utils import is_remote_session, enable_requests_logging
 from pymongo import MongoClient
-from bson.objectid import ObjectId
 
 
 get_input = getattr(__builtins__, 'raw_input', input)
@@ -73,16 +71,30 @@ def prepare_call(transfer):
             #script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
             #with open(os.path.join(script_dir, 'json_auth.txt'), 'r') as f:
                 #data = json.load(f)
-            requirements_data = load_requirements_data_from_db()
-            response = transfer.endpoint_activate(config.GWAS_ENDPOINT_ID, requirements_data=requirements_data)
-            print(response['code'])
+            requirements_data = None
+            try:
+                requirements_data = load_requirements_data_from_db()
+                response = transfer.endpoint_activate(config.GWAS_ENDPOINT_ID, requirements_data=requirements_data)
+                print(response['code'])
+            except TransferAPIError as ex:
+                if ex.http_status == 502:
+                    if "MYPROXY_SERVER_DN=" in ex.message:
+                        # update proxy server value
+                        print("attempting to update proxy server dn value")
+                        requirements_data['DATA'][5]['value'] = re.search(r"MYPROXY_SERVER_DN=\"(.*)\"",
+                                                                          ex.message).group(1)
+                        save_requirements_to_db(requirements_data)
+                        response = transfer.endpoint_activate(config.GWAS_ENDPOINT_ID,
+                                                              requirements_data=requirements_data)
+                        print(response['code'])
+                else:
+                    raise ex
         elif resp['activated']:
             print('activated')
     except GlobusAPIError as ex:
         print(ex)
         if ex.http_status == 401:
-            sys.exit('Refresh token has expired. '
-                     'Please delete refresh-tokens.json and try again.')
+            sys.exit('Refresh token has expired. Please delete refresh-tokens.json and try again.')
         else:
             raise ex
     return
@@ -184,7 +196,7 @@ def load_requirements_data_from_db():
 
 def save_tokens_to_db(tokens):
     """Save a set of tokens for later use."""
-    mongo_client = MongoClient(config.MONGO_URI, username=config.MONGO_USER, password=config.MONGO_PASSWORD) 
+    mongo_client = MongoClient(config.MONGO_URI, username=config.MONGO_USER, password=config.MONGO_PASSWORD)
     globus_db = mongo_client[config.MONGO_DB] # 'globus-tokens'
     globus_db_collection = globus_db['globus-tokens']
     resp = globus_db_collection.find_one({})
@@ -203,6 +215,17 @@ def update_tokens_file_on_refresh(token_response):
     Will be invoked any time a new access token is fetched.
     """
     save_tokens_to_db(token_response.by_resource_server)
+
+
+def save_requirements_to_db(requirements):
+    mongo_client = MongoClient(config.MONGO_URI, username=config.MONGO_USER, password=config.MONGO_PASSWORD)
+    globus_db = mongo_client[config.MONGO_DB] # 'globus-tokens'
+    globus_db_collection = globus_db['globus-requirements']
+    resp = globus_db_collection.find_one({})
+    if resp:
+        globus_db_collection.replace_one({'_id': resp["_id"]}, requirements)
+    else:
+        globus_db_collection.insert(requirements, check_keys=False)
 
 
 def do_native_app_authentication(client_id, redirect_uri,
