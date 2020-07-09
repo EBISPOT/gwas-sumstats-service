@@ -164,7 +164,7 @@ class SumStatFile:
 
     def validate_file(self):
         self.set_logfile()
-        validator = val.Validator(file=self.store_path, filetype='standard', error_limit=1, logfile=self.logfile)
+        validator = val.Validator(file=self.store_path, filetype='gwas-upload', error_limit=1, logfile=self.logfile)
         try:
             logger.info("Validating file extension...")
             if not validator.validate_file_extension():
