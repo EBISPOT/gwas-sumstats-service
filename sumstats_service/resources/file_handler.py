@@ -215,14 +215,16 @@ class SumStatFile:
         self.set_store_path()
         # We know the readme name exactly, but we don't know the extension of the sumstats file
         source_readme =  os.path.join(self.parent_path, str(self.study_id)) + ".README"
-        upload_to_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=source_readme, parent_dir=config.VALIDATED_PATH, dest_dir=self.callback_id, dest_file="README.txt")
+        upload_to_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=source_readme, parent_dir=config.VALIDATED_PATH, dest_dir=self.callback_id, dest_file=str(self.study_id) + ".README")
         try:
-            self.store_path = glob(self.store_path + ".*[!log]")[0]
-            if self.store_path:
-                file_ext = self.get_ext()
-                dest_file = self.study_id + file_ext
-                logger.info("syncing file: {} --> {}/{}".format(self.store_path, config.VALIDATED_PATH, os.path.join(self.callback_id, dest_file)))
-                upload_to_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=self.store_path, parent_dir=config.VALIDATED_PATH, dest_dir=self.callback_id, dest_file=dest_file)
+            matching_files = glob(self.store_path + ".*[!log|!README]")
+            if len(matching_files) == 1:
+                self.store_path = matching_files[0]
+                if self.store_path:
+                    file_ext = self.get_ext()
+                    dest_file = self.study_id + file_ext
+                    logger.info("syncing file: {} --> {}/{}".format(self.store_path, config.VALIDATED_PATH, os.path.join(self.callback_id, dest_file)))
+                    upload_to_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=self.store_path, parent_dir=config.VALIDATED_PATH, dest_dir=self.callback_id, dest_file=dest_file)
             else:
                 logger.error("Error: {}\nCould not locate file for {}".format(self.study_id))
                 return False
@@ -239,7 +241,7 @@ class SumStatFile:
         try:        
             self.set_valid_parent_path()
             self.set_valid_path()
-            source_readme = os.path.join(self.valid_parent_path, "README.txt")
+            source_readme = os.path.join(self.valid_parent_path, str(self.study_id) + ".README")
 
             self.staging_dir_name = str(self.staging_dir_name.replace(' ', ''))
             self.staging_file_name = str(self.staging_file_name.replace(' ', '')) 
