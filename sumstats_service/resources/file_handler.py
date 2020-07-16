@@ -269,8 +269,9 @@ def get_source_file_from_id(source_dir, source):
     files = globus.list_files(source_dir)
     source_with_ext = None
     ext = None
-    if files:
-        for f in files:
+    filter_files = [f for f in [f for f in files if not ".README" in f] if not ".log" in f]
+    if filter_files:
+        for f in filter_files:
             file_ext = "".join(pathlib.Path(f).suffixes)
             file_no_ext = f.replace(file_ext, "")
             logger.debug("source: {}, file: {}".format(source, f))
