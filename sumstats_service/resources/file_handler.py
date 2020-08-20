@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 class SumStatFile:
     def __init__(self, file_path=None, callback_id=None, study_id=None, 
                 md5exp=None, readme=None, entryUUID=None,
-                staging_dir_name=None, staging_file_name=None):
+                staging_dir_name=None, staging_file_name=None, minrows=None):
         self.file_path = file_path
         self.callback_id = callback_id
         self.study_id = study_id
@@ -34,6 +34,7 @@ class SumStatFile:
         self.entryUUID = entryUUID
         self.staging_dir_name = staging_dir_name
         self.staging_file_name = staging_file_name
+        self.minrows = minrows
 
 
     def set_logfile(self):
@@ -164,24 +165,45 @@ class SumStatFile:
 
     def validate_file(self):
         self.set_logfile()
-        validator = val.Validator(file=self.store_path, filetype='gwas-upload', error_limit=1, logfile=self.logfile)
+        self.validation_error = 3
+        if self.minrows:
+            validator = val.Validator(file=self.store_path, filetype='gwas-upload', error_limit=1, logfile=self.logfile, minrows=self.minrows)
+        else:
+            validator = val.Validator(file=self.store_path, filetype='gwas-upload', error_limit=1, logfile=self.logfile)
         try:
             logger.info("Validating file extension...")
             if not validator.validate_file_extension():
                 logger.info("VALIDATION FAILED")
+                self.validation_error = 6
                 return False
             logger.info("Validating headers...")
             if not validator.validate_headers():
                 logger.info("Invalid headers...exiting before any further checks")
                 logger.info("VALIDATION FAILED")
+                self.validation_error = 7
                 return False
+
+            logger.info("Validating file for squareness...")
+            if not validator.validate_file_squareness():
+                logger.info("Rows are malformed..exiting before any further checks")
+                self.validation_error = 8
+                return False
+
+            logger.info("Validating rows...")
+            if not validator.validate_rows():
+                logger.info("File contains too few rows..exiting before any further checks")
+                self.validation_error = 9
+                return False
+
             logger.info("Validating data...")
             if validator.validate_data():
                 logger.info("VALIDATION SUCCESSFUL")
                 return True
             else:
-                logger.info("VALIDATION FAILED")
+                logger.info("VALIDATION FAILED")                
+                self.validation_error = 3
                 return False
+
         except Exception as e:
             logger.error(e)
             logger.info("VALIDATION FAILED")

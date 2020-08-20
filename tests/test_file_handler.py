@@ -55,7 +55,7 @@ class TestSumStatsFile(unittest.TestCase):
 
     def test_validate_true_when_valid(self):        
         ssf = fh.SumStatFile(file_path=self.valid_url, callback_id=self.cid, 
-                study_id=self.sid, md5exp=self.valid_url_md5)
+                study_id=self.sid, md5exp=self.valid_url_md5, minrows=10)
         ssf.retrieve()
         result = ssf.validate_file()
         self.assertTrue(result)
@@ -63,7 +63,7 @@ class TestSumStatsFile(unittest.TestCase):
 
     def test_validate_false_when_invalid(self):
         ssf = fh.SumStatFile(file_path=self.invalid_url, callback_id=self.cid, 
-                study_id=self.sid, md5exp=self.valid_url_md5)
+                study_id=self.sid, md5exp=self.valid_url_md5, minrows=10)
         ssf.retrieve()
         result = ssf.validate_file()
         self.assertFalse(result)

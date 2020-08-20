@@ -48,7 +48,7 @@ class TestAPIUtils(unittest.TestCase):
                  ]
                } 
         cid = au.json_payload_to_db(valid_json)
-        resp = au.validate_files_from_payload(cid, valid_json)
+        resp = au.validate_files_from_payload(cid, valid_json, minrows=10)
         check = json.loads(resp)
         self.assertEqual(check["callbackID"], cid)
         self.assertEqual(check["validationList"][0]["retrieved"], 1)
@@ -73,7 +73,7 @@ class TestAPIUtils(unittest.TestCase):
                  ]
                }
         cid = au.json_payload_to_db(one_bad_md5)
-        resp = au.validate_files_from_payload(cid, one_bad_md5)
+        resp = au.validate_files_from_payload(cid, one_bad_md5, minrows=10)
         check = json.loads(resp)
         self.assertEqual(check["callbackID"], cid)
         self.assertEqual(check["validationList"][0]["retrieved"], 0)
@@ -101,7 +101,7 @@ class TestAPIUtils(unittest.TestCase):
                  ]
                }
         cid = au.json_payload_to_db(one_bad_md5)
-        resp = au.validate_files_from_payload(cid, one_bad_md5)
+        resp = au.validate_files_from_payload(cid, one_bad_md5, minrows=10)
         check = json.loads(resp)
         self.assertEqual(check["callbackID"], cid)
         self.assertEqual(check["validationList"][0]["retrieved"], 1)
@@ -130,7 +130,7 @@ class TestAPIUtils(unittest.TestCase):
                  ]
                } 
         cid = au.json_payload_to_db(valid_json)
-        resp = au.validate_files_from_payload(cid, valid_json)
+        resp = au.validate_files_from_payload(cid, valid_json, minrows=10)
         au.store_validation_results_in_db(resp)
         path = os.path.join(self.test_storepath, cid)
         self.assertTrue(os.path.exists(path))

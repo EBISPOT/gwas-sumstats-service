@@ -89,7 +89,11 @@ VALIDATION_ERRORS = [
                         {'id': 2, 'errorText': 'The md5sum of the summary statistics file does not match the one provided'},
                         {'id': 3, 'errorText': 'Summary statistics file validation failed, please run the validator on your file to see the errors (available here: https://pypi.org/project/ss-validate/)'},
                         {'id': 4, 'errorText': 'Missing mandatory field, you must provide (i) file path/URL, (ii) md5 sum and (iii) genome assembly for each file'},
-                        {'id': 5, 'errorText': 'Genome assembly invalid - please see documentation for valid assemblies'}
+                        {'id': 5, 'errorText': 'Genome assembly invalid - please see documentation for valid assemblies'},
+                        {'id': 6, 'errorText': 'Summary statistics file validation failed: File extension error, please run the validator on your file to see the errors (available here: https://pypi.org/project/ss-validate/)'},
+                        {'id': 7, 'errorText': 'Summary statistics file validation failed: File header error, please run the validator on your file to see the errors (available here: https://pypi.org/project/ss-validate/)'},
+                        {'id': 8, 'errorText': 'Summary statistics file validation failed: File squareness error, please run the validator on your file to see the errors (available here: https://pypi.org/project/ss-validate/)'},
+                        {'id': 9, 'errorText': 'Summary statistics file validation failed: File contains fewer than 100,000 rows. If you have fewer than 100,000 variants in your dataset, please contact gwas-subs@ebi.ac.uk for further advice.'}
                     ]
 
 VALID_ASSEMBLIES = ["GRCh38", "GRCh37", "NCBI36", "NCBI35", "NCBI34", "NR"]
