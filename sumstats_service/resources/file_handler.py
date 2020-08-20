@@ -200,7 +200,7 @@ class SumStatFile:
                 logger.info("VALIDATION SUCCESSFUL")
                 return True
             else:
-                logger.info("VALIDATION FAILED")                
+                logger.info("VALIDATION FAILED")
                 self.validation_error = 3
                 return False
 
