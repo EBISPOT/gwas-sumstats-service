@@ -37,7 +37,7 @@ def store_validation_results_in_db(validation_response):
         study.error_code = item["errorCode"]
         study.store_validation_statuses()
 
-def validate_files_from_payload(callback_id, content):
+def validate_files_from_payload(callback_id, content, minrows=None):
     if config.VALIDATE_WITH_SSH == 'true':
         logger.debug('Validate with ssh')
         ssh = sshc.SSHClient(host=config.COMPUTE_FARM_LOGIN_NODE, username=config.COMPUTE_FARM_USERNAME)
@@ -82,7 +82,7 @@ def validate_files_from_payload(callback_id, content):
     else:
         # maintain this for the sandbox which cannot ssh ebi farm
         logger.debug('Validate without ssh')
-        return vp.validate_files_from_payload(callback_id, content)
+        return vp.validate_files_from_payload(callback_id, content, minrows=minrows)
     
 
 def validate_metadata(callback_id):

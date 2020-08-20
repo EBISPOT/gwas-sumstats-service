@@ -164,7 +164,7 @@ class Study:
             return True
 
 
-    def validate_study(self):
+    def validate_study(self, minrows=None):
         # Step through the validation
         if not self.mandatory_metadata_check():
             self.set_error_code(4)
@@ -173,7 +173,7 @@ class Study:
                 self.set_error_code(5)
             else:
                 ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id, 
-                        md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID)
+                        md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID, minrows=minrows)
                 if ssf.retrieve() is True:
                     self.set_retrieved_status(1)
                     if not ssf.md5_ok():
@@ -186,7 +186,7 @@ class Study:
                             ssf.tidy_files() if config.VALIDATE_WITH_SSH else None
                         else:
                             self.set_data_valid_status(0)
-                            self.set_error_code(3)
+                            self.set_error_code(ssf.validation_error)
                 else:
                     self.set_retrieved_status(0)
                     self.set_error_code(1)

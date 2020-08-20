@@ -21,9 +21,9 @@ class Payload:
         self.set_callback_id_for_studies()
         self.create_entry_for_studies()
 
-    def validate_payload(self):
+    def validate_payload(self, minrows=None):
         for study in self.study_obj_list:
-            study.validate_study()
+            study.validate_study(minrows)
 
     def get_payload_complete_status(self):
         for study in self.study_obj_list:

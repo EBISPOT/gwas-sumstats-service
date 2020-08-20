@@ -6,11 +6,11 @@ import config
 import os
 
 
-def validate_files_from_payload(callback_id, content, out=None):
+def validate_files_from_payload(callback_id, content, out=None, minrows=None):
     payload = pl.Payload(callback_id=callback_id, payload=content)
     payload.create_study_obj_list()
     payload.set_callback_id_for_studies()
-    payload.validate_payload()
+    payload.validate_payload(minrows=minrows)
     response = construct_validation_response(callback_id, payload)
     if out:
         with open(out, 'w') as out:
@@ -81,6 +81,7 @@ def main():
     argparser.add_argument("-ftpserver", help='The FTP server name where your files are', required=False, default=config.FTP_SERVER)
     argparser.add_argument("-ftpuser", help='The FTP username', required=False, default=config.FTP_USERNAME)
     argparser.add_argument("-ftppass", help='The FTP password', required=False, default=config.FTP_PASSWORD)
+    argparser.add_argument("-minrows", help='The minimum required rows in a sumsats file for validation to pass', required=False, default=None)
     
     
     args = argparser.parse_args()
@@ -103,7 +104,7 @@ def main():
         content = json.loads(args.payload)
 
 
-    validate_files_from_payload(args.cid, content, args.out)
+    validate_files_from_payload(args.cid, content, args.out, args.minrows)
 
 
 if __name__ == '__main__':

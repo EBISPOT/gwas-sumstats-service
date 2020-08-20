@@ -6,7 +6,6 @@ import sumstats_service.resources.study_service as st
 from pymongo import MongoClient
 
 
-
 class TestStudyService(unittest.TestCase):
     def setUp(self):
         self.testDB = "./tests/study_meta.db"
@@ -145,7 +144,7 @@ class TestStudyService(unittest.TestCase):
         valid_url = "file://{}".format(os.path.abspath("./tests/test_sumstats_file.tsv"))
         valid_md5 = "a1195761f082f8cbc2f5a560743077cc"
         study = st.Study(study_id=self.study_id, file_path=valid_url, md5=valid_md5, assembly=self.assembly, callback_id="1234abcd")
-        study.validate_study()
+        study.validate_study(10)
         self.assertIsNone(study.error_code)
         self.assertEqual(study.data_valid, 1)
 
