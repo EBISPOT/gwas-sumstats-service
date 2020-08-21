@@ -15,6 +15,7 @@ import pathlib
 from sumstats_service.resources.error_classes import *
 import sumstats_service.resources.globus as globus
 import ftplib
+import time
 
 
 logging.basicConfig(level=logging.DEBUG, format='(%(levelname)s): %(message)s')
@@ -61,6 +62,8 @@ class SumStatFile:
         if self.entryUUID:
             logger.debug("Fetching file {} from ftp, parent path: {}".format(self.file_path, self.entryUUID))  
             source_path = os.path.join(self.entryUUID, self.file_path)
+            # check globus transfer is complete
+            self.wait_until_files_are_transered()
             download_status = download_from_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=source_path, dest=self.store_path)
 
         # else check to see if URL we can use
@@ -95,6 +98,16 @@ class SumStatFile:
             self.store_path =  path_with_ext
             logger.debug("store path is {}".format(self.store_path))
         return download_status # True or False
+
+    def wait_until_files_are_transered(self):
+        transfer = globus.init()
+        transfer_status = globus.get_upload_status(transfer, self.entryUUID, self.file_path)
+        counter = 0
+        while transfer_status[self.file_path] is False and counter <= 300:
+            time.sleep(15)
+            transfer_status = globus.get_upload_status(transfer, self.entryUUID, self.file_path)
+            counter += 15
+        return True
 
     def set_parent_path(self):
         self.parent_path = os.path.join(config.STORAGE_PATH, self.callback_id)
