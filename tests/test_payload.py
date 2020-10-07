@@ -58,13 +58,13 @@ class TestPayload(unittest.TestCase):
     def test_check_basic_content_present(self):
         data = {'requestEntries': [{}]}
         payload = pl.Payload(payload=data)
-        self.assertTrue(payload.check_basic_content_present)
+        self.assertTrue(payload.check_basic_content_present())
         missing_data = {'requestEntries': []}
         payload = pl.Payload(payload=missing_data)
-        self.assertRaises(BadUserRequest, payload.check_basic_content_present)
+        self.assertFalse(payload.check_basic_content_present())
         missing_all = {}
         payload = pl.Payload(payload=missing_all)
-        self.assertRaises(BadUserRequest, payload.check_basic_content_present)
+        self.assertFalse(payload.check_basic_content_present())
 
     def test_create_study_obj_list(self):
         payload = pl.Payload(payload=VALID_POST)
@@ -87,7 +87,7 @@ class TestPayload(unittest.TestCase):
                         }
         payload = pl.Payload(payload=dupe_study)
         payload.create_study_obj_list()
-        self.assertRaises(BadUserRequest, payload.check_study_ids_valid)
+        self.assertFalse(payload.check_study_ids_valid())
 
     def test_get_data_for_callback_id(self):
         payload = pl.Payload(payload=VALID_POST)

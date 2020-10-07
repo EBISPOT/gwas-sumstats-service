@@ -12,6 +12,7 @@ class mongoClient():
         self.database = self.client[database]
         self.study_collection = self.database['sumstats-study-meta']
         self.error_collection = self.database['sumstats-errors']
+        self.callback_collection = self.database['sumstats-callback-tracking']
 
     """ generic methods"""
 
@@ -70,6 +71,33 @@ class mongoClient():
 
     def get_study_count(self):
         return self.study_collection.count_documents({})
+
+    def check_callback_id_in_db(self, callback_id):
+        studies = [i for i in  self.study_collection.find({"callbackID": callback_id})]
+        if not len(studies):
+            # check it hasn't been registered but not yet added to the studies db
+            callback_registered = [i for i in  self.callback_collection.find({"callbackID": callback_id})]
+            if not len(callback_registered):
+                return False
+        return True
+
+    def register_callback_id(self, callback_id):
+        self.insert(self.callback_collection, {"callbackID": callback_id})
+
+    def remove_callback_id(self, callback_id):
+        self.callback_collection.delete_many({"callbackID": callback_id})
+
+    def update_metadata_errors(self, callback_id, error_list):
+        data = self.callback_collection.find_one({"callbackID": callback_id})
+        objectid = data['_id']
+        data['metadataErrors'] = error_list
+        self.replace_one(self.callback_collection, objectid, data)
+
+    def get_metadata_errors(self, callback_id):
+        data = self.callback_collection.find_one({"callbackID": callback_id})
+        if data and "metadataErrors" in data:
+            return data["metadataErrors"]
+        return []
 
     def get_data_from_callback_id(self, callback_id):
         studies = self.study_collection.find({"callbackID": callback_id})
