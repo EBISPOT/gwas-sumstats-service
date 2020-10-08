@@ -2,7 +2,7 @@ import pytest
 import os
 import shutil
 import json
-from sumstats_service.app import app, celery
+from sumstats_service.app import app
 import sumstats_service.resources.api_endpoints as ep
 import sumstats_service.resources.api_utils as au
 from tests.test_constants import *
@@ -11,13 +11,14 @@ import sumstats_service.resources.payload as pl
 import config
 from pymongo import MongoClient
 
+
+
 class TestAPP:
     def setup_method(self, method):
         self.testDB = "./tests/study_meta.db"
         self.test_storepath = "./tests/data"
         config.STORAGE_PATH = self.test_storepath
         config.DB_PATH = self.testDB
-        celery.conf['CELERY_ALWAYS_EAGER'] = True
         sq = sqlClient(self.testDB)
         sq.create_conn()
         sq.cur.executescript(config.DB_SCHEMA)
@@ -70,11 +71,8 @@ class TestAPP:
         tester = app.test_client(self)
         response = tester.post('/v1/sum-stats',
                                json='{}')
-        assert response.status_code == 201
-        callback_id = response.get_json()["callbackID"]
-        response = tester.get('/v1/sum-stats/{}'.format(callback_id))
-        assert response.status_code == 200
-        assert "Missing 'requestEntries' in json" in response.get_json()['metadataErrors']
+        assert response.status_code == 400
+        assert "Missing 'requestEntries' in json" in response.get_json()['message']
 
     def test_post_new_study_missing_mandatory_fields(self):
         tester = app.test_client(self)
@@ -111,11 +109,8 @@ class TestAPP:
 
         response = tester.post('/v1/sum-stats',
                                json=invalid_post)
-        assert response.status_code == 201
-        callback_id = response.get_json()["callbackID"]
-        response = tester.get('/v1/sum-stats/{}'.format(callback_id))
-        assert response.status_code == 200
-        assert "is invalid" in response.get_json()['metadataErrors'][0]
+        assert response.status_code == 400
+        assert "is invalid" in response.get_json()['message']
 
     def test_post_duplicate_study_id_in_one_payload(self):
         tester = app.test_client(self)
@@ -137,12 +132,7 @@ class TestAPP:
                         }
         response = tester.post('/v1/sum-stats',
                                json=invalid_post)
-        assert response.status_code == 201
-        callback_id = response.get_json()["callbackID"]
-        response = tester.get('/v1/sum-stats/{}'.format(callback_id))
-        assert response.status_code == 200
-        assert "duplicated" in response.get_json()['metadataErrors'][0]
-
+        assert response.status_code == 400
 
     def test_bad_callback_id(self):
         tester = app.test_client(self)

@@ -23,18 +23,10 @@ def create_href(method_name, params=None):
         url_for(method_name, **params)
     )}
 
-def json_payload_to_db(content, callback_id=None):
-    payload = pl.Payload(payload=content, callback_id=callback_id)
+def json_payload_to_db(content):
+    payload = pl.Payload(payload=content)
     payload.payload_to_db()
-    if len(payload.metadata_errors) != 0:
-        return False
     return payload.callback_id
-
-def generate_callback_id():
-    payload = pl.Payload()
-    payload.generate_callback_id()
-    return payload.callback_id
-    
 
 def store_validation_results_in_db(validation_response):
     for item in json.loads(validation_response)['validationList']:
@@ -110,7 +102,6 @@ def delete_payload_from_db(callback_id):
     if not payload:
         raise RequestedNotFound("Couldn't find resource with callback id: {}".format(self.callback_id))
     payload.get_data_for_callback_id()
-    payload.remove_callback_id()
     status_list = []
     for study in payload.study_obj_list:
         status_list.append({
@@ -140,26 +131,17 @@ def publish_sumstats(study_list):
 
 
 def construct_get_payload_response(callback_id):
-    response = None
     payload = pl.Payload(callback_id=callback_id)
-    if payload.get_data_for_callback_id():
-        if not payload.study_obj_list:
-            # callback registered but studies not yet added (due to async)
-            response = {"callbackID": str(callback_id),
-                        "status": "PROCESSING"}
-            if payload.metadata_errors:
-                response["metadataErrors"] = payload.metadata_errors
-                response["status"] = "INVALID"
-        else:
-            completed = payload.get_payload_complete_status()
-            status_list = []
-            for study in payload.study_obj_list:
-                study_report = create_study_report(study)
-                status_list.append(study_report)
-            response = {"callbackID": str(callback_id),
-                        "completed": completed,
-                        "statusList": status_list
-                        }
+    payload.get_data_for_callback_id()
+    completed = payload.get_payload_complete_status()
+    status_list = []
+    for study in payload.study_obj_list:
+        study_report = create_study_report(study)
+        status_list.append(study_report)
+    response = {"callbackID": str(callback_id),
+                "completed": completed,
+                "statusList": status_list
+                }
     return response
 
 

@@ -13,8 +13,7 @@ def celery_config():
                 port=os.environ['QUEUE_PORT']
                 ),
             'result_backend': 'rpc://',
-            'queues':('preval', 'postval'),
-            'task_always_eager': True
+            'queues':('preval', 'postval')
            }
 
     

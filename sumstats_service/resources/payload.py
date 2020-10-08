@@ -13,17 +13,15 @@ class Payload:
         self.callback_id = callback_id
         self.study_obj_list = []
         self.study_ids = []
-        self.metadata_errors = []
 
     def payload_to_db(self):
         if self.check_basic_content_present() is True:
-            print("payload")
-            print(self.payload)
             self.create_study_obj_list()
             if self.check_study_ids_valid() is True:
                 self.set_callback_id_for_studies()
                 self.create_entry_for_studies()
         self.store_metadata_errors()
+
 
     def validate_payload(self, minrows=None):
         for study in self.study_obj_list:
@@ -38,14 +36,9 @@ class Payload:
     def get_data_for_callback_id(self):
         mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
         data = mdb.get_data_from_callback_id(self.callback_id)
-        self.get_metadata_errors()
+        
         if data is None:
-            if mdb.check_callback_id_in_db(self.callback_id):
-                # callback registered but studies not yet added (due to async)
-                return True
-            else:
-                raise RequestedNotFound("Couldn't find resource with callback id: {}".format(self.callback_id))
-
+            raise RequestedNotFound("Couldn't find resource with callback id: {}".format(self.callback_id))
         for study_metadata in data:
             study_id = st.set_var_from_dict(study_metadata, 'studyID', None)
             callback_id = st.set_var_from_dict(study_metadata, 'callbackID', None)
@@ -68,28 +61,11 @@ class Payload:
             self.study_obj_list.append(study)
         return self.study_obj_list
 
-    def remove_callback_id(self):
-        mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
-        mdb.remove_callback_id(self.callback_id)
-        
-    def store_metadata_errors(self):
-        mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
-        mdb.update_metadata_errors(self.callback_id, self.metadata_errors)
-
-    def get_metadata_errors(self):
-        mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
-        self.metadata_errors = mdb.get_metadata_errors(self.callback_id)
-
-
     def check_basic_content_present(self):
         if not 'requestEntries' in self.payload:
-            self.metadata_errors.append("Missing 'requestEntries' in json")
-            return False
-            #raise BadUserRequest("Missing 'requestEntries' in json")
-        elif len(self.payload['requestEntries']) == 0:
-            self.metadata_errors.append("Missing data")
-            return False
-            #raise BadUserRequest("Missing data")
+            raise BadUserRequest("Missing 'requestEntries' in json")
+        if len(self.payload['requestEntries']) == 0:
+            raise BadUserRequest("Missing data")
         return True
 
     def create_study_obj_list(self):
@@ -103,28 +79,24 @@ class Payload:
     def check_study_ids_valid(self):
         for study in self.study_obj_list:
             if not study.valid_study_id():
-                self.metadata_errors.append("Study ID: {} is invalid".format(study.study_id))
-                #raise BadUserRequest("Study ID: {} is invalid".format(study.study_id))
+                raise BadUserRequest("Study ID: {} is invalid".format(study.study_id))
                 return False
             if study.study_id_exists_in_db():
-                self.metadata_errors.append("Study ID: {} exists already".format(study.study_id))
-                #raise BadUserRequest("Study ID: {} exists already".format(study.study_id))
+                raise BadUserRequest("Study ID: {} exists already".format(study.study_id))
                 return False
             if study.study_id not in self.study_ids:
                 self.study_ids.append(study.study_id)
             else:
-                self.metadata_errors.append("Study ID: {} duplicated in payload".format(study.study_id))
-                #raise BadUserRequest("Study ID: {} duplicated in payload".format(study.study_id))
+                raise BadUserRequest("Study ID: {} duplicated in payload".format(study.study_id))
                 return False
         return True
 
     def generate_callback_id(self):
         randid = shortuuid.uuid()[:8]
         mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
-        while mdb.check_callback_id_in_db(randid) is True:
+        while mdb.get_data_from_callback_id(randid) is not None:
             randid = shortuuid.uuid()[:8]
         self.callback_id = randid
-        mdb.register_callback_id(self.callback_id)
 
     def set_callback_id_for_studies(self):
         if self.callback_id:

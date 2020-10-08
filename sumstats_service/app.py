@@ -73,12 +73,10 @@ def root():
 def sumstats():
     content = request.get_json(force=True)
     logger.debug("POST content: " + str(content))
-
-    #resp = endpoints.create_studies(content)
-    #callback_id = json.loads(resp)['callbackID'] 
-    resp = endpoints.generate_callback_id() #json.loads(resp)['callbackID'] 
-    callback_id = json.loads(resp)['callbackID']
-    validate_files_in_background.apply_async(args=[callback_id, content], link=store_validation_results.s(), retry=True)
+    resp = endpoints.create_studies(content)
+    if resp:
+        callback_id = json.loads(resp)['callbackID']
+        validate_files_in_background.apply_async(args=[callback_id, content], link=store_validation_results.s(), retry=True)
     return Response(response=resp,
                     status=201,
                     mimetype="application/json")
@@ -142,17 +140,13 @@ def get_dir_contents(unique_id):
 
 @celery.task(queue='preval', options={'queue': 'preval'})
 def validate_files_in_background(callback_id, content):
-    if endpoints.create_studies(callback_id=callback_id, content=content):
-        results = au.validate_files_from_payload(callback_id=callback_id, content=content)
-    else:
-        results = None
+    results = au.validate_files_from_payload(callback_id, content)
     return results
 
 
 @celery.task(queue='postval', options={'queue': 'postval'})
 def store_validation_results(results):
-    if results:
-        au.store_validation_results_in_db(results)
+    au.store_validation_results_in_db(results)
 
 
 @celery.task(queue='preval', options={'queue': 'preval'})
