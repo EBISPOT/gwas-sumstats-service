@@ -207,30 +207,5 @@ class TestAPP:
         assert response.status_code == 200
 
 
-    def test_get_200_with_readme(self, celery_session_worker):
-        valid_json = {
-               "requestEntries": [
-                   {
-                    "id": "abc123",
-                    "filePath": self.valid_url,
-                    "readme": TEST_README,
-                    "md5":"a1195761f082f8cbc2f5a560743077cc",
-                    "assembly":"GRCh38"
-                   },
-                   {
-                    "id": "xyz321",
-                    "filePath": self.valid_url,
-                    "md5":"a1195761f082f8cbc2f5a560743077cc",
-                    "assembly":"GRCh38"
-                   },
-                 ]
-               } 
-        tester = app.test_client(self)
-        response = tester.post('/v1/sum-stats', json=valid_json)
-        assert response.status_code == 201
-        callback_id = response.get_json()["callbackID"]
-        response = tester.get('/v1/sum-stats/{}'.format(callback_id))
-        assert response.status_code == 200
-
 if __name__ == '__main__':
     unittest.main()

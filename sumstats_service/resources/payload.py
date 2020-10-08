@@ -17,8 +17,6 @@ class Payload:
 
     def payload_to_db(self):
         if self.check_basic_content_present() is True:
-            print("payload")
-            print(self.payload)
             self.create_study_obj_list()
             if self.check_study_ids_valid() is True:
                 self.set_callback_id_for_studies()
