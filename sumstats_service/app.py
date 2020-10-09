@@ -73,12 +73,9 @@ def root():
 def sumstats():
     content = request.get_json(force=True)
     logger.debug("POST content: " + str(content))
-
-    #resp = endpoints.create_studies(content)
-    #callback_id = json.loads(resp)['callbackID'] 
-    resp = endpoints.generate_callback_id() #json.loads(resp)['callbackID'] 
+    resp = endpoints.generate_callback_id()
     callback_id = json.loads(resp)['callbackID']
-    validate_files_in_background.apply_async(args=[callback_id, content], link=store_validation_results.s(), retry=True)
+    process_studies.apply_async(args=[callback_id, content], retry=True)
     return Response(response=resp,
                     status=201,
                     mimetype="application/json")
@@ -139,13 +136,18 @@ def get_dir_contents(unique_id):
 
 
 # --- Celery tasks --- #
+# postval --> app side worker queue
+# preval --> compute cluster side worker queue
+
+@celery.task(queue='postval', options={'queue': 'postval'})
+def process_studies(callback_id, content):
+    if endpoints.create_studies(callback_id=callback_id, content=content):
+        validate_files_in_background.apply_async(args=[callback_id, content], link=store_validation_results.s(), retry=True)
+    
 
 @celery.task(queue='preval', options={'queue': 'preval'})
 def validate_files_in_background(callback_id, content):
-    if endpoints.create_studies(callback_id=callback_id, content=content):
-        results = au.validate_files_from_payload(callback_id=callback_id, content=content)
-    else:
-        results = None
+    results = au.validate_files_from_payload(callback_id=callback_id, content=content)
     return results
 
 
