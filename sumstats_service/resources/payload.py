@@ -33,6 +33,16 @@ class Payload:
                 return False
         return True
 
+    def get_payload_status(self):
+        study_statuses = [study.get_status() for study in self.study_obj_list]
+        if 'RETRIEVING' in study_statuses:
+            return 'PROCESSING'
+        elif 'INVALID' in study_statuses:
+            return 'INVALID'
+        else:
+            return 'VALID'
+
+
     def get_data_for_callback_id(self):
         mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
         data = mdb.get_data_from_callback_id(self.callback_id)

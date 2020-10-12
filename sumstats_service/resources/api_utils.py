@@ -146,18 +146,22 @@ def construct_get_payload_response(callback_id):
         if not payload.study_obj_list:
             # callback registered but studies not yet added (due to async)
             response = {"callbackID": str(callback_id),
-                        "status": "PROCESSING"}
+                        "status": "PROCESSING",
+                        "completed": False}
             if payload.metadata_errors:
                 response["metadataErrors"] = payload.metadata_errors
                 response["status"] = "INVALID"
+                response["completed"] = True
         else:
             completed = payload.get_payload_complete_status()
+            payload_status = payload.get_payload_status()
             status_list = []
             for study in payload.study_obj_list:
                 study_report = create_study_report(study)
                 status_list.append(study_report)
             response = {"callbackID": str(callback_id),
                         "completed": completed,
+                        "status": payload_status,
                         "statusList": status_list
                         }
     return response
