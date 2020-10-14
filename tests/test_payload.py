@@ -97,26 +97,29 @@ class TestPayload(unittest.TestCase):
         for study in payload_new.study_obj_list:
             self.assertEqual(study.callback_id, cid)
 
-    def test_get_payload_complete_status(self):
+    def test_get_payload__status(self):
         payload = pl.Payload(payload=VALID_POST)
         payload.payload_to_db()
-        cid = payload.callback_id
-        completed = payload.get_payload_complete_status()
-        self.assertEqual(completed, False)
+        payload.get_data_for_callback_id()
+        for study in payload.study_obj_list:
+            study.set_retrieved_status(None)
+            study.store_retrieved_status()
+            study.set_data_valid_status(None)
+            study.store_data_valid_status()
+        status = payload.get_payload_status()
+        self.assertEqual(status, 'PROCESSING')
         for study in payload.study_obj_list:
             study.set_retrieved_status(0)
             study.store_retrieved_status()
             study.set_data_valid_status(0)
             study.store_data_valid_status()
-        payload_new = pl.Payload(callback_id=cid)
-        completed = payload_new.get_payload_complete_status()
-        self.assertEqual(completed, True)
+        status = payload.get_payload_status()
+        self.assertEqual(status, 'INVALID')
         for study in payload.study_obj_list:
             study.set_retrieved_status(1)
             study.store_retrieved_status()
             study.set_data_valid_status(1)
             study.store_data_valid_status()
-        payload_new = pl.Payload(callback_id=cid)
-        completed = payload_new.get_payload_complete_status()
-        self.assertEqual(completed, True)
+        status = payload.get_payload_status()
+        self.assertEqual(status, 'VALID')
 

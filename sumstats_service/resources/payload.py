@@ -27,11 +27,6 @@ class Payload:
         for study in self.study_obj_list:
             study.validate_study(minrows)
 
-    def get_payload_complete_status(self):
-        for study in self.study_obj_list:
-            if study.get_status() == 'RETRIEVING':
-                return False
-        return True
 
     def get_payload_status(self):
         study_statuses = [study.get_status() for study in self.study_obj_list]
