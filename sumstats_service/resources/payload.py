@@ -28,6 +28,11 @@ class Payload:
             study.validate_study(minrows)
 
 
+    def validate_payload_metadata(self):
+        for study in self.study_obj_list:
+            study.mandatory_metadata_check()
+            
+
     def get_payload_status(self):
         study_statuses = [study.get_status() for study in self.study_obj_list]
         if 'RETRIEVING' in study_statuses:
