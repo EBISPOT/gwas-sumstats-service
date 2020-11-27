@@ -7,15 +7,12 @@ import os
 
 
 
-def validate_metadata_for_payload(callback_id, content, out=None, minrows=None):
+def validate_metadata_for_payload(callback_id, content):
     payload = pl.Payload(callback_id=callback_id, payload=content)
     payload.create_study_obj_list()
     payload.set_callback_id_for_studies()
     payload.validate_payload_metadata()
     response = construct_validation_response(callback_id, payload)
-    if out:
-        with open(out, 'w') as out:
-            out.write(json.dumps(response))
     return json.dumps(response)
 
 
