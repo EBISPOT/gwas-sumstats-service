@@ -126,7 +126,7 @@ class TestStudyService(unittest.TestCase):
 
     def test_validate_study_metadata_invalid(self):
         study = st.Study(study_id=self.study_id, file_path=self.file_path, md5=self.md5, assembly="FAIL")
-        study.mandatory_metadata_check()
+        study.mandatory_metadata_chec()
         self.assertEqual(study.error_code, 5)
 
     def test_validate_study_URL_invalid(self):

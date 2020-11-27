@@ -46,6 +46,10 @@ def store_validation_results_in_db(validation_response):
         study.store_validation_statuses()
 
 def validate_files_from_payload(callback_id, content, minrows=None):
+    validate_metadata = vp.validate_metadata_for_payload(callback_id, content)
+    if any([i['errorCode'] for i in json.loads(validate_metadata)['validationList']]):
+        #metadata invalid stop here
+        return validate_metadata
     if config.VALIDATE_WITH_SSH == 'true':
         logger.debug('Validate with ssh')
         ssh = sshc.SSHClient(host=config.COMPUTE_FARM_LOGIN_NODE, username=config.COMPUTE_FARM_USERNAME)
