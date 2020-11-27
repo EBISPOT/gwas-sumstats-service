@@ -35,10 +35,10 @@ class Payload:
 
     def get_payload_status(self):
         study_statuses = [study.get_status() for study in self.study_obj_list]
-        if 'RETRIEVING' in study_statuses:
-            return 'PROCESSING'
-        elif 'INVALID' in study_statuses:
+        if 'INVALID' in study_statuses:
             return 'INVALID'
+        elif all(status == 'RETRIEVING' for status in study_statuses):
+            return 'PROCESSING'
         else:
             return 'VALID'
 
