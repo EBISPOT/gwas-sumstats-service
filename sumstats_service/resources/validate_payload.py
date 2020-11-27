@@ -6,6 +6,17 @@ import config
 import os
 
 
+
+def validate_metadata_for_payload(callback_id, content):
+    payload = pl.Payload(callback_id=callback_id, payload=content)
+    payload.create_study_obj_list()
+    payload.set_callback_id_for_studies()
+    payload.validate_payload_metadata()
+    response = construct_validation_response(callback_id, payload)
+    return json.dumps(response)
+
+
+
 def validate_files_from_payload(callback_id, content, out=None, minrows=None):
     payload = pl.Payload(callback_id=callback_id, payload=content)
     payload.create_study_obj_list()
@@ -82,6 +93,7 @@ def main():
     argparser.add_argument("-ftpuser", help='The FTP username', required=False, default=config.FTP_USERNAME)
     argparser.add_argument("-ftppass", help='The FTP password', required=False, default=config.FTP_PASSWORD)
     argparser.add_argument("-minrows", help='The minimum required rows in a sumsats file for validation to pass', required=False, default=None)
+    argparser.add_argument("-metadata", help='Validate the metadata only', required=False, action='store_true', dest='meta_only')
     
     
     args = argparser.parse_args()
@@ -103,8 +115,10 @@ def main():
         # if content is given as json string
         content = json.loads(args.payload)
 
-
-    validate_files_from_payload(args.cid, content, args.out, args.minrows)
+    if args.meta_only is True:
+        validate_metadata_for_payload(args.cid, content, args.out, args.minrows)
+    else:
+        validate_files_from_payload(args.cid, content, args.out, args.minrows)
 
 
 if __name__ == '__main__':
