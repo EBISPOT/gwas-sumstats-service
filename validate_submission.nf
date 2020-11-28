@@ -4,20 +4,43 @@
 params.storepath = 'data/test1234'
 params.cid = 'test1234'
 params.payload = 'data/test1234/payload.json'
+params.ftpServer = ''
+params.ftpPWD = ''
+params.ftpUser = ''
+
+// parse json payload
+import groovy.json.JsonSlurper
+def jsonSlurper = new JsonSlurper()
+payload = jsonSlurper.parse(new File("$params.payload"))
+// create ids channel from study ids
+entries = []
+payload["requestEntries"].each { it -> entries.add( it.id ) }
+ids = Channel.from(entries)
 
 
-process foo {
+process validate_study {
 
   containerOptions "--bind $params.storepath"
 
+  input:
+  val(id) from ids
+  
   output:
-  stdout receiver
+  stdout into result
 
-  """
-  ls $params.storepath
-  validate-payload -metadata -cid $params.cid -payload $params.payload -storepath $params.storepath -out $params.storepath/$params.cid/meta-val.json
-  """
+  
+  shell:
+  '''
+  metadata=$(cat !{params.payload} | jq '.requestEntries[] | select(.id =="!{id}")')
+  id="!{id}"
+  filePath=$(echo $metadata | jq .filePath)
+  md5=$(echo $metadata | jq .md5)
+  assembly=$(echo $metadata | jq .assembly)
+  readme=$(echo $metadata | jq .readme)
+  validate-study -f $filePath -md5 $md5 -assembly $assembly -readme $readme
+  '''
 
 }
 
-receiver.view { it }
+
+result.view { it }
