@@ -8,6 +8,7 @@ params.ftpServer = ''
 params.ftpPWD = ''
 params.ftpUser = ''
 
+
 // parse json payload
 import groovy.json.JsonSlurper
 def jsonSlurper = new JsonSlurper()
@@ -28,16 +29,12 @@ process validate_study {
   output:
   stdout into result
 
-  
+
   shell:
   '''
   metadata=$(cat !{params.payload} | jq '.requestEntries[] | select(.id =="!{id}")')
   id="!{id}"
-  filePath=$(echo $metadata | jq .filePath)
-  md5=$(echo $metadata | jq .md5)
-  assembly=$(echo $metadata | jq .assembly)
-  readme=$(echo $metadata | jq .readme)
-  validate-study -f $filePath -md5 $md5 -assembly $assembly -readme $readme
+  validate-study -cid !{params.cid} -id "$id" -payload !{params.payload} -storepath !{params.storepath} -ftpserver !{params.ftpServer} -ftpuser !{params.ftpUser} -ftppass !{params.ftpPWD}
   '''
 
 }
