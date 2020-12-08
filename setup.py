@@ -5,7 +5,10 @@ setup(
     version='0.1',
     packages=find_packages(include=['sumstats_service.*','config.py']),
     entry_points={
-        "console_scripts": ['validate-payload = sumstats_service.resources.validate_payload:main']
+        "console_scripts": 
+            ['validate-payload = sumstats_service.resources.validate_payload:main',
+             'validate-study = sumstats_service.resources.validate_study:main'
+            ]
     },
     include_package_data=True,
     zip_safe=False,
