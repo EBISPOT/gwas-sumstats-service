@@ -2,6 +2,7 @@ import json
 from urllib.parse import unquote
 from flask import url_for
 import config
+import subprocess
 from sumstats_service.resources.error_classes import *
 import sumstats_service.resources.payload as pl
 import sumstats_service.resources.study_service as st
@@ -9,6 +10,7 @@ import sumstats_service.resources.validate_payload as vp
 import sumstats_service.resources.ssh_client as sshc
 import os
 import time
+import glob
 import logging
 
 
@@ -50,18 +52,40 @@ def validate_files_from_payload(callback_id, content, minrows=None):
     if any([i['errorCode'] for i in json.loads(validate_metadata)['validationList']]):
         #metadata invalid stop here
         return validate_metadata
+
+    par_dir = os.path.join(config.STORAGE_PATH, callback_id)
+    payload_path = os.path.join(par_dir, "payload.json")
+    #-with-singularity docker://{image}:{tag} \
+    nextflow_cmd =  """
+                    nextflow run validate_submission.nf \
+                            --payload {plp}\
+                            --storepath {sp}\
+                            -cid {cid}\
+                            -ftpServer {ftps}\
+                            -ftpUser {ftpu}\
+                            -ftpPWD {ftpp}\
+                            -w {wd} \
+                            -minrows {mr}
+                    """.format(image=config.SINGULARITY_IMAGE, 
+                            tag=config.SINGULARITY_TAG, 
+                            cid=callback_id, 
+                            sp=config.STORAGE_PATH, 
+                            vp=config.VALIDATED_PATH, 
+                            ftps=config.FTP_SERVER, 
+                            ftpu=config.FTP_USERNAME, 
+                            ftpp=config.FTP_PASSWORD, 
+                            plp=payload_path,
+                            wd=par_dir,
+                            mr=minrows)
     if config.VALIDATE_WITH_SSH == 'true':
         logger.debug('Validate with ssh')
         ssh = sshc.SSHClient(host=config.COMPUTE_FARM_LOGIN_NODE, username=config.COMPUTE_FARM_USERNAME)
-        par_dir = os.path.join(config.STORAGE_PATH, callback_id)
         outfile = os.path.join(par_dir, 'validation.json')
         memory = 16000
         ssh.mkdir(par_dir)
-        payload_path = os.path.join(par_dir, "payload.json")
         ssh.write_data_to_file(json.dumps(content), payload_path)
         logger.debug('content:\n{}'.format(content))
-        bsub_com = 'singularity exec --bind {sp} docker://{image}:{tag} validate-payload -cid {cid} -out {outfile} -storepath {sp} -validated_path {vp} -ftpserver {ftps} -ftpuser {ftpu} -ftppass {ftpp} -payload {plp}'.format(
-                image=config.SINGULARITY_IMAGE, tag=config.SINGULARITY_TAG, cid=callback_id, outfile=outfile, sp=config.STORAGE_PATH, vp=config.VALIDATED_PATH, ftps=config.FTP_SERVER, ftpu=config.FTP_USERNAME, ftpp=config.FTP_PASSWORD, plp=payload_path)
+        bsub_com = 'singularity exec --bind {sp} docker://{image}:{tag} validate-payload -cid {cid} -out {outfile} -storepath {sp} -validated_path {vp} -ftpserver {ftps} -ftpuser {ftpu} -ftppass {ftpp} -payload {plp}'.format(image=config.SINGULARITY_IMAGE, tag=config.SINGULARITY_TAG, cid=callback_id, outfile=outfile, sp=config.STORAGE_PATH, vp=config.VALIDATED_PATH, ftps=config.FTP_SERVER, ftpu=config.FTP_USERNAME, ftpp=config.FTP_PASSWORD, plp=payload_path)
         command = 'export http_proxy={hp}; export https_proxy={hsp}; export VALIDATE_WITH_SSH={ssh}; bsub -oo {pd}/stdout -eo {pd}/stderr -M {mem} -R "rusage[mem={mem}]" "{bsub_com}"'.format(
                 pd=par_dir, q=config.COMPUTE_FARM_QUEUE, mem=memory, bsub_com=bsub_com, hp=config.REMOTE_HTTP_PROXY, hsp=config.REMOTE_HTTPS_PROXY, ssh=config.VALIDATE_WITH_SSH)
         logger.debug('command:\n{}'.format(command))
@@ -94,7 +118,20 @@ def validate_files_from_payload(callback_id, content, minrows=None):
     else:
         # maintain this for the sandbox which cannot ssh ebi farm
         logger.debug('Validate without ssh')
-        return vp.validate_files_from_payload(callback_id, content, minrows=minrows)
+        os.mkdir(par_dir)
+        with open(payload_path, 'w') as f:
+            f.write(json.dumps(content))
+        subprocess.run(nextflow_cmd.split())
+        json_out_files = glob.glob(os.path.join(par_dir, '[!payload]*.json'))
+        results = {
+                    "callbackID": callback_id,
+                    "validationList" : []
+                  }
+        if len(json_out_files) > 0:
+            for j in json_out_files:
+                with open(j, 'r') as f:
+                    results["validationList"].append(json.load(f))
+        return json.dumps(results)
     
 
 def validate_metadata(callback_id):
