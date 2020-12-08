@@ -15,11 +15,22 @@ def parse_payload(payload, studyid):
     return (study_meta[0]['filePath'], study_meta[0]['md5'], study_meta[0]['assembly'], study_meta[0]['readme'],  study_meta[0]['entryUUID'] )
     
     
+#{"callbackID": "235v8a5M", "validationList": [{"id": "5f5c93c0e097d40001939fe7", "retrieved": 1, "dataValid": 0, "errorCode": 2}]}
 
 def validate_study(callback_id, study_id, filepath, md5, assembly, readme, entryUUID, out=None, minrows=None):
     study = st.Study(callback_id=callback_id, study_id=study_id, file_path=filepath, md5=md5, assembly=assembly, readme=readme, entryUUID=entryUUID)
     study.validate_study(minrows)
-    print(study.study_id, study.retrieved, study.data_valid, study.error_code)
+    result = { 
+                "id": study.study_id,
+                "retrieved": study.retrieved,
+                "dataValid": study.data_valid,
+                "errorCode": study.error_code
+             }
+    if out:           
+        with open(out, 'w') as f:
+            f.write(json.dumps(result))
+        
+    print(result)
     if study.data_valid != 1:
         sys.exit(1)
     else:
@@ -67,8 +78,10 @@ def main():
         content = json.loads(args.payload)
 
 
+    ###out = os.path.join(args.storepath, args.cid, args.out)
+    out = args.out
     filepath, md5, assembly, readme, entryUUID = parse_payload(content, args.id)
-    validate_study(args.cid, args.id, filepath, md5, assembly, readme, entryUUID, args.out, args.minrows)
+    validate_study(args.cid, args.id, filepath, md5, assembly, readme, entryUUID, out, args.minrows)
 
 
 if __name__ == '__main__':

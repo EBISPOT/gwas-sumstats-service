@@ -170,7 +170,6 @@ class Study:
     def validate_study(self, minrows=None):
         # Step through the validation
         if self.mandatory_metadata_check() is True:
-            print("metadata good")
             ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id, 
                     md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID, minrows=minrows)
             if ssf.retrieve() is True:
@@ -189,8 +188,6 @@ class Study:
             else:
                 self.set_retrieved_status(0)
                 self.set_error_code(1)
-        else:
-            print("metadata bad")
     
     
     def move_file_to_staging(self):
