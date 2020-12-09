@@ -60,12 +60,12 @@ def validate_files_from_payload(callback_id, content, minrows=None):
                     nextflow run validate_submission.nf \
                             --payload {plp}\
                             --storepath {sp}\
-                            -cid {cid}\
-                            -ftpServer {ftps}\
-                            -ftpUser {ftpu}\
-                            -ftpPWD {ftpp}\
+                            --cid {cid}\
+                            --ftpServer {ftps}\
+                            --ftpUser {ftpu}\
+                            --ftpPWD {ftpp}\
                             -w {wd} \
-                            -minrows {mr}
+                            --minrows {mr}
                     """.format(image=config.SINGULARITY_IMAGE, 
                             tag=config.SINGULARITY_TAG, 
                             cid=callback_id, 
