@@ -25,6 +25,9 @@ ids = Channel.from(entries)
 process validate_study {
 
   containerOptions "--bind $params.storePath"
+  memory { 2.GB * task.attempt }
+  maxErrors 3  
+  errorStrategy { task.exitStatus == 25 ? 'retry' : 'terminate' }
 
   input:
   val(id) from ids

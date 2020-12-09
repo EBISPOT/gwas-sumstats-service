@@ -97,3 +97,10 @@ VALIDATION_ERRORS = [
                     ]
 
 VALID_ASSEMBLIES = ["GRCh38", "GRCh37", "NCBI36", "NCBI35", "NCBI34", "NR"]
+
+NEXTFLOW_CONFIG =   """
+                    executor {
+                        name = 'lsf'
+                        queueSize = 100
+                    }
+                    """
