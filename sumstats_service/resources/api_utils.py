@@ -67,7 +67,8 @@ def validate_files_from_payload(callback_id, content, minrows=None):
                             --ftpPWD {ftpp}\
                             --minrows {mr}\
                             -w {wd} \
-                            -c {conf}
+                            -c {conf} \
+                            -with-singularity docker://{image}:{tag}
                     """.format(image=config.SINGULARITY_IMAGE, 
                             tag=config.SINGULARITY_TAG, 
                             cid=callback_id, 
@@ -126,7 +127,8 @@ def validate_files_from_payload(callback_id, content, minrows=None):
             f.write(json.dumps(content))
         with open(nextflow_config_path, 'w') as f:
             f.write(config.NEXTFLOW_CONFIG)
-        subprocess.run(nextflow_cmd.split())
+        pipe_ps = subprocess.run(nextflow_cmd.split())
+        logger.debug('pipeline process output:\n{}'.format(pipe_ps))
         json_out_files = glob.glob(os.path.join(par_dir, '[!payload]*.json'))
         results = {
                     "callbackID": callback_id,
@@ -136,6 +138,9 @@ def validate_files_from_payload(callback_id, content, minrows=None):
             for j in json_out_files:
                 with open(j, 'r') as f:
                     results["validationList"].append(json.load(f))
+        logger.info(json.dumps(results))
+        if pipe_ps.returncode != 0:
+            remove_payload_files(callback_id)
         return json.dumps(results)
     
 
