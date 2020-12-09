@@ -59,7 +59,7 @@ def validate_files_from_payload(callback_id, content, minrows=None):
     nextflow_cmd =  """
                     nextflow run validate_submission.nf \
                             --payload {plp}\
-                            --storepath {sp}\
+                            --storePath {sp}\
                             --cid {cid}\
                             --ftpServer {ftps}\
                             --ftpUser {ftpu}\
