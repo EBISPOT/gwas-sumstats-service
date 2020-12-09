@@ -1,27 +1,15 @@
 //run with:
-///nextflow run test_singularity.nf -with-singularity ebispot/gwas-sumstats-service:latest --payload /path/to/payload.json --storepath /path/to/storepath -w /path/to/workpath
+//nextflow run validate_submission.nf --payload test/data/test1234/payload.json --storepath test/data/ -w test/data/test1234/work --ftpServer <> --ftpUser <> --ftpPWD <> --cid test1234
 
-params.storepath = 'data/test1234'
-params.cid = 'test1234'
-params.payload = 'data/test1234/payload.json'
+params.storePath = ''
+params.cid = ''
+params.payload = ''
 params.ftpServer = ''
 params.ftpPWD = ''
 params.ftpUser = ''
+params.minrows = '10'
+params.validatedPath = 'data/valid'
 
-payload_id = Channel.from(params.cid)
-
-
-// create json out file
-//import groovy.json.JsonOutput
-//def data = [
-//      callbackID: "$params.cid",
-//      validationList: []
-//      ]
-//
-//def json_str = JsonOutput.toJson(data)
-//def json_beauty = JsonOutput.prettyPrint(json_str)
-//File file = new File("$params.storepath", "$params.cid", "validate.json")
-//file.write(json_beauty)
 
 // parse json payload
 import groovy.json.JsonSlurper
@@ -36,19 +24,17 @@ ids = Channel.from(entries)
 
 process validate_study {
 
-  afterScript 'echo "hello"'
-  containerOptions "--bind $params.storepath"
+  containerOptions "--bind $params.storePath"
 
   input:
   val(id) from ids
   
   output:
   stdout into result
-  file "${id}.json" into json_out
 
 
   """
-  validate-study -cid $params.cid -id $id -payload $params.payload -storepath $params.storepath -ftpserver $params.ftpServer -ftpuser $params.ftpUser -ftppass $params.ftpPWD -minrows 10 -out "$id".json
+  validate-study -cid $params.cid -id $id -payload $params.payload -storepath $params.storePath -ftpserver $params.ftpServer -ftpuser $params.ftpUser -ftppass $params.ftpPWD -minrows $params.minrows -out "${id}".json -validated_path $params.validatedPath
   """
 
 }
