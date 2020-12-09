@@ -55,6 +55,7 @@ def validate_files_from_payload(callback_id, content, minrows=None):
 
     par_dir = os.path.join(config.STORAGE_PATH, callback_id)
     payload_path = os.path.join(par_dir, "payload.json")
+    nextflow_config_path = os.path.join(par_dir, "nextflow.config")
     #-with-singularity docker://{image}:{tag} \
     nextflow_cmd =  """
                     nextflow run validate_submission.nf \
@@ -64,8 +65,9 @@ def validate_files_from_payload(callback_id, content, minrows=None):
                             --ftpServer {ftps}\
                             --ftpUser {ftpu}\
                             --ftpPWD {ftpp}\
+                            --minrows {mr}\
                             -w {wd} \
-                            --minrows {mr}
+                            -c {conf}
                     """.format(image=config.SINGULARITY_IMAGE, 
                             tag=config.SINGULARITY_TAG, 
                             cid=callback_id, 
@@ -76,7 +78,8 @@ def validate_files_from_payload(callback_id, content, minrows=None):
                             ftpp=config.FTP_PASSWORD, 
                             plp=payload_path,
                             wd=par_dir,
-                            mr=minrows)
+                            mr=minrows,
+                            conf=nextflow_config_path)
     if config.VALIDATE_WITH_SSH == 'true':
         logger.debug('Validate with ssh')
         ssh = sshc.SSHClient(host=config.COMPUTE_FARM_LOGIN_NODE, username=config.COMPUTE_FARM_USERNAME)
@@ -121,6 +124,8 @@ def validate_files_from_payload(callback_id, content, minrows=None):
         os.mkdir(par_dir)
         with open(payload_path, 'w') as f:
             f.write(json.dumps(content))
+        with open(nextflow_config_path, 'w') as f:
+            f.write(config.NEXTFLOW_CONFIG)
         subprocess.run(nextflow_cmd.split())
         json_out_files = glob.glob(os.path.join(par_dir, '[!payload]*.json'))
         results = {
