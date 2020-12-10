@@ -100,5 +100,5 @@ VALID_ASSEMBLIES = ["GRCh38", "GRCh37", "NCBI36", "NCBI35", "NCBI34", "NR"]
 
 NEXTFLOW_CONFIG = ("executor.name = 'lsf'\n"
                    "executor.queueSize = 100\n"
-                   "singularity.cacheDir = {sing_cache_dir}\n").format(
+                   "singularity.cacheDir = '{sing_cache_dir}'\n").format(
         sing_cache_dir=_env_variable_else('SINGULARITY_CACHEDIR', './singularity_cache'))
