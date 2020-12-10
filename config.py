@@ -98,10 +98,5 @@ VALIDATION_ERRORS = [
 
 VALID_ASSEMBLIES = ["GRCh38", "GRCh37", "NCBI36", "NCBI35", "NCBI34", "NR"]
 
-NEXTFLOW_CONFIG =   """
-                    executor {
-                        name = 'lsf'
-                        queueSize = 100
-                    }
-                    singularity.cacheDir = {sing_cache_dir}
-                    """.format(sing_cache_dir=_env_variable_else('SINGULARITY_CACHEDIR', './singularity_cache'))
+NEXTFLOW_CONFIG = "executor.name = 'lsf'\nexecutor.queueSize = 100\nsingularity.cacheDir = {sing_cache_dir}".format(
+        sing_cache_dir=_env_variable_else('SINGULARITY_CACHEDIR', './singularity_cache'))
