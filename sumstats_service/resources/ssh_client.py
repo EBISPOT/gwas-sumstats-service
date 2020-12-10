@@ -1,5 +1,6 @@
 import paramiko
 import re
+import config
 
 class SSHClient():
     def __init__(self, host, username):
@@ -34,6 +35,21 @@ class SSHClient():
             sftp.mkdir(dirname)
         except IOError:
             pass
+
+    def rm(self, path, callback_id):
+        if config.STORAGE_PATH not in path and callback_id not in path:
+            # shouldn't be removing files elsewhere
+            pass
+        else:
+            sftp = self.client.open_sftp()
+            files = sftp.listdir(path)
+            for f in files:
+                filepath = os.path.join(path, f)
+                try:
+                    sftp.remove(filepath)
+                except IOError:
+                    self.rm(filepath)
+            sftp.rmdir(path)
 
 
     @staticmethod
