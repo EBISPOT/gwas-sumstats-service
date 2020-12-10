@@ -103,4 +103,5 @@ NEXTFLOW_CONFIG =   """
                         name = 'lsf'
                         queueSize = 100
                     }
-                    """
+                    singularity.cacheDir = {sing_cache_dir}
+                    """.format(sing_cache_dir=_env_variable_else('SINGULARITY_CACHEDIR', './singularity_cache'))
