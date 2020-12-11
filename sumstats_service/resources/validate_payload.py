@@ -47,7 +47,7 @@ def construct_failure_response(callback_id, payload):
               "id": study.study_id,
               "retrieved": "",
               "dataValid": "",
-              "errorCode": "An error occurred in the validation process, please contact us"
+              "errorCode": 10
               }
 
         validation_list.append(validation_report)

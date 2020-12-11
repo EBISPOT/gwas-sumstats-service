@@ -1,5 +1,6 @@
 import json
 import sumstats_service.resources.study_service as st
+import sumstats_service.resources.payload as pl
 import argparse
 import sys
 import config
@@ -7,12 +8,15 @@ import os
 
 
 
-def parse_payload(payload, studyid):
-    study_meta = [i for i in payload['requestEntries'] if i['id'] == studyid]
+def parse_payload(content, studyid):
+    payload = pl.Payload(callback_id=callback_id, payload=content)
+    payload.create_study_obj_list()
+    payload.set_callback_id_for_studies()
+    study_meta = [s for s in payload.study_obj_list if s.study_id == studyid]
     if len(study_meta) != 1:
         print("could not find only one matching study id in payload")
         return False
-    return (study_meta[0]['filePath'], study_meta[0]['md5'], study_meta[0]['assembly'], study_meta[0]['readme'],  study_meta[0]['entryUUID'] )
+    return (study_meta[0].file_path, study_meta[0].md5, study_meta[0].assembly, study_meta[0].readme,  study_meta[0].entryUUID )
     
     
 def validate_study(callback_id, study_id, filepath, md5, assembly, readme, entryUUID, out=None, minrows=None):
