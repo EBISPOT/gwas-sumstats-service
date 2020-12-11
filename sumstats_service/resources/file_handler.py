@@ -325,7 +325,7 @@ def md5_check(file):
 def remove_payload(callback_id):
     path = os.path.join(config.STORAGE_PATH, callback_id)
     try:
-        shutil.rmtree(path)
+        shutil.rmtree(path, ignore_errors=True)
     except FileNotFoundError as e:
         logger.error(e)
 
