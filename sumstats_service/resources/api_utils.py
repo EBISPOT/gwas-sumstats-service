@@ -67,12 +67,12 @@ def validate_files_from_payload(callback_id, content, minrows=None):
         ssh.write_data_to_file(config.NEXTFLOW_CONFIG, nextflow_config_path)
         memory = 2400
         ssh.write_data_to_file(json.dumps(content), payload_path)
-        logger.debug('content:\n{}'.format(content))
+        logger.info('content:\n{}'.format(content))
         command = ssh_command_string(par_dir, log_dir, memory, nextflow_cmd)
-        logger.debug('command:\n{}'.format(command))
+        logger.info('command:\n{}'.format(command))
         stdin, stdout, stderr = ssh.exec_command(command)
         jobid = ssh.parse_jobid(stdout)
-        logger.debug('jobid[]:\n'.format(jobid))
+        logger.info('jobid[]:\n'.format(jobid))
         results = None
         if jobid is None:
             print("command didn't return a jobid")
@@ -102,6 +102,7 @@ def validate_files_from_payload(callback_id, content, minrows=None):
             results = results_if_failure(callback_id, content)
             ssh.rm(par_dir, callback_id)
         ssh.close_connection()
+        logger.info(results)
         return json.dumps(results)
     else:
         logger.debug('Validate without ssh')

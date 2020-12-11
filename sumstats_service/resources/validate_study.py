@@ -8,7 +8,7 @@ import os
 
 
 
-def parse_payload(content, studyid):
+def parse_payload(content, studyid, callback_id):
     payload = pl.Payload(callback_id=callback_id, payload=content)
     payload.create_study_obj_list()
     payload.set_callback_id_for_studies()
@@ -87,7 +87,7 @@ def main():
 
 
     out = os.path.join(args.storepath, args.cid, args.out)
-    filepath, md5, assembly, readme, entryUUID = parse_payload(content, args.id)
+    filepath, md5, assembly, readme, entryUUID = parse_payload(content, args.id, args.cid)
     minrows = None if len(args.minrows) == 0 or args.minrows == "None" else args.minrows
     if args.force_valid is True:
         force_validation(args.cid, args.id, filepath, md5, assembly, readme, entryUUID)
