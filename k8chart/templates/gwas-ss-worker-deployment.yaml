@@ -45,6 +45,8 @@ spec:
           value: {{.Values.image.env.stagingPath}}
         - name: VALIDATED_PATH
           value: {{.Values.image.env.validatedPath}}
+        - name: SW_PATH
+          value: {{.Values.image.env.swPath}}
         - name: VALIDATE_WITH_SSH
           value: "{{.Values.image.env.validateSSH}}"
         - name: COMPUTE_FARM_LOGIN_NODE

@@ -9,6 +9,7 @@ STORAGE_PATH = _env_variable_else('STORAGE_PATH', './data')
 LOGGING_PATH = "./logs"
 STAGING_PATH = _env_variable_else('STAGING_PATH', 'depo_ss_staging')
 VALIDATED_PATH = _env_variable_else('VALIDATED_PATH', 'depo_ss_validated')
+SW_PATH =  _env_variable_else('SW_PATH', './bin')
 
 
 # --- Rabbit and Celery --- #

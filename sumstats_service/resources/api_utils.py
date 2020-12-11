@@ -167,13 +167,15 @@ def ssh_command_string(par_dir, log_dir, memory, nextflow_cmd):
     command = ("export http_proxy={hp}; "
                "export https_proxy={hsp}; "
                "export VALIDATE_WITH_SSH={ssh}; "
+               "export PATH=$PATH:{sw}; "
                "mkdir -p {logs}; "
                "bsub -oo {logs}/stdout -eo {logs}/stderr "
                "-M {mem} -R 'rusage[mem={mem}]' "
                "'{nextflow_cmd}'").format(
                     pd=par_dir, 
                     q=config.COMPUTE_FARM_QUEUE, 
-                    logs=log_dir, 
+                    logs=log_dir,
+                    sw=config.SW_PATH,
                     mem=memory, 
                     nextflow_cmd=nextflow_cmd, 
                     hp=config.REMOTE_HTTP_PROXY, 
