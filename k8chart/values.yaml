@@ -54,12 +54,12 @@ service:
   name: gwas-ss-service
   type: ClusterIP
   port: 8000
-  gunicornCmd: '["gunicorn", "-b", "0.0.0.0:8000", "sumstats_service.app:app", "-k=eventlet", "-t=1200", "-w=2", "--log-level=debug","--access-logfile=logs/ss_access.log","--error-logfile=logs/ss_error.log"]'
+  gunicornCmd: '["gunicorn", "-b", "0.0.0.0:8000", "sumstats_service.app:app", "-k=eventlet", "-t=1200", "-w=2", "--log-level=info","--access-logfile=logs/ss_access.log","--error-logfile=logs/ss_error.log"]'
 
 worker:
   name: gwas-ss-worker
-  celeryCmd: '["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=debug", "--queues=preval,postval"]'
-  celeryCmdPostOnly:  '["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=debug", "--queues=postval"]'
+  celeryCmd: '["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=info", "--queues=preval,postval"]'
+  celeryCmdPostOnly:  '["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=info", "--queues=postval"]'
   replicaCount: 1
 
 ingress:

@@ -72,7 +72,7 @@ def root():
 @app.route('/v1/sum-stats', methods=['POST'])
 def sumstats():
     content = request.get_json(force=True)
-    logger.debug("POST content: " + str(content))
+    logger.info("POST content: " + str(content))
     resp = endpoints.generate_callback_id()
     callback_id = json.loads(resp)['callbackID']
     process_studies.apply_async(args=[callback_id, content], retry=True)
