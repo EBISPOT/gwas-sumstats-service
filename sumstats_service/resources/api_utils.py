@@ -98,11 +98,11 @@ def validate_files_from_payload(callback_id, content, minrows=None):
             valid = all([study['dataValid'] == 1 for study in contents_list_of_dicts])
             if valid is False:
                 ssh.rm(par_dir, callback_id)
-            ssh.close_connection()
-            return json.dumps(results)
         else:
-            ssh.close_connection()
-            return vp.construct_failure_response
+            results = results_if_failure(callback_id, content)
+            ssh.rm(par_dir, callback_id)
+        ssh.close_connection()
+        return json.dumps(results)
     else:
         logger.debug('Validate without ssh')
         return validate_files_NOT_SSH(callback_id, content, par_dir, payload_path, nextflow_config_path, log_dir, nextflow_cmd)
@@ -128,15 +128,25 @@ def validate_files_NOT_SSH(callback_id, content, par_dir, payload_path, nextflow
         for j in json_out_files:
             with open(j, 'r') as f:
                 results["validationList"].append(json.load(f))
+    else:
+        results = results_if_failure(callback_id, content)
     logger.info(json.dumps(results))
     if pipe_ps.returncode != 0:
         remove_payload_files(callback_id)
     return json.dumps(results)
 
 
+def results_if_failure(callback_id, content):
+    payload = pl.Payload(callback_id=callback_id, payload=content)
+    payload.create_study_obj_list()
+    results = vp.construct_failure_response(callback_id, payload)
+    return results
+
+
 def nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, nextflow_config_path):
     nextflow_cmd =  """
-                    nextflow run validate_submission.nf \
+                    nextflow -log {logs}/nextflow.log \
+                            run validate_submission.nf \
                             --payload {plp}\
                             --storePath {sp}\
                             --cid {cid}\
@@ -145,8 +155,7 @@ def nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows
                             --ftpPWD {ftpp}\
                             --minrows {mr}\
                             -w {wd} \
-                            -c {conf} 
-                            -log {logs}/nextflow.log \
+                            -c {conf} \
                             -with-singularity docker://{image}:{tag}
                     """.format(image=config.SINGULARITY_IMAGE, 
                             tag=config.SINGULARITY_TAG, 
