@@ -26,8 +26,9 @@ process validate_study {
 
   containerOptions "--bind $params.storePath"
   memory { 2.GB * task.attempt }
+  time { 1.hour * task.attempt }
   maxErrors 3  
-  errorStrategy { task.exitStatus == 25 ? 'retry' : 'terminate' }
+  errorStrategy { task.exitStatus in 2..140 ? 'retry' : 'terminate' }
 
   input:
   val(id) from ids
