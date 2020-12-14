@@ -38,7 +38,7 @@ def validate_study(callback_id, study_id, filepath, md5, assembly, readme, entry
         sys.exit(0)
 
 
-def move_files(args.cid, args.id, filepath, md5, assembly, readme, entryUUID):
+def move_files(callback_id, study_id, filepath, md5, assembly, readme, entryUUID):
     study = st.Study(callback_id=callback_id, study_id=study_id, file_path=filepath, md5=md5, assembly=assembly, readme=readme, entryUUID=entryUUID)
     study.move_to_valid()
 

@@ -82,6 +82,14 @@ def is_path(string):
         return False
 
 
+def move_to_valid(callback_id, content):
+    payload = pl.Payload(callback_id=callback_id, payload=content)
+    payload.create_study_obj_list()
+    payload.set_callback_id_for_studies()    
+    for study in payload.study_obj_list:
+        study.move_to_valid()
+
+
 def main():
     argparser = argparse.ArgumentParser()
     argparser.add_argument("-cid", help='The callback ID', required=True)
@@ -94,6 +102,7 @@ def main():
     argparser.add_argument("-ftppass", help='The FTP password', required=False, default=config.FTP_PASSWORD)
     argparser.add_argument("-minrows", help='The minimum required rows in a sumsats file for validation to pass', required=False, default=None)
     argparser.add_argument("-metadata", help='Validate the metadata only', required=False, action='store_true', dest='meta_only')
+    argparser.add_argument("-move_files", help='Just move the files', required=False, action='store_true')
     
     
     args = argparser.parse_args()
@@ -117,6 +126,8 @@ def main():
 
     if args.meta_only is True:
         validate_metadata_for_payload(args.cid, content, args.out, args.minrows)
+    elif args.move_files is True:
+        move_to_valid(args.cid, content)
     else:
         validate_files_from_payload(args.cid, content, args.out, args.minrows)
 
