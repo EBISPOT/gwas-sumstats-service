@@ -10,7 +10,7 @@ class Study:
                  md5=None, assembly=None, callback_id=None,
                  retrieved=None, data_valid=None, status=None, 
                  error_code=None, readme=None, entryUUID=None,
-                 author_name=None, pmid=None, gcst=None):
+                 author_name=None, pmid=None, gcst=None, raw_ss=None):
         self.study_id = study_id
         self.file_path = file_path
         self.md5 = md5
@@ -25,6 +25,7 @@ class Study:
         self.author_name = author_name
         self.pmid = pmid
         self.gcst = gcst
+        self.raw_ss = raw_ss
 
     def valid_study_id(self):
         if re.match('^[a-zA-Z0-9]+$', self.study_id) and len(self.study_id) > 3:
@@ -123,6 +124,7 @@ class Study:
             self.author_name = set_var_from_dict(study_metadata, 'authorName', None)
             self.pmid = set_var_from_dict(study_metadata, 'pmid', None)
             self.gcst = set_var_from_dict(study_metadata, 'gcst', None)
+            self.raw_ss = set_var_from_dict(study_metadata, 'rawSS', None)
             self.set_error_text()
         return study_metadata
 
@@ -181,7 +183,7 @@ class Study:
                     if ssf.validate_file():
                         self.set_data_valid_status(1)
                         ssf.write_readme_file()
-                        ssf.tidy_files() if config.VALIDATE_WITH_SSH else None
+                        #ssf.tidy_files() if config.VALIDATE_WITH_SSH else None
                     else:
                         self.set_data_valid_status(0)
                         self.set_error_code(ssf.validation_error)
@@ -190,7 +192,7 @@ class Study:
                 self.set_error_code(1)
     
 
-    def force_validation(self):
+    def force_valid(self):
         if self.mandatory_metadata_check() is True:
             ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id, 
                     md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID, minrows=minrows)
@@ -202,10 +204,18 @@ class Study:
                 else:
                     self.set_data_valid_status(1)
                     ssf.write_readme_file()
-                    ssf.tidy_files() if config.VALIDATE_WITH_SSH else None
+                    #ssf.tidy_files() if config.VALIDATE_WITH_SSH else None
             else:
                 self.set_retrieved_status(0)
-                self.set_error_code(1)    
+                self.set_error_code(1)
+
+
+    def move_to_valid(self):
+        ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id, 
+                    md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID, minrows=minrows, raw_ss=None)
+        ssf.tidy_files()
+        
+
 
 
     def move_file_to_staging(self):

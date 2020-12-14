@@ -38,9 +38,14 @@ def validate_study(callback_id, study_id, filepath, md5, assembly, readme, entry
         sys.exit(0)
 
 
-def force_validation(callback_id, study_id, filepath, md5, assembly, readme, entryUUID):
+def move_files(args.cid, args.id, filepath, md5, assembly, readme, entryUUID):
     study = st.Study(callback_id=callback_id, study_id=study_id, file_path=filepath, md5=md5, assembly=assembly, readme=readme, entryUUID=entryUUID)
-    study.force_validation()
+    study.move_to_valid()
+
+
+def force_valid(callback_id, study_id, filepath, md5, assembly, readme, entryUUID):
+    study = st.Study(callback_id=callback_id, study_id=study_id, file_path=filepath, md5=md5, assembly=assembly, readme=readme, entryUUID=entryUUID)
+    study.force_valid()
     
 
 def is_path(string):
@@ -63,6 +68,8 @@ def main():
     argparser.add_argument("-ftppass", help='The FTP password', required=False, default=config.FTP_PASSWORD)
     argparser.add_argument("-minrows", help='The minimum required rows in a sumsats file for validation to pass', required=False, default=None)
     argparser.add_argument("-force_valid", help='Force the validation to be true', required=False, action='store_true')
+    argparser.add_argument("-move_files", help='Just move the files', required=False, action='store_true')
+
     
     
     
@@ -90,7 +97,9 @@ def main():
     filepath, md5, assembly, readme, entryUUID = parse_payload(content, args.id, args.cid)
     minrows = None if len(args.minrows) == 0 or args.minrows == "None" else args.minrows
     if args.force_valid is True:
-        force_validation(args.cid, args.id, filepath, md5, assembly, readme, entryUUID)
+        force_valid(args.cid, args.id, filepath, md5, assembly, readme, entryUUID)
+    elif args.move_files is True:
+        move_files(args.cid, args.id, filepath, md5, assembly, readme, entryUUID)
     else:
         validate_study(args.cid, args.id, filepath, md5, assembly, readme, entryUUID, out, minrows)
 
