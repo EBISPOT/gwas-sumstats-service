@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 class SumStatFile:
     def __init__(self, file_path=None, callback_id=None, study_id=None, 
                 md5exp=None, readme=None, entryUUID=None,
-                staging_dir_name=None, staging_file_name=None, minrows=None):
+                staging_dir_name=None, staging_file_name=None, minrows=None, raw_ss=None):
         self.file_path = file_path
         self.callback_id = callback_id
         self.study_id = study_id
@@ -35,6 +35,7 @@ class SumStatFile:
         self.staging_dir_name = staging_dir_name
         self.staging_file_name = staging_file_name
         self.minrows = minrows
+        self.raw_ss = raw_ss
 
 
     def set_logfile(self):

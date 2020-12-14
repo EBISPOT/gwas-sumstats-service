@@ -27,7 +27,7 @@ process validate_study {
   containerOptions "--bind $params.storePath"
   memory { 2.GB * task.attempt }
   time { 1.hour * task.attempt }
-  maxErrors 3  
+  maxRetries 5  
   errorStrategy { task.exitStatus in 2..140 ? 'retry' : 'terminate' }
 
   input:
@@ -35,13 +35,35 @@ process validate_study {
   
   output:
   stdout into result
-
+  val id in valid
 
   """
-  validate-study -cid $params.cid -id $id -payload $params.payload -storepath $params.storePath -ftpserver $params.ftpServer -ftpuser $params.ftpUser -ftppass $params.ftpPWD -minrows $params.minrows -out "${id}".json -validated_path $params.validatedPath
+  validate-study -cid $params.cid -id $id -payload $params.payload -storepath $params.storePath -ftpserver $params.ftpServer -ftpuser $params.ftpUser -ftppass $params.ftpPWD -minrows $params.minrows -out "${id}".json 
   """
 
 }
 
 
+process move_and_clean {
+
+  containerOptions "--bind $params.storePath"
+  memory { 2.GB * task.attempt }
+  time { 1.hour * task.attempt }
+  maxRetries 5  
+  errorStrategy { task.exitStatus in 2..140 ? 'retry' : 'terminate' }
+
+  input:
+  val(id) from valid
+
+  output:
+  stdout into completed
+
+  """
+  validate-study -cid $params.cid -id $id -payload $params.payload -storepath $params.storePath -ftpserver $params.ftpServer -ftpuser $params.ftpUser -ftppass $params.ftpPWD -minrows $params.minrows -out "${id}".json -validated_path $params.validatedPath 
+  """
+
+
+}
+
 result.view { it }
+completed.view { it }
