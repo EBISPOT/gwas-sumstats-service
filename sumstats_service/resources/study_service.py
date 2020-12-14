@@ -195,7 +195,7 @@ class Study:
     def force_valid(self):
         if self.mandatory_metadata_check() is True:
             ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id, 
-                    md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID, minrows=minrows)
+                    md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID)
             if ssf.retrieve() is True:
                 self.set_retrieved_status(1)
                 if not ssf.md5_ok():
@@ -212,7 +212,7 @@ class Study:
 
     def move_to_valid(self):
         ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id, 
-                    md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID, minrows=minrows, raw_ss=None)
+                    md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID, raw_ss=None)
         ssf.tidy_files()
         
 

@@ -8,7 +8,7 @@ params.ftpServer = ''
 params.ftpPWD = ''
 params.ftpUser = ''
 params.minrows = '10'
-params.validatedPath = 'data/valid'
+params.validatedPath = './data/valid'
 
 
 // parse json payload
@@ -35,7 +35,7 @@ process validate_study {
   
   output:
   stdout into result
-  val id in valid
+  val id into valid
 
   """
   validate-study -cid $params.cid -id $id -payload $params.payload -storepath $params.storePath -ftpserver $params.ftpServer -ftpuser $params.ftpUser -ftppass $params.ftpPWD -minrows $params.minrows -out "${id}".json 
@@ -53,13 +53,13 @@ process move_and_clean {
   errorStrategy { task.exitStatus in 2..140 ? 'retry' : 'terminate' }
 
   input:
-  val(id) from valid
+  val(id) from valid.collect()
 
   output:
   stdout into completed
 
   """
-  validate-study -cid $params.cid -id $id -payload $params.payload -storepath $params.storePath -ftpserver $params.ftpServer -ftpuser $params.ftpUser -ftppass $params.ftpPWD -minrows $params.minrows -out "${id}".json -validated_path $params.validatedPath 
+  validate-payload -cid $params.cid -payload $params.payload -storepath $params.storePath -ftpserver $params.ftpServer -ftpuser $params.ftpUser -ftppass $params.ftpPWD -validated_path $params.validatedPath -move_files
   """
 
 
