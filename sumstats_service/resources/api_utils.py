@@ -110,14 +110,18 @@ def validate_files_from_payload(callback_id, content, minrows=None):
 
     
 def add_errors_if_study_missing(callback_id, content, results):
-    payload = pl.Payload(callback_id=callback_id, payload=content)
-    payload.create_study_obj_list()
-    study_list = [s.study_id for s in payload.study_obj_list]
-    studies_with_results = [s.id for s in results['validationList']]
-    for study in study_list:
-        if study not in studies_with_results:
-            results['validationList'].append({"id": study, "retrieved": None, "dataValid": None, "errorCode": 10})
-    return results
+    if any([s['errorCode'] for s in results['validationList']]):
+        # if we already identfied errors, there's no need to add them
+        return results
+    else:
+        payload = pl.Payload(callback_id=callback_id, payload=content)
+        payload.create_study_obj_list()
+        study_list = [s.study_id for s in payload.study_obj_list]
+        studies_with_results = [s['id'] for s in results['validationList']]
+        for study in study_list:
+            if study not in studies_with_results:
+                results['validationList'].append({"id": study, "retrieved": None, "dataValid": None, "errorCode": 10})
+        return results
             
     
 def validate_files_NOT_SSH(callback_id, content, par_dir, payload_path, nextflow_config_path, log_dir, nextflow_cmd):
