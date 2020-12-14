@@ -73,7 +73,7 @@ def validate_files_from_payload(callback_id, content, minrows=None):
         stdin, stdout, stderr = ssh.exec_command(command)
         jobid = ssh.parse_jobid(stdout)
         logger.info('jobid[]:\n'.format(jobid))
-        results = None
+        contents_list = None
         if jobid is None:
             print("command didn't return a jobid")
         else:
@@ -82,19 +82,19 @@ def validate_files_from_payload(callback_id, content, minrows=None):
                 status = ssh.get_job_status(jobid)
                 if status in ['DONE', 'EXIT']:
                     file_contents = ssh.get_file_content(os.path.join(par_dir, '[!payload]*.json'))
-                    contents_list = file_contents.replace('}{', '}|{').split('|') if len(f) > 0 else None
+                    contents_list = file_contents.replace('}{', '}|{').split('|') if len(f) > 0 else False
                 if status in ['PEND', 'RUN']:
                     continue
                 else:
                     print(status)
                     break
-        attempts = 1
-        if contents_list:
+        if contents_list is True:
             contents_list_of_dicts = [json.loads(i) for i in contents_list]
             results = {
                     "callbackID": callback_id,
                     "validationList" : contents_list_of_dicts
                   }
+            add_errors_if_study_missing(callback_id, content, results)
             valid = all([study['dataValid'] == 1 for study in contents_list_of_dicts])
             if valid is False:
                 ssh.rm(par_dir, callback_id)
@@ -108,6 +108,17 @@ def validate_files_from_payload(callback_id, content, minrows=None):
         logger.debug('Validate without ssh')
         return validate_files_NOT_SSH(callback_id, content, par_dir, payload_path, nextflow_config_path, log_dir, nextflow_cmd)
 
+    
+def add_errors_if_study_missing(callback_id, content, results):
+    payload = pl.Payload(callback_id=callback_id, payload=content)
+    payload.create_study_obj_list()
+    study_list = [s.study_id for s in payload.study_obj_list]
+    studies_with_results = [s.id for s in results['validationList']]
+    for study in study_list:
+        if study not in studies_with_results:
+            results['validationList'].append({"id": study, "retrieved": None, "dataValid": None, "errorCode": 10})
+    return results
+            
     
 def validate_files_NOT_SSH(callback_id, content, par_dir, payload_path, nextflow_config_path, log_dir, nextflow_cmd):
     # maintain this for the sandbox which cannot ssh ebi farm
@@ -129,6 +140,7 @@ def validate_files_NOT_SSH(callback_id, content, par_dir, payload_path, nextflow
         for j in json_out_files:
             with open(j, 'r') as f:
                 results["validationList"].append(json.load(f))
+        add_errors_if_study_missing(callback_id, content, results)
     else:
         results = results_if_failure(callback_id, content)
     logger.info(json.dumps(results))
