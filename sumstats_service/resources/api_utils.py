@@ -170,13 +170,14 @@ def nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows
     nextflow_cmd =  """
                     nextflow -log {logs}/nextflow.log \
                             run validate_submission.nf \
-                            --payload {plp}\
-                            --storePath {sp}\
-                            --cid {cid}\
-                            --ftpServer {ftps}\
-                            --ftpUser {ftpu}\
-                            --ftpPWD {ftpp}\
-                            --minrows {mr}\
+                            --payload {plp} \
+                            --storePath {sp} \
+                            --cid {cid} \
+                            --ftpServer {ftps} \
+                            --ftpUser {ftpu} \
+                            --ftpPWD {ftpp} \
+                            --minrows {mr} \
+                            --validatedPath {vp} \
                             -w {wd} \
                             -c {conf} \
                             -with-singularity docker://{image}:{tag}
