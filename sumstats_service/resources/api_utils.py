@@ -110,7 +110,7 @@ def validate_files_from_payload(callback_id, content, minrows=None):
             results = add_errors_if_study_missing(callback_id, content, results)
         else:
             results = results_if_failure(callback_id, content)
-        ssh.rm(par_dir, callback_id)
+        ssh.rm(par_dir)
         ssh.close_connection()
         logger.info(results)
         return json.dumps(results)

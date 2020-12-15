@@ -38,8 +38,8 @@ class SSHClient():
         except IOError:
             pass
 
-    def rm(self, path, callback_id):
-        if config.STORAGE_PATH not in path and callback_id not in path:
+    def rm(self, path):
+        if config.STORAGE_PATH not in path:
             # shouldn't be removing files elsewhere
             pass
         else:
