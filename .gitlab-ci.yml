@@ -59,6 +59,25 @@ deploy_staging:
   only:
     - master
 
+
+deploy_dev:
+  image: dtzar/helm-kubectl:2.13.1
+  stage: deploy
+  script:
+    - echo "Deploy to dev namespace on fallback server"
+    - mkdir -p /root/.kube
+    - echo ${PFALLBACK_KUBECONFIG} | base64 -d > /root/.kube/config
+    - RABBITPWD=$(kubectl --namespace rabbitmq get secret rabbitmq -o jsonpath="{.data.rabbitmq-password}" | base64 -d)
+    - helm init
+    - helm delete --purge gwas-sumstats-service-dev || true
+    - helm install --name gwas-sumstats-service-dev --set k8Namespace=dev-gwas,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_SHA,image.env.celeryUser=$RABBITUSER,image.env.celeryPwd=$RABBITPWD,image.env.storagePath=$STORAGE_PATH,image.env.computeFarmLogin=$HX_LOGIN_NODE,image.env.computeFarmUser=$CLUSTER_USERNAME,image.env.httpProxy=$HX_HTTP_PROXY,image.env.httpsProxy=$HX_HTTPS_PROXY,image.env.gwasEndpointID=$GWAS_ENDPOINT_ID,image.env.globusSecret=$GLOBUS_SECRET,image.env.transferClientID=$TRANSFER_CLIENT_ID,image.env.clientID=$CLIENT_ID,image.env.ftpServer=$FTP_SERVER,image.env.ftpUser=$FTP_USERNAME,image.env.ftpPassword=$FTP_PASSWORD,image.env.mongoURI=$PROD_MONGO_URI,image.env.mongoUser=$PROD_MONGO_USER,image.env.mongoPassword=$PROD_MONGO_PASSWORD,image.env.mongoDB=$PROD_MONGO_DB,image.env.remoteHttpProxy=$HX_HTTP_PROXY,image.env.remoteHttpsProxy=$HX_HTTPS_PROXY,image.env.stagingPath=$STAGING_PATH_SANDBOX,image.env.validatedPath=$VALIDATED_PATH_SANDBOX,image.env.swPath=$SW_PATH ./k8chart/ --wait
+  environment:
+    name: dev
+  when: manual
+  only:
+    - master
+
+
 deploy_fallback:
   image: dtzar/helm-kubectl:2.13.1
   stage: deploy
