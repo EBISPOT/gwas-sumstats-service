@@ -37,6 +37,7 @@ image:
     stagingPath: "./staging"
     validatedPath: "./validated"
     swPath: "./bin"
+    singularityCache: ""
     
 
 volume:

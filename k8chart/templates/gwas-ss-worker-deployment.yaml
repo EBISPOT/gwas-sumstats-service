@@ -57,6 +57,8 @@ spec:
           value: {{.Values.image.repository}}
         - name: SINGULARITY_TAG
           value: {{.Values.image.tag}}
+        - name: SINGULARITY_CACHEDIR
+          value: {{.Values.image.singularityCache}}
         - name: REMOTE_HTTP_PROXY
           value: {{.Values.image.env.remoteHttpProxy}}
         - name: REMOTE_HTTPS_PROXY
