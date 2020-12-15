@@ -240,7 +240,7 @@ class SumStatFile:
         upload_to_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=source_readme, parent_dir=config.VALIDATED_PATH, dest_dir=self.callback_id, dest_file=str(self.study_id) + ".README")
         try:
             matching_files = glob(self.store_path + ".*[!log|!README|!json]")
-            logger.info("files to sync: {}".format(matching_files))            
+            logger.info("files to sync: {}".format(matching_files))
             if len(matching_files) == 1:
                 self.store_path = matching_files[0]
                 if self.store_path:

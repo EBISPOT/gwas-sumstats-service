@@ -105,10 +105,6 @@ def validate_files_from_payload(callback_id, content, minrows=None):
                     "validationList" : contents_list_of_dicts
                   }
             results = add_errors_if_study_missing(callback_id, content, results)
-            valid = all([study['dataValid'] == 1 for study in contents_list_of_dicts])
-            if valid is False:
-                # remove ftp dir
-                pass
         else:
             results = results_if_failure(callback_id, content)
         ssh.rm(par_dir, callback_id)
@@ -159,9 +155,6 @@ def validate_files_NOT_SSH(callback_id, content, par_dir, payload_path, nextflow
     else:
         results = results_if_failure(callback_id, content)
     logger.info(json.dumps(results))
-    if pipe_ps.returncode != 0:
-        # remove ftp dir
-        pass
     remove_payload_files(callback_id)
     return json.dumps(results)
 
