@@ -95,13 +95,13 @@ def validate_files_from_payload(callback_id, content, minrows=None):
                 status = ssh.get_job_status(jobid)
                 if status in ['DONE', 'EXIT']:
                     file_contents = ssh.get_file_content(os.path.join(par_dir, '[!payload]*.json'))
-                    contents_list = file_contents.replace('}{', '}|{').split('|') if len(f) > 0 else False
+                    contents_list = file_contents.replace('}{', '}|{').split('|') if len(file_contents) > 0 else False
                 if status in ['PEND', 'RUN']:
                     continue
                 else:
                     print(status)
                     break
-        if contents_list is True:
+        if contents_list:
             contents_list_of_dicts = [json.loads(i) for i in contents_list]
             results = {
                     "callbackID": callback_id,
