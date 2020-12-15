@@ -210,14 +210,6 @@ class Study:
                 self.set_error_code(1)
 
 
-    def move_to_valid(self):
-        ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id, 
-                    md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID, raw_ss=None)
-        ssf.tidy_files()
-        
-
-
-
     def move_file_to_staging(self):
         dir_name = self.gcst
         #if self.author_name and self.pmid:

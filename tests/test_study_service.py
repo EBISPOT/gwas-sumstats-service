@@ -140,18 +140,6 @@ class TestStudyService(unittest.TestCase):
         study.validate_study()
         self.assertEqual(study.error_code, 2)
 
-    def test_validate_study_data_valid(self):
-        valid_url = "file://{}".format(os.path.abspath("./tests/test_sumstats_file.tsv"))
-        valid_md5 = "a1195761f082f8cbc2f5a560743077cc"
-        study = st.Study(study_id=self.study_id, file_path=valid_url, md5=valid_md5, assembly=self.assembly, callback_id="1234abcd")
-        study.validate_study(10)
-        self.assertIsNone(study.error_code)
-        self.assertEqual(study.data_valid, 1)
-
-
-
-
-
 
 
 if __name__ == '__main__':

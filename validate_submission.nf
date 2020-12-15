@@ -37,7 +37,7 @@ process validate_study {
   stdout into result
 
   """
-  validate-study -cid $params.cid -id $id -payload $params.payload -storepath $params.storePath -ftpserver $params.ftpServer -ftpuser $params.ftpUser -ftppass $params.ftpPWD -minrows $params.minrows -out "${id}".json 
+  validate-study -cid $params.cid -id $id -payload $params.payload -storepath $params.storePath -ftpserver $params.ftpServer -ftpuser $params.ftpUser -ftppass $params.ftpPWD -minrows $params.minrows -out "${id}".json -validated_path $params.validatedPath
   """
 
 }
