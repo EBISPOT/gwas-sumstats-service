@@ -40,6 +40,7 @@ def generate_callback_id():
     
 
 def store_validation_results_in_db(validation_response):
+    valid = True
     for item in json.loads(validation_response)['validationList']:
         study_id = item["id"]
         study = st.Study(study_id)
@@ -47,6 +48,14 @@ def store_validation_results_in_db(validation_response):
         study.data_valid = item["dataValid"]
         study.error_code = item["errorCode"]
         study.store_validation_statuses()
+        if study.error_code:
+            valid = False
+    if valid == False:
+        callback_id = json.loads(validation_response)['callbackID']
+        payload = pl.Payload(callback_id=callback_id)
+        payload.clear_validated_files()
+
+
 
 def validate_files_from_payload(callback_id, content, minrows=None):
     validate_metadata = vp.validate_metadata_for_payload(callback_id, content)

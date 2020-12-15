@@ -8,7 +8,7 @@ params.ftpServer = ''
 params.ftpPWD = ''
 params.ftpUser = ''
 params.minrows = '10'
-params.validatedPath = './data/valid'
+params.validatedPath = 'test_depo_validated'
 
 
 // parse json payload

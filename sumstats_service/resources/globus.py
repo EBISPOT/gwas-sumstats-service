@@ -7,7 +7,7 @@ from urllib.parse import unquote
 import config
 import globus_sdk
 from globus_sdk import (NativeAppAuthClient, TransferClient,
-                        RefreshTokenAuthorizer, ConfidentialAppAuthClient)
+                        RefreshTokenAuthorizer, ConfidentialAppAuthClient, DeleteData)
 from globus_sdk.exc import GlobusAPIError, TransferAPIError
 from sumstats_service.resources.globus_utils import is_remote_session, enable_requests_logging
 from pymongo import MongoClient
@@ -275,8 +275,12 @@ def list_files(directory):
     return files
 
 
-
-
+def remove_path(path_to_remove):
+    transfer = init()
+    ddata = DeleteData(transfer, config.GWAS_ENDPOINT_ID, recursive=True)
+    ddata.add_item(path_to_remove)
+    delete_result = tc.submit_delete(ddata)
+    return delete_result
 
 
 def main():

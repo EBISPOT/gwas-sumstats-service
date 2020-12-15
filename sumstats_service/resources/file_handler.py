@@ -258,8 +258,6 @@ class SumStatFile:
             logger.error("Error: {}\nCould not move file {} to validated".format(e, self.store_path))
             return False
         return True
-        # TODO clear up the files on the store path
-        # close down globus endpoint
 
 
     def move_file_to_staging(self):
@@ -332,6 +330,15 @@ def remove_payload(callback_id):
         shutil.rmtree(path, ignore_errors=True)
     except FileNotFoundError as e:
         logger.error(e)
+
+
+def remove_payload_validated_files(callback_id):
+    path_to_remove = os.path.join(config.VALIDATED_PATH, callback_id)
+    logger.info("remove path: {}".format(path_to_remove))
+    status = globus.remove_path(path_to_remove)
+    logger.info(status)    
+    return status
+
 
 def parse_url(url):
     url_parse = urlparse(url)

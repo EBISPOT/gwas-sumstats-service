@@ -28,9 +28,9 @@ def enable_requests_logging():
     http_client.HTTPConnection.debuglevel = 4
 
     logging.basicConfig()
-    logging.getLogger().setLevel(logging.DEBUG)
+    logging.getLogger().setLevel(logging.INFO)
     requests_log = logging.getLogger('requests.packages.urllib3')
-    requests_log.setLevel(logging.DEBUG)
+    requests_log.setLevel(logging.INFO)
     requests_log.propagate = True
 
 
