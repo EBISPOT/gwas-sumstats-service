@@ -183,7 +183,7 @@ class Study:
                     if ssf.validate_file():
                         self.set_data_valid_status(1)
                         ssf.write_readme_file()
-                        #ssf.tidy_files() if config.VALIDATE_WITH_SSH else None
+                        ssf.tidy_files()
                     else:
                         self.set_data_valid_status(0)
                         self.set_error_code(ssf.validation_error)
@@ -204,18 +204,10 @@ class Study:
                 else:
                     self.set_data_valid_status(1)
                     ssf.write_readme_file()
-                    #ssf.tidy_files() if config.VALIDATE_WITH_SSH else None
+                    ssf.tidy_files()
             else:
                 self.set_retrieved_status(0)
                 self.set_error_code(1)
-
-
-    def move_to_valid(self):
-        ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id, 
-                    md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID, raw_ss=None)
-        ssf.tidy_files()
-        
-
 
 
     def move_file_to_staging(self):

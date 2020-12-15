@@ -35,35 +35,12 @@ process validate_study {
   
   output:
   stdout into result
-  val id into valid
 
   """
-  validate-study -cid $params.cid -id $id -payload $params.payload -storepath $params.storePath -ftpserver $params.ftpServer -ftpuser $params.ftpUser -ftppass $params.ftpPWD -minrows $params.minrows -out "${id}".json 
+  validate-study -cid $params.cid -id $id -payload $params.payload -storepath $params.storePath -ftpserver $params.ftpServer -ftpuser $params.ftpUser -ftppass $params.ftpPWD -minrows $params.minrows -out "${id}".json -validated_path $params.validatedPath
   """
 
 }
 
-
-process move_and_clean {
-
-  containerOptions "--bind $params.storePath"
-  memory { 2.GB * task.attempt }
-  time { 1.hour * task.attempt }
-  maxRetries 5  
-  errorStrategy { task.exitStatus in 2..140 ? 'retry' : 'terminate' }
-
-  input:
-  val(id) from valid.collect()
-
-  output:
-  stdout into completed
-
-  """
-  validate-payload -cid $params.cid -payload $params.payload -storepath $params.storePath -ftpserver $params.ftpServer -ftpuser $params.ftpUser -ftppass $params.ftpPWD -validated_path $params.validatedPath -move_files
-  """
-
-
-}
 
 result.view { it }
-completed.view { it }
