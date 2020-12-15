@@ -239,7 +239,8 @@ class SumStatFile:
         source_readme =  os.path.join(self.parent_path, str(self.study_id)) + ".README"
         upload_to_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=source_readme, parent_dir=config.VALIDATED_PATH, dest_dir=self.callback_id, dest_file=str(self.study_id) + ".README")
         try:
-            matching_files = glob(self.store_path + ".*[!log|!README]")
+            matching_files = glob(self.store_path + ".*[!log|!README|!json]")
+            logger.info("files to sync: {}".format(matching_files))            
             if len(matching_files) == 1:
                 self.store_path = matching_files[0]
                 if self.store_path:
@@ -254,8 +255,6 @@ class SumStatFile:
             logger.error("Error: {}\nCould not move file {} to validated".format(e, self.store_path))
             return False
         return True
-        # TODO clear up the files on the store path
-        # close down globus endpoint
 
 
     def move_file_to_staging(self):
@@ -328,6 +327,15 @@ def remove_payload(callback_id):
         shutil.rmtree(path, ignore_errors=True)
     except FileNotFoundError as e:
         logger.error(e)
+
+
+def remove_payload_validated_files(callback_id):
+    path_to_remove = os.path.join(config.VALIDATED_PATH, callback_id)
+    logger.info("remove path: {}".format(path_to_remove))
+    status = globus.remove_path(path_to_remove)
+    logger.info(status)    
+    return status
+
 
 def parse_url(url):
     url_parse = urlparse(url)

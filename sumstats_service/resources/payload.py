@@ -177,6 +177,9 @@ class Payload:
     def remove_payload_directory(self):
         fh.remove_payload(self.callback_id)
 
+    def clear_validated_files(self):
+        fh.remove_payload_validated_files(self.callback_id)
+
     
     def update_publication_details(self, publication_content):
         author_name, pmid, gcst_list = self.parse_publication_content(publication_content)

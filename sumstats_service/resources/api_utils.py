@@ -40,6 +40,7 @@ def generate_callback_id():
     
 
 def store_validation_results_in_db(validation_response):
+    valid = True
     for item in json.loads(validation_response)['validationList']:
         study_id = item["id"]
         study = st.Study(study_id)
@@ -47,6 +48,14 @@ def store_validation_results_in_db(validation_response):
         study.data_valid = item["dataValid"]
         study.error_code = item["errorCode"]
         study.store_validation_statuses()
+        if study.error_code:
+            valid = False
+    if valid == False:
+        callback_id = json.loads(validation_response)['callbackID']
+        payload = pl.Payload(callback_id=callback_id)
+        payload.clear_validated_files()
+
+
 
 def validate_files_from_payload(callback_id, content, minrows=None):
     validate_metadata = vp.validate_metadata_for_payload(callback_id, content)
@@ -74,6 +83,7 @@ def validate_files_from_payload(callback_id, content, minrows=None):
         jobid = ssh.parse_jobid(stdout)
         logger.info('jobid[]:\n'.format(jobid))
         contents_list = None
+        results = None
         if jobid is None:
             print("command didn't return a jobid")
         else:
@@ -94,13 +104,14 @@ def validate_files_from_payload(callback_id, content, minrows=None):
                     "callbackID": callback_id,
                     "validationList" : contents_list_of_dicts
                   }
-            add_errors_if_study_missing(callback_id, content, results)
+            results = add_errors_if_study_missing(callback_id, content, results)
             valid = all([study['dataValid'] == 1 for study in contents_list_of_dicts])
             if valid is False:
-                ssh.rm(par_dir, callback_id)
+                # remove ftp dir
+                pass
         else:
             results = results_if_failure(callback_id, content)
-            ssh.rm(par_dir, callback_id)
+        ssh.rm(par_dir, callback_id)
         ssh.close_connection()
         logger.info(results)
         return json.dumps(results)
@@ -149,7 +160,9 @@ def validate_files_NOT_SSH(callback_id, content, par_dir, payload_path, nextflow
         results = results_if_failure(callback_id, content)
     logger.info(json.dumps(results))
     if pipe_ps.returncode != 0:
-        remove_payload_files(callback_id)
+        # remove ftp dir
+        pass
+    remove_payload_files(callback_id)
     return json.dumps(results)
 
 
