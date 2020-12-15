@@ -67,13 +67,16 @@ def validate_files_from_payload(callback_id, content, minrows=None):
     payload_path = os.path.join(par_dir, "payload.json")
     nextflow_config_path = os.path.join(par_dir, "nextflow.config")
     log_dir = os.path.join(config.STORAGE_PATH, 'logs', callback_id)
-    nextflow_cmd = nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, nextflow_config_path)
+    nf_script_path =  os.path.join(par_dir, "validate_submission.nf")
     if config.VALIDATE_WITH_SSH == 'true':
+        nextflow_cmd = nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, nextflow_config_path, nf_script_path)    
         logger.debug('Validate with ssh')
         ssh = sshc.SSHClient(host=config.COMPUTE_FARM_LOGIN_NODE, username=config.COMPUTE_FARM_USERNAME)
         ssh.mkdir(par_dir)
         ssh.write_data_to_file(json.dumps(content), payload_path)
         ssh.write_data_to_file(config.NEXTFLOW_CONFIG, nextflow_config_path)
+        with open("validate_submission.nf", "r") as f:
+            ssh.write_data_to_file(f.read(), nf_script_path)
         memory = 2400
         ssh.write_data_to_file(json.dumps(content), payload_path)
         logger.info('content:\n{}'.format(content))
@@ -113,6 +116,7 @@ def validate_files_from_payload(callback_id, content, minrows=None):
         return json.dumps(results)
     else:
         logger.debug('Validate without ssh')
+        nextflow_cmd = nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, nextflow_config_path)    
         return validate_files_NOT_SSH(callback_id, content, par_dir, payload_path, nextflow_config_path, log_dir, nextflow_cmd)
 
     
@@ -166,10 +170,10 @@ def results_if_failure(callback_id, content):
     return results
 
 
-def nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, nextflow_config_path):
+def nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, nextflow_config_path, nf_script_path='validate_submission.nf'):
     nextflow_cmd =  """
                     nextflow -log {logs}/nextflow.log \
-                            run validate_submission.nf \
+                            run {script} \
                             --payload {plp} \
                             --storePath {sp} \
                             --cid {cid} \
@@ -182,7 +186,8 @@ def nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows
                             -c {conf} \
                             -with-singularity docker://{image}:{tag}
                     """.format(image=config.SINGULARITY_IMAGE, 
-                            tag=config.SINGULARITY_TAG, 
+                            tag=config.SINGULARITY_TAG,
+                            script=nf_script_path,
                             cid=callback_id, 
                             sp=config.STORAGE_PATH, 
                             vp=config.VALIDATED_PATH, 
