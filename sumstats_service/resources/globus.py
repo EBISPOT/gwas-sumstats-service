@@ -279,7 +279,7 @@ def remove_path(path_to_remove):
     transfer = init()
     ddata = DeleteData(transfer, config.GWAS_ENDPOINT_ID, recursive=True)
     ddata.add_item(path_to_remove)
-    delete_result = tc.submit_delete(ddata)
+    delete_result = transfer.submit_delete(ddata)
     return delete_result
 
 
