@@ -160,20 +160,41 @@ def create_dir(transfer, uid, email=None):
             endpoint_id = create_result.data['id']
 
             # add user to endpoint
-            rule_data = {
-                "DATA_TYPE": "access",
-                "principal_type": "identity",
-                "principal": identity_id,
-                "path": '/',
-                "permissions": "rw"
-            }
-            transfer.add_endpoint_acl_rule(endpoint_id, rule_data)
+
+            add_permissions_to_endpoint(transfer=transfer, 
+                                        endpoint_id=endpoint_id, 
+                                        principal_type="identity", 
+                                        principal=identity_id, 
+                                        path='/', 
+                                        permissions="rw", 
+                                        role_type=None )
+
+            # add gwas team to endpoint
+            add_permissions_to_endpoint(transfer=transfer, 
+                                        endpoint_id=endpoint_id, 
+                                        principal_type="group", 
+                                        principal=config.GWAS_GLOBUS_GROUP, 
+                                        path='/', 
+                                        permissions="rw", 
+                                        role_type="administrator")
             return endpoint_id
         else:
             return None
     else:
         transfer.operation_mkdir(config.GWAS_ENDPOINT_ID, uid)
 
+
+def add_permissions_to_endpoint(transfer, endpoint_id, principal_type, principal, path, permissions, role_type):
+    if principal:
+        rule_data = {
+                    "DATA_TYPE": "access",
+                    "principal_type": principal_type,
+                    "principal": principal,
+                    "path": path,
+                    "permissions": permissions,
+                    "role_type": role_type
+                }
+        transfer.add_endpoint_acl_rule(endpoint_id, rule_data)
 
 
 def load_tokens_from_db():
