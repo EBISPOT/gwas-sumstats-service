@@ -169,19 +169,26 @@ def create_dir(transfer, uid, email=None):
                                         permissions="rw", 
                                         role_type=None )
 
-            # add gwas team to endpoint
-            add_permissions_to_endpoint(transfer=transfer, 
-                                        endpoint_id=endpoint_id, 
-                                        principal_type="group", 
-                                        principal=config.GWAS_GLOBUS_GROUP, 
-                                        path='/', 
-                                        permissions="rw", 
-                                        role_type="administrator")
+            # add role - could add another role for users to become access managers
+            add_role(transfer=transfer, 
+                     endpoint_id=endpoint_id, 
+                     principal_type="group", 
+                     principal=config.GWAS_GLOBUS_GROUP, 
+                     role_type="administrator")
             return endpoint_id
         else:
             return None
     else:
         transfer.operation_mkdir(config.GWAS_ENDPOINT_ID, uid)
+
+
+def add_role(transfer, endpoint_id, principal_type, principal, role_type):
+    role_data = {
+                "DATA_TYPE": "role", 
+                "principal_type": principal_type, 
+                "principal": principal, 
+                "role": role_type
+                }
 
 
 def add_permissions_to_endpoint(transfer, endpoint_id, principal_type, principal, path, permissions, role_type):
