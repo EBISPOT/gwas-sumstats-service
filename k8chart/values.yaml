@@ -24,6 +24,7 @@ image:
     gwasEndpointID: ""
     globusSecret: ""
     transferClientID: ""
+    gwasGlobusGroup: ""
     clientID: ""
     ftpServer: ""
     ftpUser: ""

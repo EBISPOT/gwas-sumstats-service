@@ -39,6 +39,8 @@ spec:
           value: {{.Values.image.env.gwasEndpointID}}
         - name: GLOBUS_SECRET
           value: {{.Values.image.env.globusSecret}}
+        - name: GWAS_GLOBUS_GROUP
+          value: {{.Values.image.env.gwasGlobusGroup}}
         - name: TRANSFER_CLIENT_ID
           value: {{.Values.image.env.transferClientID}}
         - name: CLIENT_ID

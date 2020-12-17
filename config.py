@@ -51,6 +51,7 @@ GWAS_ENDPOINT_ID = _env_variable_else('GWAS_ENDPOINT_ID', None)
 GLOBUS_SECRET = _env_variable_else('GLOBUS_SECRET', None)
 CLIENT_ID = _env_variable_else('CLIENT_ID', None)
 TRANSFER_CLIENT_ID = _env_variable_else('TRANSFER_CLIENT_ID', None)
+GWAS_GLOBUS_GROUP = _env_variable_else('GWAS_GLOBUS_GROUP', None)
 
 # --- SQLite schema --- # 
 
