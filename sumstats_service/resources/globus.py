@@ -189,7 +189,12 @@ def add_role(transfer, endpoint_id, principal_type, principal, role_type):
                 "principal": principal, 
                 "role": role_type
                 }
-    transfer.add_endpoint_role(endpoint_id, role_data)
+    try:
+        transfer.add_endpoint_role(endpoint_id, role_data)
+    except TransferAPIError as e:
+        print(e)
+
+
 
 
 def add_permissions_to_endpoint(transfer, endpoint_id, principal_type, principal, path, permissions, role_type):
