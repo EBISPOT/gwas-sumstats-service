@@ -53,6 +53,13 @@ class SumStatFile:
         except FileExistsError:
             pass
 
+    def check_raw_ss(self):
+        if self.raw_ss:
+            source_path = os.path.join(self.entryUUID, self.raw_ss)
+            raw_ss_exists = filepath_exists_with_globus(source_path)
+            return raw_ss_exists
+        return True
+
     def retrieve(self):
         download_status = False
         self.make_parent_dir()
@@ -280,6 +287,13 @@ class SumStatFile:
             readme_status = mv_file_with_globus(source=source_readme, dest_dir=dest_dir, dest=os.path.join(dest_dir, "README.txt"))
             # move sumstats file
             file_status = mv_file_with_globus(source=source_file, dest_dir=dest_dir, dest=dest_file)
+            # move raw sumstats
+            if self.raw_ss:
+                raw_ss_source = os.path.join(self.entryUUID, self.raw_ss)
+                raw_ss_dest = os.path.join(dest_dir, self.raw_ss + ".rawSS")
+                raw_ss_status = mv_file_with_globus(source=raw_ss_source, dest_dir=dest_dir, dest=raw_ss_dest)
+                if raw_ss_status is False:
+                    logger.error("Error could not move {}".format(raw_ss_dest))
             if readme_status is False:
                 logger.error("Error could not move {}".format(str(os.path.join(dest_dir, "README.txt"))))
             if file_status is False:
@@ -315,6 +329,8 @@ def mv_file_with_globus(dest_dir, source, dest):
     status = globus.rename_file(dest_dir, source, dest)
     return status
 
+def filepath_exists_with_globus(path):
+    return globus.filepath_exists(path)
 
 def md5_check(file):
     hash_md5 = hashlib.md5()

@@ -52,7 +52,7 @@ class TestPayload(unittest.TestCase):
                  "assembly":"GRCh38"
                 }
         payload = pl.Payload(payload=data_missing_field)
-        study_id, file_path, md5, assembly, readme, entryUUID = payload.parse_new_study_json(data_missing_field)
+        study_id, file_path, md5, assembly, readme, entryUUID, rawSS = payload.parse_new_study_json(data_missing_field)
         self.assertIsNone(file_path)
 
     def test_check_basic_content_present(self):

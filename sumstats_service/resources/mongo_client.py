@@ -34,10 +34,10 @@ class mongoClient():
                   "md5", 
                   "assembly", 
                   "readme", 
-                  "entryUUID"]
+                  "entryUUID",
+                  "rawSS"]
         study_data_dict = dict(zip(fields, data))
         self.insert(self.study_collection, study_data_dict)
-        # Can create index if needed
 
     def get_study_metadata(self, study):
         meta_dict = self.study_collection.find_one({"studyID": study})
