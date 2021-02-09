@@ -51,7 +51,7 @@ deploy_staging:
     - mkdir -p /root/.kube
     - echo ${SANDBOX_KUBECONF} | base64 -d > /root/.kube/config
     - RABBITPWD=$(kubectl --namespace rabbitmq get secret rabbitmq -o jsonpath="{.data.rabbitmq-password}" | base64 -d)
-    - helm init
+    - helm init --stable-repo-url https://charts.helm.sh/stable
     - helm delete --purge gwas-sumstats-service || true
     - helm install --name gwas-sumstats-service --set k8Namespace=gwas,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_SHA,image.env.celeryUser=$RABBITUSER,image.env.celeryPwd=$RABBITPWD,image.env.validateSSH=false,image.env.gwasEndpointID=$GWAS_ENDPOINT_ID,image.env.globusSecret=$GLOBUS_SECRET,image.env.transferClientID=$TRANSFER_CLIENT_ID,image.env.clientID=$CLIENT_ID,image.env.ftpServer=$FTP_SERVER,image.env.ftpUser=$FTP_USERNAME,image.env.ftpPassword=$FTP_PASSWORD,image.env.mongoURI=$SANDBOX_MONGO_URI,image.env.mongoUser=$SANDBOX_MONGO_USER,image.env.mongoPassword=$SANDBOX_MONGO_PASSWORD,image.env.mongoDB=$SANDBOX_MONGO_DB,image.env.validatedPath=$VALIDATED_PATH_SANDBOX,image.env.gwasGlobusGroup=$GWAS_GLOBUS_GROUP ./k8chart/ --wait
   environment:
@@ -68,7 +68,7 @@ deploy_dev:
     - mkdir -p /root/.kube
     - echo ${PFALLBACK_KUBECONFIG} | base64 -d > /root/.kube/config
     - RABBITPWD=$(kubectl --namespace rabbitmq get secret rabbitmq -o jsonpath="{.data.rabbitmq-password}" | base64 -d)
-    - helm init
+    - helm init --stable-repo-url https://charts.helm.sh/stable
     - helm delete --purge gwas-sumstats-service-dev || true
     - helm install --name gwas-sumstats-service-dev --set k8Namespace=dev-gwas,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_SHA,image.env.celeryUser=$RABBITUSER,image.env.celeryPwd=$RABBITPWD,image.env.storagePath=$STORAGE_PATH,image.env.computeFarmLogin=$HX_LOGIN_NODE,image.env.computeFarmUser=$CLUSTER_USERNAME,image.env.httpProxy=$HX_HTTP_PROXY,image.env.httpsProxy=$HX_HTTPS_PROXY,image.env.gwasEndpointID=$GWAS_ENDPOINT_ID,image.env.globusSecret=$GLOBUS_SECRET,image.env.transferClientID=$TRANSFER_CLIENT_ID,image.env.clientID=$CLIENT_ID,image.env.ftpServer=$FTP_SERVER,image.env.ftpUser=$FTP_USERNAME,image.env.ftpPassword=$FTP_PASSWORD,image.env.mongoURI=$PROD_MONGO_URI,image.env.mongoUser=$PROD_MONGO_USER,image.env.mongoPassword=$PROD_MONGO_PASSWORD,image.env.mongoDB=$PROD_MONGO_DB,image.env.remoteHttpProxy=$HX_HTTP_PROXY,image.env.remoteHttpsProxy=$HX_HTTPS_PROXY,image.env.stagingPath=$STAGING_PATH_SANDBOX,image.env.validatedPath=$VALIDATED_PATH_SANDBOX,image.env.swPath=$SW_PATH,volume.log.ClaimName=gwas-depo-logs-dev,image.env.gwasGlobusGroup=$GWAS_GLOBUS_GROUP ./k8chart/ --wait
   environment:
@@ -86,7 +86,7 @@ deploy_fallback:
     - mkdir -p /root/.kube
     - echo ${PFALLBACK_KUBECONFIG} | base64 -d > /root/.kube/config
     - RABBITPWD=$(kubectl --namespace rabbitmq get secret rabbitmq -o jsonpath="{.data.rabbitmq-password}" | base64 -d)
-    - helm init
+    - helm init --stable-repo-url https://charts.helm.sh/stable
     - helm delete --purge gwas-sumstats-service || true
     - helm install --name gwas-sumstats-service --set k8Namespace=gwas,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_SHA,image.env.celeryUser=$RABBITUSER,image.env.celeryPwd=$RABBITPWD,image.env.storagePath=$STORAGE_PATH,image.env.computeFarmLogin=$HX_LOGIN_NODE,image.env.computeFarmUser=$CLUSTER_USERNAME,image.env.httpProxy=$HX_HTTP_PROXY,image.env.httpsProxy=$HX_HTTPS_PROXY,image.env.gwasEndpointID=$GWAS_ENDPOINT_ID,image.env.globusSecret=$GLOBUS_SECRET,image.env.transferClientID=$TRANSFER_CLIENT_ID,image.env.clientID=$CLIENT_ID,image.env.ftpServer=$FTP_SERVER,image.env.ftpUser=$FTP_USERNAME,image.env.ftpPassword=$FTP_PASSWORD,image.env.mongoURI=$PROD_MONGO_URI,image.env.mongoUser=$PROD_MONGO_USER,image.env.mongoPassword=$PROD_MONGO_PASSWORD,image.env.mongoDB=$PROD_MONGO_DB,image.env.remoteHttpProxy=$HX_HTTP_PROXY,image.env.remoteHttpsProxy=$HX_HTTPS_PROXY,image.env.stagingPath=$STAGING_PATH,image.env.validatedPath=$VALIDATED_PATH,image.env.swPath=$SW_PATH,image.env.singularityCache=$SINGULARITY_CACHEDIR,image.env.gwasGlobusGroup=$GWAS_GLOBUS_GROUP  ./k8chart/ --wait
   environment:
@@ -104,7 +104,7 @@ deploy_prod:
     - mkdir -p /root/.kube
     - echo ${PLIVE_KUBECONFIG} | base64 -d > /root/.kube/config
     - RABBITPWD=$(kubectl --namespace rabbitmq get secret rabbitmq -o jsonpath="{.data.rabbitmq-password}" | base64 -d)
-    - helm init
+    - helm init --stable-repo-url https://charts.helm.sh/stable
     - helm delete --purge gwas-sumstats-service || true
     - helm install --name gwas-sumstats-service --set k8Namespace=gwas,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_SHA,image.env.celeryUser=$RABBITUSER,image.env.celeryPwd=$RABBITPWD,image.env.storagePath=$STORAGE_PATH,image.env.computeFarmLogin=$HH_LOGIN_NODE,image.env.computeFarmUser=$CLUSTER_USERNAME,image.env.httpProxy=$HH_HTTP_PROXY,image.env.httpsProxy=$HH_HTTPS_PROXY,image.env.gwasEndpointID=$GWAS_ENDPOINT_ID,image.env.globusSecret=$GLOBUS_SECRET,image.env.transferClientID=$TRANSFER_CLIENT_ID,image.env.clientID=$CLIENT_ID,image.env.ftpServer=$FTP_SERVER,image.env.ftpUser=$FTP_USERNAME,image.env.ftpPassword=$FTP_PASSWORD,image.env.mongoURI=$PROD_MONGO_URI,image.env.mongoUser=$PROD_MONGO_USER,image.env.mongoPassword=$PROD_MONGO_PASSWORD,image.env.mongoDB=$PROD_MONGO_DB,image.env.remoteHttpProxy=$PG_HTTP_PROXY,image.env.remoteHttpsProxy=$PG_HTTPS_PROXY,image.env.stagingPath=$STAGING_PATH,image.env.validatedPath=$VALIDATED_PATH,image.env.swPath=$SW_PATH,image.env.singularityCache=$SINGULARITY_CACHEDIR,image.env.gwasGlobusGroup=$GWAS_GLOBUS_GROUP ./k8chart/ --wait
   environment:
