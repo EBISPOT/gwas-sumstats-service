@@ -96,7 +96,8 @@ VALIDATION_ERRORS = [
                         {'id': 7, 'errorText': 'Summary statistics file validation failed: File header error, please run the validator on your file to see the errors (available here: https://pypi.org/project/ss-validate/)'},
                         {'id': 8, 'errorText': 'Summary statistics file validation failed: File squareness error, please run the validator on your file to see the errors (available here: https://pypi.org/project/ss-validate/)'},
                         {'id': 9, 'errorText': 'Summary statistics file validation failed: File contains fewer than 100,000 rows. If you have fewer than 100,000 variants in your dataset, please contact gwas-subs@ebi.ac.uk for further advice.'},
-                        {'id': 10, 'errorText': 'There is a problem on our side, please contact gwas-subs@ebi.ac.uk for further advice.'}
+                        {'id': 10, 'errorText': 'There is a problem on our side, please contact gwas-subs@ebi.ac.uk for further advice.'},
+                        {'id': 11, 'errorText': 'The raw sumstats file can not be found'}
                     ]
 
 VALID_ASSEMBLIES = ["GRCh38", "GRCh37", "NCBI36", "NCBI35", "NCBI34", "NR"]

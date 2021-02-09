@@ -4,6 +4,7 @@ import sys
 from datetime import date
 import webbrowser
 from urllib.parse import unquote
+import pathlib
 import config
 import globus_sdk
 from globus_sdk import (NativeAppAuthClient, TransferClient,
@@ -307,6 +308,13 @@ def list_files(directory):
     except TransferAPIError as e:
         print(e)
     return files
+
+def filepath_exists(path):
+    pardir = pathlib.Path(path).parent
+    filename = pathlib.Path(path).name
+    if filename in list_files(pardir):
+        return True
+    return False
 
 
 def remove_path(path_to_remove):

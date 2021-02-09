@@ -145,7 +145,8 @@ class Study:
                 self.md5,
                 self.assembly,
                 self.readme,
-                self.entryUUID
+                self.entryUUID,
+                self.raw_ss
                 ]
         mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
         mdb.insert_new_study(data)
@@ -173,20 +174,24 @@ class Study:
         # Step through the validation
         if self.mandatory_metadata_check() is True:
             ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id, 
-                    md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID, minrows=minrows)
+                    md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID, minrows=minrows, raw_ss=self.raw_ss)
             if ssf.retrieve() is True:
                 self.set_retrieved_status(1)
                 if not ssf.md5_ok():
                     self.set_data_valid_status(0)
                     self.set_error_code(2)
                 else:
-                    if ssf.validate_file():
-                        self.set_data_valid_status(1)
-                        ssf.write_readme_file()
-                        ssf.tidy_files()
+                    if ssf.check_raw_ss():
+                        if ssf.validate_file():
+                            self.set_data_valid_status(1)
+                            ssf.write_readme_file()
+                            ssf.tidy_files()
+                        else:
+                            self.set_data_valid_status(0)
+                            self.set_error_code(ssf.validation_error)
                     else:
                         self.set_data_valid_status(0)
-                        self.set_error_code(ssf.validation_error)
+                        self.set_error_code(11)
             else:
                 self.set_retrieved_status(0)
                 self.set_error_code(1)
@@ -212,12 +217,10 @@ class Study:
 
     def move_file_to_staging(self):
         dir_name = self.gcst
-        #if self.author_name and self.pmid:
-        #    dir_name = '_'.join([self.author_name, str(self.pmid), self.gcst])
         sumstats_file_name = self.gcst + '_build' + str(self.assembly)
         ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, 
                 study_id=self.study_id, readme=self.readme, entryUUID=self.entryUUID, 
-                staging_dir_name=dir_name, staging_file_name=sumstats_file_name)
+                staging_dir_name=dir_name, staging_file_name=sumstats_file_name, raw_ss=self.raw_ss)
         return ssf.move_file_to_staging()
     
     
