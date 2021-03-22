@@ -68,11 +68,12 @@ class Payload:
             author_name = st.set_var_from_dict(study_metadata, 'authorName', None)
             pmid = st.set_var_from_dict(study_metadata, 'pmid', None)
             gcst = st.set_var_from_dict(study_metadata, 'gcst', None)
+            raw_ss= st.set_var_from_dict(study_metadata, 'rawSS', None)
 
             study = st.Study(study_id=study_id, callback_id=callback_id, file_path=file_path, 
                             md5=md5, assembly=assembly, retrieved=retrieved,
                             data_valid=data_valid, error_code=error_code, readme=readme, 
-                            entryUUID=entryUUID, author_name=author_name, pmid=pmid, gcst=gcst)
+                            entryUUID=entryUUID, author_name=author_name, pmid=pmid, gcst=gcst, raw_ss=raw_ss)
             self.study_obj_list.append(study)
         return self.study_obj_list
 
@@ -102,9 +103,9 @@ class Payload:
 
     def create_study_obj_list(self):
         for item in self.payload['requestEntries']:
-            study_id, file_path, md5, assembly, readme, entryUUID = self.parse_new_study_json(item)
+            study_id, file_path, md5, assembly, readme, entryUUID, raw_file_path = self.parse_new_study_json(item)
             study = st.Study(study_id=study_id, file_path=file_path, md5=md5,
-                             assembly=assembly, readme=readme, entryUUID=entryUUID)
+                             assembly=assembly, readme=readme, entryUUID=entryUUID, raw_ss=raw_file_path)
             self.study_obj_list.append(study)
         return True
 
@@ -161,7 +162,8 @@ class Payload:
            "entryUUID": "abc789",
            "md5":"b1d7e0a58d36502d59d036a17336ddf5",
            "assembly":"38",
-           "readme":"optional text"
+           "readme":"optional text",
+           "rawFilePath": "optional/file/path.tsv"
         }
         """
         study_id = study_dict['id'] if 'id' in study_dict else None
@@ -169,8 +171,9 @@ class Payload:
         md5 = study_dict['md5'] if 'md5' in study_dict else None
         assembly = study_dict['assembly'] if 'assembly' in study_dict else None
         readme = study_dict['readme'] if 'readme' in study_dict else None     
-        entryUUID = study_dict['entryUUID'] if 'entryUUID' in study_dict else None        
-        return (study_id, file_path, md5, assembly, readme, entryUUID)
+        entryUUID = study_dict['entryUUID'] if 'entryUUID' in study_dict else None
+        raw_file_path = study_dict['rawFilePath'] if 'rawFilePath' in study_dict else None
+        return (study_id, file_path, md5, assembly, readme, entryUUID, raw_file_path)
 
     
 
