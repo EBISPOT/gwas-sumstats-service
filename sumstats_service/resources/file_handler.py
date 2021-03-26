@@ -290,7 +290,7 @@ class SumStatFile:
             # move raw sumstats
             if self.raw_ss:
                 raw_ss_source = os.path.join(self.entryUUID, self.raw_ss)
-                raw_ss_dest = os.path.join(dest_dir, self.raw_ss + ".rawSS")
+                raw_ss_dest = os.path.join(dest_dir, self.raw_ss)
                 raw_ss_status = mv_file_with_globus(source=raw_ss_source, dest_dir=dest_dir, dest=raw_ss_dest)
                 if raw_ss_status is False:
                     logger.error("Error could not move {}".format(raw_ss_dest))
