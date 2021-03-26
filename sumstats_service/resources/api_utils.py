@@ -265,7 +265,8 @@ def publish_sumstats(study_list):
         study = st.Study(study_id=s['id'], file_path=s['file_path'],
                         assembly=s['assembly'], callback_id=s['callback_id'],
                         readme=s['readme'], entryUUID=s['entryUUID'],
-                        author_name=s['author_name'], pmid=s['pmid'], gcst=s['gcst'])
+                        author_name=s['author_name'], pmid=s['pmid'],
+                        gcst=s['gcst'], raw_ss=s['rawSS'])
         study.move_file_to_staging()
 
 
@@ -308,7 +309,8 @@ def update_payload(callback_id, content):
                         "callback_id": study.callback_id,
                         "readme": study.readme,
                         "entryUUID": study.entryUUID,
-                        "author_name": study.author_name
+                        "author_name": study.author_name,
+                        "rawSS": study.raw_ss
                        }
         study_list.append(study_report)
     response = {"callbackID": str(callback_id),
