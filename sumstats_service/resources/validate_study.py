@@ -19,9 +19,9 @@ def parse_payload(content, studyid, callback_id):
     return (study_meta[0].file_path, study_meta[0].md5, study_meta[0].assembly, study_meta[0].readme,  study_meta[0].entryUUID )
     
     
-def validate_study(callback_id, study_id, filepath, md5, assembly, readme, entryUUID, out=None, minrows=None):
+def validate_study(callback_id, study_id, filepath, md5, assembly, readme, entryUUID, out=None, minrows=None, forcevalid=False):
     study = st.Study(callback_id=callback_id, study_id=study_id, file_path=filepath, md5=md5, assembly=assembly, readme=readme, entryUUID=entryUUID)
-    study.validate_study(minrows)
+    study.validate_study(minrows=minrows, forcevalid=forcevalid)
     result = { 
                 "id": study.study_id,
                 "retrieved": study.retrieved,
@@ -39,9 +39,9 @@ def validate_study(callback_id, study_id, filepath, md5, assembly, readme, entry
 
 
 
-def force_valid(callback_id, study_id, filepath, md5, assembly, readme, entryUUID):
-    study = st.Study(callback_id=callback_id, study_id=study_id, file_path=filepath, md5=md5, assembly=assembly, readme=readme, entryUUID=entryUUID)
-    study.force_valid()
+#def force_valid(callback_id, study_id, filepath, md5, assembly, readme, entryUUID):
+#    study = st.Study(callback_id=callback_id, study_id=study_id, file_path=filepath, md5=md5, assembly=assembly, readme=readme, entryUUID=entryUUID)
+#    study.force_valid()
     
 
 def is_path(string):
@@ -63,8 +63,7 @@ def main():
     argparser.add_argument("-ftpuser", help='The FTP username', required=False, default=config.FTP_USERNAME)
     argparser.add_argument("-ftppass", help='The FTP password', required=False, default=config.FTP_PASSWORD)
     argparser.add_argument("-minrows", help='The minimum required rows in a sumsats file for validation to pass', required=False, default=None)
-    argparser.add_argument("-force_valid", help='Force the validation to be true', required=False, action='store_true')
-    argparser.add_argument("-move_files", help='Just move the files', required=False, action='store_true')
+    argparser.add_argument("-forcevalid", help='Setting to True will force the validation to be true', required=False, default=False)
 
     
     
@@ -92,10 +91,7 @@ def main():
     out = os.path.join(args.storepath, args.cid, args.out)
     filepath, md5, assembly, readme, entryUUID = parse_payload(content, args.id, args.cid)
     minrows = None if len(args.minrows) == 0 or args.minrows == "None" else args.minrows
-    if args.force_valid is True:
-        force_valid(args.cid, args.id, filepath, md5, assembly, readme, entryUUID)
-    else:
-        validate_study(args.cid, args.id, filepath, md5, assembly, readme, entryUUID, out, minrows)
+    validate_study(args.cid, args.id, filepath, md5, assembly, readme, entryUUID, out, minrows, args.forcevalid)
 
 
 if __name__ == '__main__':

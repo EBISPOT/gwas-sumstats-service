@@ -146,10 +146,9 @@ def process_studies(callback_id, content):
     
 
 @celery.task(queue='preval', options={'queue': 'preval'})
-def validate_files_in_background(callback_id, content):
-    results = au.validate_files_from_payload(callback_id=callback_id, content=content)
+def validate_files_in_background(callback_id, content, minrows=None, forcevalid=False):
+    results = au.validate_files_from_payload(callback_id=callback_id, content=content, minrows=minrows, forcevalid=forcevalid)
     return results
-
 
 @celery.task(queue='postval', options={'queue': 'postval'})
 def store_validation_results(results):
