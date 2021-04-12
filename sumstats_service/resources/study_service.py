@@ -170,7 +170,7 @@ class Study:
             return True
 
 
-    def validate_study(self, minrows=None):
+    def validate_study(self, minrows=None, forcevalid=False):
         # Step through the validation
         if self.mandatory_metadata_check() is True:
             ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id, 
@@ -182,7 +182,8 @@ class Study:
                     self.set_error_code(2)
                 else:
                     if ssf.check_raw_ss():
-                        if ssf.validate_file():
+                        validation_status = ssf.validate_file() if forcevalid is False else True
+                        if validation_status is True:
                             self.set_data_valid_status(1)
                             ssf.write_readme_file()
                             ssf.tidy_files()
@@ -197,22 +198,22 @@ class Study:
                 self.set_error_code(1)
     
 
-    def force_valid(self):
-        if self.mandatory_metadata_check() is True:
-            ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id, 
-                    md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID)
-            if ssf.retrieve() is True:
-                self.set_retrieved_status(1)
-                if not ssf.md5_ok():
-                    self.set_data_valid_status(0)
-                    self.set_error_code(2)
-                else:
-                    self.set_data_valid_status(1)
-                    ssf.write_readme_file()
-                    ssf.tidy_files()
-            else:
-                self.set_retrieved_status(0)
-                self.set_error_code(1)
+    #def force_valid(self):
+    #    if self.mandatory_metadata_check() is True:
+    #        ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id,
+    #                md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID)
+    #        if ssf.retrieve() is True:
+    #            self.set_retrieved_status(1)
+    #            if not ssf.md5_ok():
+    #                self.set_data_valid_status(0)
+    #                self.set_error_code(2)
+    #            else:
+    #                self.set_data_valid_status(1)
+    #                ssf.write_readme_file()
+    #                ssf.tidy_files()
+    #        else:
+    #            self.set_retrieved_status(0)
+    #            self.set_error_code(1)
 
 
     def move_file_to_staging(self):

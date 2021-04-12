@@ -57,7 +57,7 @@ def store_validation_results_in_db(validation_response):
 
 
 
-def validate_files_from_payload(callback_id, content, minrows=None):
+def validate_files_from_payload(callback_id, content, minrows=None, forcevalid=False):
     validate_metadata = vp.validate_metadata_for_payload(callback_id, content)
     if any([i['errorCode'] for i in json.loads(validate_metadata)['validationList']]):
         #metadata invalid stop here
@@ -69,7 +69,7 @@ def validate_files_from_payload(callback_id, content, minrows=None):
     log_dir = os.path.join(config.STORAGE_PATH, 'logs', callback_id)
     nf_script_path =  os.path.join(par_dir, "validate_submission.nf")
     if config.VALIDATE_WITH_SSH == 'true':
-        nextflow_cmd = nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, nextflow_config_path, nf_script_path)    
+        nextflow_cmd = nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, forcevalid, nextflow_config_path, nf_script_path)
         logger.debug('Validate with ssh')
         ssh = sshc.SSHClient(host=config.COMPUTE_FARM_LOGIN_NODE, username=config.COMPUTE_FARM_USERNAME)
         ssh.mkdir(par_dir)
@@ -116,7 +116,7 @@ def validate_files_from_payload(callback_id, content, minrows=None):
         return json.dumps(results)
     else:
         logger.debug('Validate without ssh')
-        nextflow_cmd = nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, nextflow_config_path)    
+        nextflow_cmd = nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, forcevalid, nextflow_config_path)
         return validate_files_NOT_SSH(callback_id, content, par_dir, payload_path, nextflow_config_path, log_dir, nextflow_cmd)
 
     
@@ -170,7 +170,7 @@ def results_if_failure(callback_id, content):
     return results
 
 
-def nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, nextflow_config_path, nf_script_path='validate_submission.nf'):
+def nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, forcevalid, nextflow_config_path, nf_script_path='validate_submission.nf'):
     nextflow_cmd =  """
                     nextflow -log {logs}/nextflow.log \
                             run {script} \
@@ -181,6 +181,7 @@ def nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows
                             --ftpUser {ftpu} \
                             --ftpPWD {ftpp} \
                             --minrows {mr} \
+                            --forcevalid {fv} \
                             --validatedPath {vp} \
                             -w {wd} \
                             -c {conf} \
@@ -198,6 +199,7 @@ def nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows
                             logs=log_dir,
                             wd=par_dir,
                             mr=minrows,
+                            fv=forcevalid,
                             conf=nextflow_config_path)
     return nextflow_cmd
 
