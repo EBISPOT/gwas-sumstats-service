@@ -5,7 +5,7 @@ stages:
   - deploy
 
 services:
-  - ${DEPENDENCY_PROXY_PREFIX}/docker:dind
+  - docker:dind
 
 variables:
   DOCKER_DRIVER: overlay2
