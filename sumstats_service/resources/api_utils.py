@@ -8,6 +8,8 @@ import sumstats_service.resources.payload as pl
 import sumstats_service.resources.study_service as st
 import sumstats_service.resources.validate_payload as vp
 import sumstats_service.resources.ssh_client as sshc
+import sumstats_service.resources.globus as globus
+import sumstats_service.resources.file_handler as fh
 import os
 from pathlib import Path
 import time
@@ -55,6 +57,13 @@ def store_validation_results_in_db(validation_response):
         payload = pl.Payload(callback_id=callback_id)
         payload.clear_validated_files()
 
+
+def delete_globus_endpoint(globus_uuid):
+    status = globus.deactivate_endpoint(globus_uuid)
+    path = os.path.join(config.FTP_SERVER, globus_uuid)
+    if status is True:
+        fh.remove_directory_contents(path)
+    return status
 
 
 def validate_files_from_payload(callback_id, content, minrows=None, forcevalid=False):

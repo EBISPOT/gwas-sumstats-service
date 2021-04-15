@@ -127,7 +127,13 @@ def make_dir():
         return make_response(jsonify(resp), 200)
 
 
-@app.route('/v1/sum-stats/globus/ls/<unique_id>')
+@app.route('/v1/sum-stats/globus/<unique_id>', methods=['DELETE'])
+def deactivate_dir(unique_id):
+    resp = {'unique_id': unique_id}
+    au.delete_globus_endpoint(unique_id)
+    return make_response(jsonify(resp), 202)
+
+@app.route('/v1/sum-stats/globus/<unique_id>')
 def get_dir_contents(unique_id):
     resp = {'unique_id': unique_id}
     data = globus.list_dir(unique_id)
