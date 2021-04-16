@@ -316,6 +316,11 @@ def remove_path(path_to_remove):
     delete_result = transfer.submit_delete(ddata)
     return delete_result
 
+def remove_endpoint_and_all_contents(uid):
+    endpoint_id = get_endpoint_id_from_uid(uid)
+    remove_path(endpoint_id)
+    deactivate_status = deactivate_endpoint(endpoint_id)
+    return deactivate_status
 
 def deactivate_endpoint(uid):
     transfer = init()
