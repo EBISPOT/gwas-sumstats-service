@@ -69,9 +69,6 @@ def prepare_call(transfer):
         resp = transfer.get_endpoint(config.GWAS_ENDPOINT_ID)
         # activate
         if not resp['activated']:
-            #script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
-            #with open(os.path.join(script_dir, 'json_auth.txt'), 'r') as f:
-                #data = json.load(f)
             requirements_data = None
             try:
                 requirements_data = load_requirements_data_from_db()
@@ -117,9 +114,6 @@ def get_upload_status(transfer, unique_id, files):
     for file in files:
         return_files[file] = False
     for task in transfer.task_list(filter='status:SUCCEEDED/type:TRANSFER'):
-#        print(task)
-#        for event in transfer.task_event_list(task_id=task['task_id']):
-#            print(event)
         for event in transfer.task_successful_transfers(task_id=task['task_id']):
             print(event)
             path = event['destination_path']
@@ -194,8 +188,6 @@ def add_role(transfer, endpoint_id, principal_type, principal, role_type):
         transfer.add_endpoint_role(endpoint_id, role_data)
     except TransferAPIError as e:
         print(e)
-
-
 
 
 def add_permissions_to_endpoint(transfer, endpoint_id, principal_type, principal, path, permissions, role_type):
@@ -323,6 +315,30 @@ def remove_path(path_to_remove):
     ddata.add_item(path_to_remove)
     delete_result = transfer.submit_delete(ddata)
     return delete_result
+
+def remove_endpoint_and_all_contents(uid):
+    endpoint_id = get_endpoint_id_from_uid(uid)
+    remove_path(endpoint_id)
+    deactivate_status = deactivate_endpoint(endpoint_id)
+    return deactivate_status
+
+def deactivate_endpoint(uid):
+    transfer = init()
+    endpoint_id = get_endpoint_id_from_uid(uid)
+    if endpoint_id:
+        transfer.delete_endpoint(endpoint_id)
+        return True
+    return False
+
+def get_endpoint_id_from_uid(uid):
+    transfer = init()
+    search_pattern = uid[0:8]
+    host_path = "/~/{}/".format(uid)
+    endpoint_id = None
+    for ep in transfer.endpoint_search(search_pattern, filter_scope='shared-by-me'):
+        if ep['host_path'] == host_path:
+            endpoint_id = ep['id']
+    return endpoint_id
 
 
 def main():

@@ -7,7 +7,6 @@ import config
 import os
 
 
-
 def parse_payload(content, studyid, callback_id):
     payload = pl.Payload(callback_id=callback_id, payload=content)
     payload.create_study_obj_list()
@@ -38,11 +37,16 @@ def validate_study(callback_id, study_id, filepath, md5, assembly, readme, entry
         sys.exit(0)
 
 
+def str2bool(v):
+    if isinstance(v, bool):
+       return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 
-#def force_valid(callback_id, study_id, filepath, md5, assembly, readme, entryUUID):
-#    study = st.Study(callback_id=callback_id, study_id=study_id, file_path=filepath, md5=md5, assembly=assembly, readme=readme, entryUUID=entryUUID)
-#    study.force_valid()
-    
 
 def is_path(string):
     try:
@@ -63,10 +67,8 @@ def main():
     argparser.add_argument("-ftpuser", help='The FTP username', required=False, default=config.FTP_USERNAME)
     argparser.add_argument("-ftppass", help='The FTP password', required=False, default=config.FTP_PASSWORD)
     argparser.add_argument("-minrows", help='The minimum required rows in a sumsats file for validation to pass', required=False, default=None)
-    argparser.add_argument("-forcevalid", help='Setting to True will force the validation to be true', required=False, default=False)
+    argparser.add_argument("-forcevalid", help='Setting to True will force the validation to be true', type=str2bool, nargs='?', const=True, required=False, default=False)
 
-    
-    
     
     args = argparser.parse_args()
     if args.storepath:

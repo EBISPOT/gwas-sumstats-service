@@ -8,6 +8,7 @@ import sumstats_service.resources.payload as pl
 import sumstats_service.resources.study_service as st
 import sumstats_service.resources.validate_payload as vp
 import sumstats_service.resources.ssh_client as sshc
+import sumstats_service.resources.globus as globus
 import os
 from pathlib import Path
 import time
@@ -55,6 +56,10 @@ def store_validation_results_in_db(validation_response):
         payload = pl.Payload(callback_id=callback_id)
         payload.clear_validated_files()
 
+
+def delete_globus_endpoint(globus_uuid):
+    status = globus.remove_endpoint_and_all_contents(globus_uuid)
+    return status
 
 
 def validate_files_from_payload(callback_id, content, minrows=None, forcevalid=False):
@@ -267,7 +272,8 @@ def publish_sumstats(study_list):
         study = st.Study(study_id=s['id'], file_path=s['file_path'],
                         assembly=s['assembly'], callback_id=s['callback_id'],
                         readme=s['readme'], entryUUID=s['entryUUID'],
-                        author_name=s['author_name'], pmid=s['pmid'], gcst=s['gcst'])
+                        author_name=s['author_name'], pmid=s['pmid'],
+                        gcst=s['gcst'], raw_ss=s['rawSS'])
         study.move_file_to_staging()
 
 
@@ -310,7 +316,8 @@ def update_payload(callback_id, content):
                         "callback_id": study.callback_id,
                         "readme": study.readme,
                         "entryUUID": study.entryUUID,
-                        "author_name": study.author_name
+                        "author_name": study.author_name,
+                        "rawSS": study.raw_ss
                        }
         study_list.append(study_report)
     response = {"callbackID": str(callback_id),
