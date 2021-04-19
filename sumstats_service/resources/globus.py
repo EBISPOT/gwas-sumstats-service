@@ -16,8 +16,9 @@ from pymongo import MongoClient
 
 get_input = getattr(__builtins__, 'raw_input', input)
 # uncomment the next line to enable debug logging for network requests
-enable_requests_logging()
+#enable_requests_logging()
 
+# TODO: this globus module needs refactoring to a Class
 
 def mkdir(unique_id, email_address=None):
     transfer = init()
@@ -309,29 +310,31 @@ def filepath_exists(path):
     return False
 
 
-def remove_path(path_to_remove):
-    transfer = init()
+def remove_path(path_to_remove, transfer_client=None):
+    transfer = transfer_client if transfer_client else init()
     ddata = DeleteData(transfer, config.GWAS_ENDPOINT_ID, recursive=True)
     ddata.add_item(path_to_remove)
     delete_result = transfer.submit_delete(ddata)
     return delete_result
 
 def remove_endpoint_and_all_contents(uid):
-    endpoint_id = get_endpoint_id_from_uid(uid)
-    remove_path(endpoint_id)
-    deactivate_status = deactivate_endpoint(endpoint_id)
+    # uid == path
+    # endpoint_id == globus endpoint id
+    transfer = init()
+    deactivate_status = False
+    endpoint_id = get_endpoint_id_from_uid(uid, transfer_client=transfer)
+    if endpoint_id:
+        if remove_path(path_to_remove=uid, transfer_client=transfer):
+            deactivate_status = deactivate_endpoint(endpoint_id, transfer_client=transfer)
     return deactivate_status
 
-def deactivate_endpoint(uid):
-    transfer = init()
-    endpoint_id = get_endpoint_id_from_uid(uid)
-    if endpoint_id:
-        transfer.delete_endpoint(endpoint_id)
-        return True
-    return False
+def deactivate_endpoint(endpoint_id, transfer_client=None):
+    transfer = transfer_client if transfer_client else init()
+    status = transfer.delete_endpoint(endpoint_id)
+    return status
 
-def get_endpoint_id_from_uid(uid):
-    transfer = init()
+def get_endpoint_id_from_uid(uid, transfer_client=None):
+    transfer = transfer_client if transfer_client else init()
     search_pattern = uid[0:8]
     host_path = "/~/{}/".format(uid)
     endpoint_id = None

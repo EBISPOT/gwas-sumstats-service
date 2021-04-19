@@ -245,7 +245,7 @@ def validate_metadata(callback_id):
 def delete_payload_from_db(callback_id):
     payload = pl.Payload(callback_id=callback_id)
     if not payload:
-        raise RequestedNotFound("Couldn't find resource with callback id: {}".format(self.callback_id))
+        raise RequestedNotFound("Couldn't find resource with callback id: {}".format(callback_id))
     payload.get_data_for_callback_id()
     payload.remove_callback_id()
     status_list = []
