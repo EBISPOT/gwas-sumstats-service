@@ -13,7 +13,7 @@ coverage==4.5.3
 cryptography==2.8
 daiquiri==1.5.0
 dnspython==1.16.0
-eventlet==0.25.1
+eventlet==0.31.0
 extras==1.0.0
 filelock==3.0.12
 fixtures==3.0.0
