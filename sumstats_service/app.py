@@ -1,7 +1,7 @@
 import simplejson
 import config
 import json
-from flask import Flask, make_response, Response, jsonify, request
+from flask import Flask, make_response, Response, jsonify, request, abort
 import sumstats_service.resources.api_endpoints as endpoints
 import sumstats_service.resources.api_utils as au
 from sumstats_service.resources.error_classes import *
@@ -131,6 +131,8 @@ def make_dir():
 def deactivate_dir(unique_id):
     resp = {'unique_id': unique_id}
     status = au.delete_globus_endpoint(unique_id)
+    if status is False:
+        abort(404)
     return make_response(jsonify(resp), status)
 
 @app.route('/v1/sum-stats/globus/<unique_id>')
@@ -138,7 +140,10 @@ def get_dir_contents(unique_id):
     resp = {'unique_id': unique_id}
     data = globus.list_dir(unique_id)
     resp['data'] = data
-    return make_response(jsonify(resp), 200)
+    if data is None:
+        abort(404)
+    else:
+        return make_response(jsonify(resp), 200)
 
 
 # --- Celery tasks --- #
