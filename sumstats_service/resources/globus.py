@@ -331,7 +331,7 @@ def remove_endpoint_and_all_contents(uid):
 def deactivate_endpoint(endpoint_id, transfer_client=None):
     transfer = transfer_client if transfer_client else init()
     status = transfer.delete_endpoint(endpoint_id)
-    return status
+    return status.http_status
 
 def get_endpoint_id_from_uid(uid, transfer_client=None):
     transfer = transfer_client if transfer_client else init()
