@@ -59,8 +59,6 @@ def store_validation_results_in_db(validation_response):
 
 def delete_globus_endpoint(globus_uuid):
     status = globus.remove_endpoint_and_all_contents(globus_uuid)
-    if status is False:
-        return 200
     return status
 
 
