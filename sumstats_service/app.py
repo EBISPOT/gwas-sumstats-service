@@ -130,8 +130,8 @@ def make_dir():
 @app.route('/v1/sum-stats/globus/<unique_id>', methods=['DELETE'])
 def deactivate_dir(unique_id):
     resp = {'unique_id': unique_id}
-    au.delete_globus_endpoint(unique_id)
-    return make_response(jsonify(resp), 202)
+    status = au.delete_globus_endpoint(unique_id)
+    return make_response(jsonify(resp), status)
 
 @app.route('/v1/sum-stats/globus/<unique_id>')
 def get_dir_contents(unique_id):
