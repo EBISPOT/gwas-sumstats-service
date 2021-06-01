@@ -14,17 +14,6 @@ variables:
   CI_REGISTRY_IMAGE: ebispot/gwas-sumstats-service
 
 
-build:
-  stage: build
-  script:
-   - echo "$DOCKER_HUB_PASSWORD" > dhpw.txt
-   - docker login -u "${DOCKER_HUB_USER}" --password-stdin < dhpw.txt docker.io
-   - docker pull $CI_REGISTRY_IMAGE:latest
-   - docker build --cache-from $CI_REGISTRY_IMAGE:latest -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
-   - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-  only:
-   - dev
-
 # always build an image tagged with the commit SHA from master
 build:
   stage: build
@@ -36,6 +25,7 @@ build:
    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
   only:
    - master
+   - dev
 
 
 # if a tag is created create an images with the tag and a latest

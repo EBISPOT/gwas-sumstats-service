@@ -8,6 +8,7 @@ import sumstats_service.resources.payload as pl
 import sumstats_service.resources.study_service as st
 import sumstats_service.resources.validate_payload as vp
 import sumstats_service.resources.ssh_client as sshc
+import sumstats_service.resources.globus as globus
 import os
 from pathlib import Path
 import time
@@ -55,6 +56,10 @@ def store_validation_results_in_db(validation_response):
         payload = pl.Payload(callback_id=callback_id)
         payload.clear_validated_files()
 
+
+def delete_globus_endpoint(globus_uuid):
+    status = globus.remove_endpoint_and_all_contents(globus_uuid)
+    return status
 
 
 def validate_files_from_payload(callback_id, content, minrows=None, forcevalid=False):
@@ -240,7 +245,7 @@ def validate_metadata(callback_id):
 def delete_payload_from_db(callback_id):
     payload = pl.Payload(callback_id=callback_id)
     if not payload:
-        raise RequestedNotFound("Couldn't find resource with callback id: {}".format(self.callback_id))
+        raise RequestedNotFound("Couldn't find resource with callback id: {}".format(callback_id))
     payload.get_data_for_callback_id()
     payload.remove_callback_id()
     status_list = []
