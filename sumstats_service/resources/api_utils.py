@@ -267,14 +267,18 @@ def remove_payload_files(callback_id):
     payload.remove_payload_directory()
 
 
-def publish_sumstats(study_list):
+def publish_and_clean_sumstats(study_list):
+    # 1) move sumstats files to staging for publishing
+    # 2) deactivate globus endpoint
     for s in study_list['studyList']:
         study = st.Study(study_id=s['id'], file_path=s['file_path'],
                         assembly=s['assembly'], callback_id=s['callback_id'],
                         readme=s['readme'], entryUUID=s['entryUUID'],
                         author_name=s['author_name'], pmid=s['pmid'],
                         gcst=s['gcst'], raw_ss=s['rawSS'])
-        study.move_file_to_staging()
+        if study.move_file_to_staging() is True:
+            delete_globus_endpoint(study.entryUUID)
+
 
 
 def construct_get_payload_response(callback_id):
