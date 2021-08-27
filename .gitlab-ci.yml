@@ -1,4 +1,4 @@
-image: ${DEPENDENCY_PROXY_PREFIX}/docker:latest
+image: docker:latest
 
 stages:
   - build
@@ -46,7 +46,7 @@ build_release:
 
 
 deploy_staging:
-  image: ${DEPENDENCY_PROXY_PREFIX}/dtzar/helm-kubectl:2.13.1
+  image: dtzar/helm-kubectl:2.13.1
   stage: deploy
   script:
     - echo "Deploy to staging server"
@@ -64,7 +64,7 @@ deploy_staging:
 
 
 deploy_fallback:
-  image: ${DEPENDENCY_PROXY_PREFIX}/dtzar/helm-kubectl:2.13.1
+  image: dtzar/helm-kubectl:2.13.1
   stage: deploy
   script:
     - echo "Deploy to production fallback server"
@@ -82,7 +82,7 @@ deploy_fallback:
 
 
 deploy_prod:
-  image: ${DEPENDENCY_PROXY_PREFIX}/dtzar/helm-kubectl:2.13.1
+  image: dtzar/helm-kubectl:2.13.1
   stage: deploy
   script:
     - echo "Deploy to production server"
