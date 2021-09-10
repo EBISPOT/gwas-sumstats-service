@@ -172,7 +172,7 @@ def remove_payload_files(callback_id):
     au.remove_payload_files(callback_id)
 
 
-@celery.task(queue='preval', options={'queue': 'postval'})
+@celery.task(queue='postval', options={'queue': 'postval'})
 def publish_and_clean_sumstats(resp):
     au.publish_and_clean_sumstats(resp)
 
