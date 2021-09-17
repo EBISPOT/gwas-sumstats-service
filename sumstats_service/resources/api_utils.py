@@ -281,9 +281,9 @@ def publish_and_clean_sumstats(study_list):
                         gcst=s['gcst'], raw_ss=s['rawSS'])
         if study.move_file_to_staging() is True:
             moved += 1
-        if callback_id is not None:
+        if callback_id is None:
             callback_id = s['callback_id']
-        if globus_endpoint_id is not None:
+        if globus_endpoint_id is None:
             globus_endpoint_id = s['entryUUID']
     if callback_id and globus_endpoint_id:
         payload = pl.Payload(callback_id=callback_id)
