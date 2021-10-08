@@ -82,7 +82,7 @@ def validate_files_from_payload(callback_id, content, minrows=None, forcevalid=F
         ssh.write_data_to_file(config.NEXTFLOW_CONFIG, nextflow_config_path)
         with open("validate_submission.nf", "r") as f:
             ssh.write_data_to_file(f.read(), nf_script_path)
-        memory = 2400
+        memory = 5600
         ssh.write_data_to_file(json.dumps(content), payload_path)
         logger.info('content:\n{}'.format(content))
         command = ssh_command_string(par_dir, log_dir, memory, nextflow_cmd)
