@@ -470,6 +470,7 @@ def upload_to_ftp(server, user, password, source, parent_dir, dest_dir, dest_fil
         if not dir_exists:
             ftp.mkd(dest_dir)
         with open(source, "rb") as f:
+            logger.info("Starting transfer to {}/{}".format(dest_dir, dest_file))
             dest = os.path.join(dest_dir, dest_file)
             ftp.storbinary("STOR " + dest, f)
             ftp.quit()
