@@ -215,10 +215,11 @@ def ssh_command_string(par_dir, log_dir, memory, nextflow_cmd):
                "export PATH=$PATH:{sw}; "
                "mkdir -p {logs}; "
                "bsub -oo {logs}/stdout -eo {logs}/stderr "
+               "-q {q} "
                "-M {mem} -R 'rusage[mem={mem}]' "
                "'{nextflow_cmd}'").format(
                     pd=par_dir, 
-                    q=config.COMPUTE_FARM_QUEUE, 
+                    q=config.COMPUTE_FARM_QUEUE_LONG,
                     logs=log_dir,
                     sw=config.SW_PATH,
                     mem=memory, 

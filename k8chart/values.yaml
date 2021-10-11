@@ -19,6 +19,7 @@ image:
     validateSSH: true
     computeFarmLogin: ""
     computeFarmUser: ""
+    computeFarmQueueLong: ""
     remoteHttpProxy: ""
     remoteHttpsProxy: ""
     gwasEndpointID: ""

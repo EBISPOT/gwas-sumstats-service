@@ -53,6 +53,8 @@ spec:
           value: {{.Values.image.env.computeFarmLogin}}
         - name: COMPUTE_FARM_USERNAME
           value: {{.Values.image.env.computeFarmUser}}
+        - name: COMPUTE_FARM_QUEUE_LONG
+          value: {{.Values.image.env.computeFarmQueueLong}}
         - name: SINGULARITY_IMAGE
           value: {{.Values.image.repository}}
         - name: SINGULARITY_TAG
