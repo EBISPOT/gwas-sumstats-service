@@ -199,7 +199,7 @@ class Study:
 
     def clean_study_files_after_validation(self, ftp):
         ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id,
-                             md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID, minrows=minrows,
+                             md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID,
                              raw_ss=self.raw_ss, ftp_client=ftp)
         ssf.tidy_files()
 
