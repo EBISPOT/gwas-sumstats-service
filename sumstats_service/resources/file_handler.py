@@ -470,6 +470,8 @@ def upload_to_ftp(ftp_client, source, parent_dir, dest_dir, dest_file):
         ftp = ftp_client
         if ftp is False:
             return False
+        #pathify potential string
+        parent_dir = '/' + parent_dir if not parent_dir.startswith('/') else parent_dir
         ftp.cwd(parent_dir)
         filelist = []
         ftp.retrlines('LIST',filelist.append)
