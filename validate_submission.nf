@@ -59,7 +59,7 @@ process clean_up {
   stdout into result
 
   """
-  payload -cid $params.cid -payload $params.payload -storepath $params.storePath -ftpserver $params.ftpServer -ftpuser $params.ftpUser -ftppass $params.ftpPWD
+  payload -cid $params.cid -payload $params.payload -storepath $params.storePath -ftpserver $params.ftpServer -ftpuser $params.ftpUser -ftppass $params.ftpPWD -validated_path $params.validatedPath
   """
 
 }
