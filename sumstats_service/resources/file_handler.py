@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 class SumStatFile:
     def __init__(self, file_path=None, callback_id=None, study_id=None, 
                 md5exp=None, readme=None, entryUUID=None,
-                staging_dir_name=None, staging_file_name=None, minrows=None, raw_ss=None):
+                staging_dir_name=None, staging_file_name=None, minrows=None, raw_ss=None, ftp_client=None):
         self.file_path = file_path
         self.callback_id = callback_id
         self.study_id = study_id
@@ -36,6 +36,7 @@ class SumStatFile:
         self.staging_file_name = staging_file_name
         self.minrows = minrows
         self.raw_ss = raw_ss
+        self.ftp_client = ftp_client
 
 
     def set_logfile(self):
@@ -247,7 +248,7 @@ class SumStatFile:
         self.set_store_path()
         # We know the readme name exactly, but we don't know the extension of the sumstats file
         source_readme =  os.path.join(self.parent_path, str(self.study_id)) + ".README"
-        upload_to_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=source_readme, parent_dir=config.VALIDATED_PATH, dest_dir=self.callback_id, dest_file=str(self.study_id) + ".README")
+        upload_to_ftp(ftp_client=self.ftp_client, source=source_readme, parent_dir=config.VALIDATED_PATH, dest_dir=self.callback_id, dest_file=str(self.study_id) + ".README")
         try:
             matching_files = glob(self.store_path + ".*[!log|!README|!json]")
             logger.info("files to sync: {}".format(matching_files))
@@ -257,7 +258,7 @@ class SumStatFile:
                     file_ext = self.get_ext()
                     dest_file = self.study_id + file_ext
                     logger.info("syncing file: {} --> {}/{}".format(self.store_path, config.VALIDATED_PATH, os.path.join(self.callback_id, dest_file)))
-                    upload_to_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=self.store_path, parent_dir=config.VALIDATED_PATH, dest_dir=self.callback_id, dest_file=dest_file)
+                    upload_to_ftp(ftp_client=self.ftp_client, source=self.store_path, parent_dir=config.VALIDATED_PATH, dest_dir=self.callback_id, dest_file=dest_file)
             else:
                 logger.error("Error: {}\nCould not locate file for {}".format(self.study_id))
                 return False
@@ -455,11 +456,22 @@ def download_from_ftp(server, user, password, source, dest):
             logger.error(e)
             return False
 
-
-def upload_to_ftp(server, user, password, source, parent_dir, dest_dir, dest_file):
+def connect_to_ftp(server, user, password):
     try:
         ftp = ftplib.FTP(server)
         ftp.login(user, password)
+        return ftp
+    except ftplib.all_errors as e:
+        logger.error(e)
+        return False
+
+def upload_to_ftp(ftp_client, source, parent_dir, dest_dir, dest_file):
+    try:
+        ftp = ftp_client
+        if ftp is False:
+            return False
+        #pathify potential string
+        parent_dir = '/' + parent_dir if not parent_dir.startswith('/') else parent_dir
         ftp.cwd(parent_dir)
         filelist = []
         ftp.retrlines('LIST',filelist.append)
@@ -473,7 +485,6 @@ def upload_to_ftp(server, user, password, source, parent_dir, dest_dir, dest_fil
             logger.info("Starting transfer to {}/{}".format(dest_dir, dest_file))
             dest = os.path.join(dest_dir, dest_file)
             ftp.storbinary("STOR " + dest, f)
-            ftp.quit()
             return True
     except ftplib.all_errors as e:
             logger.error(e)

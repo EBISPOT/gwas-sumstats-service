@@ -27,15 +27,16 @@ process validate_study {
 
   containerOptions "--bind $params.storePath"
   memory { 2.GB * task.attempt }
-  time { 6.hour * task.attempt }
-  maxRetries 5  
+  time { 5.hour * task.attempt }
+  maxRetries 5
   errorStrategy { task.exitStatus in 2..140 ? 'retry' : 'terminate' }
+  publishDir "$params.storePath", mode: 'copy'
 
   input:
   val(id) from ids
-  
+
   output:
-  stdout into result
+  file "${id}.json" into validated
 
   """
   validate-study -cid $params.cid -id $id -payload $params.payload -storepath $params.storePath -ftpserver $params.ftpServer -ftpuser $params.ftpUser -ftppass $params.ftpPWD -minrows $params.minrows -forcevalid $params.forcevalid -out "${id}".json -validated_path $params.validatedPath
@@ -43,5 +44,24 @@ process validate_study {
 
 }
 
+process clean_up {
+
+  containerOptions "--bind $params.storePath"
+  memory { 2.GB * task.attempt }
+  time { 5.hour * task.attempt }
+  maxRetries 5
+  errorStrategy { task.exitStatus in 2..140 ? 'retry' : 'terminate' }
+
+  input:
+  file "*.json" from validated.collect()
+
+  output:
+  stdout into result
+
+  """
+  payload -cid $params.cid -payload $params.payload -storepath $params.storePath -ftpserver $params.ftpServer -ftpuser $params.ftpUser -ftppass $params.ftpPWD -validated_path $params.validatedPath
+  """
+
+}
 
 result.view { it }
