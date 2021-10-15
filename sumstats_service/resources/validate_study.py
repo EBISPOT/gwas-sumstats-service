@@ -62,10 +62,9 @@ def main():
         content = json.loads(args.payload)
 
 
-    out = os.path.join(args.storepath, args.cid, args.out)
     filepath, md5, assembly, readme, entryUUID = pl.parse_payload(content, args.id, args.cid)
     minrows = None if len(args.minrows) == 0 or args.minrows == "None" else args.minrows
-    validate_study(args.cid, args.id, filepath, md5, assembly, readme, entryUUID, out, minrows, args.forcevalid)
+    validate_study(args.cid, args.id, filepath, md5, assembly, readme, entryUUID, args.out, minrows, args.forcevalid)
 
 
 if __name__ == '__main__':
