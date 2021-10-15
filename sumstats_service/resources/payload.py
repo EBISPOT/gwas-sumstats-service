@@ -1,9 +1,11 @@
 import shortuuid
 import json
+import argparse
 from sumstats_service.resources.mongo_client import mongoClient
 from sumstats_service.resources.error_classes import *
 import sumstats_service.resources.study_service as st
 import sumstats_service.resources.file_handler as fh
+import sumstats_service.resources.utils as utils
 import config
 
 
@@ -230,4 +232,65 @@ class Payload:
         gcst_list = publication_content['studyList'] if 'studyList' in publication_content else None
         return (author_name, pmid, gcst_list)
 
+    def clean_up_after_validation(self, ftp_server, ftp_user, ftp_password):
+        ftp = fh.connect_to_ftp(server=ftp_server, user=ftp_user, password=ftp_password)
+        for study in self.study_obj_list:
+            study.clean_study_files_after_validation(ftp=ftp)
+        ftp.quit()
 
+
+def parse_payload(content, studyid, callback_id):
+    payload = Payload(callback_id=callback_id, payload=content)
+    payload.create_study_obj_list()
+    payload.set_callback_id_for_studies()
+    study_meta = [s for s in payload.study_obj_list if s.study_id == studyid]
+    if len(study_meta) != 1:
+        print("could not find only one matching study id in payload")
+        return False
+    return (
+    study_meta[0].file_path, study_meta[0].md5, study_meta[0].assembly, study_meta[0].readme, study_meta[0].entryUUID)
+
+
+def main():
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument("-cid", help='The callback ID', required=True)
+    argparser.add_argument("-payload", help='JSON payload (input)', required=True)
+    argparser.add_argument("-storepath", help='The storage path you want the data written to e.g. /path/to/data',
+                           required=False, default=config.STORAGE_PATH)
+    argparser.add_argument("-validated_path",
+                           help='The path you want the validated files written to e.g. /path/to/data', required=False,
+                           default=config.VALIDATED_PATH)
+    argparser.add_argument("-ftpserver", help='The FTP server name where your files are', required=False,
+                           default=config.FTP_SERVER)
+    argparser.add_argument("-ftpuser", help='The FTP username', required=False, default=config.FTP_USERNAME)
+    argparser.add_argument("-ftppass", help='The FTP password', required=False, default=config.FTP_PASSWORD)
+
+    args = argparser.parse_args()
+    if args.storepath:
+        config.STORAGE_PATH = args.storepath
+    if args.validated_path:
+        config.VALIDATED_PATH = args.validated_path
+    if args.ftpserver:
+        config.FTP_SERVER = args.ftpserver
+    if args.ftpuser:
+        config.FTP_USERNAME = args.ftpuser
+    if args.ftppass:
+        config.FTP_PASSWORD = args.ftppass
+
+    if utils.is_path(args.payload):
+        with open(args.payload, "r") as f:
+            content = json.load(f)
+    else:
+        # if content is given as json string
+        content = json.loads(args.payload)
+
+    payload = Payload(callback_id=args.cid, payload=content)
+    payload.create_study_obj_list()
+    payload.set_callback_id_for_studies()
+    payload.clean_up_after_validation(ftp_server=config.FTP_SERVER,
+                                      ftp_user=config.FTP_USERNAME,
+                                      ftp_password=config.FTP_PASSWORD)
+
+
+if __name__ == '__main__':
+    main()

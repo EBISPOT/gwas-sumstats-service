@@ -7,7 +7,8 @@ setup(
     entry_points={
         "console_scripts": 
             ['validate-payload = sumstats_service.resources.validate_payload:main',
-             'validate-study = sumstats_service.resources.validate_study:main'
+             'validate-study = sumstats_service.resources.validate_study:main',
+             'payload = sumstats_service.resources.payload:main'
             ]
     },
     include_package_data=True,

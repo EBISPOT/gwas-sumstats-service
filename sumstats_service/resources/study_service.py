@@ -186,7 +186,7 @@ class Study:
                         if validation_status is True:
                             self.set_data_valid_status(1)
                             ssf.write_readme_file()
-                            ssf.tidy_files()
+                            #ssf.tidy_files() #will tidy all files in one go now
                         else:
                             self.set_data_valid_status(0)
                             self.set_error_code(ssf.validation_error)
@@ -196,7 +196,13 @@ class Study:
             else:
                 self.set_retrieved_status(0)
                 self.set_error_code(1)
-    
+
+    def clean_study_files_after_validation(self, ftp):
+        ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id,
+                             md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID, minrows=minrows,
+                             raw_ss=self.raw_ss, ftp_client=ftp)
+        ssf.tidy_files()
+
 
     #def force_valid(self):
     #    if self.mandatory_metadata_check() is True:
