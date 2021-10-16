@@ -30,7 +30,7 @@ process validate_study {
   time { 5.hour * task.attempt }
   maxRetries 5
   errorStrategy { task.exitStatus in 2..140 ? 'retry' : 'terminate' }
-  publishDir "$params.storePath", mode: 'copy'
+  publishDir "$params.storePath/$params.cid", mode: 'move'
 
   input:
   val(id) from ids
@@ -48,8 +48,8 @@ process clean_up {
 
   containerOptions "--bind $params.storePath"
   memory { 2.GB * task.attempt }
-  time { 5.hour * task.attempt }
-  maxRetries 5
+  time { 12.hour * task.attempt }
+  maxRetries 2
   errorStrategy { task.exitStatus in 2..140 ? 'retry' : 'terminate' }
 
   input:
