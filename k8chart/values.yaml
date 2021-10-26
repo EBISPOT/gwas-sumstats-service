@@ -15,6 +15,8 @@ image:
   env:
     celeryUser: "username"
     celeryPwd: "password"
+    celeryQueue1: "preval"
+    celeryQueue2: "postval"
     storagePath: "./data"
     validateSSH: true
     computeFarmLogin: ""

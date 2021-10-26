@@ -39,6 +39,10 @@ spec:
           value: {{.Values.image.env.celeryUser}}
         - name: CELERY_PASSWORD
           value: {{.Values.image.env.celeryPwd}}
+        - name: CELERY_QUEUE1
+          value: {{.Values.image.env.celeryQueue1}}
+        - name: CELERY_QUEUE2
+          value: {{.Values.image.env.celeryQueue2}}
         - name: STORAGE_PATH
           value: {{.Values.image.env.storagePath}}
         - name: STAGING_PATH
