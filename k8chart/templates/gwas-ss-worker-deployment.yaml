@@ -19,7 +19,7 @@ spec:
       - name: {{.Values.worker.name}}
         image: "{{.Values.image.repository}}:{{.Values.image.tag}}"
         {{ if .Values.image.env.validateSSH }}
-        command: {{.Values.worker.celeryCmd}}
+        command: ["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=info", "--queues={{.Values.image.env.celeryQueue1}},{{.Values.image.env.celeryQueue2}}"]
         {{ else }}
         command: {{.Values.worker.celeryCmdPostOnly}}        
         {{ end }}
