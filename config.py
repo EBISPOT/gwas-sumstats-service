@@ -17,6 +17,11 @@ SW_PATH =  _env_variable_else('SW_PATH', './bin')
 BROKER = "amqp"
 BROKER_HOST = "rabbitmq"
 BROKER_PORT = 5672
+# the following two queues were required for EHK + EBI LSF cluster
+# install (pre-validation and post-validation) but are not required
+# if the worker is able to perform validation and see the database
+CELERY_QUEUE1 = _env_variable_else('CELERY_QUEUE1', 'preval')
+CELERY_QUEUE2 = _env_variable_else('CELERY_QUEUE2', 'postval')
 
 # --- Remote --- #
 
