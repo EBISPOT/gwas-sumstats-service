@@ -74,8 +74,12 @@ def sumstats():
     content = request.get_json(force=True)
     logger.info("POST content: " + str(content))
     resp = endpoints.generate_callback_id()
-    callback_id = json.loads(resp)['callbackID']
-    process_studies.apply_async(args=[callback_id, content], retry=True)
+    resp_dict = json.loads(resp)
+    callback_id = au.val_from_dict(key='callbackID', dict=resp_dict)
+    minrows = au.val_from_dict(key='minrows', dict=content)
+    bypass = au.val_from_dict(key='bypass', dict=content)
+    minrows = None if bypass is True and minrows else minrows
+    process_studies.apply_async(args=[callback_id, content, minrows, bypass], retry=True)
     return Response(response=resp,
                     status=201,
                     mimetype="application/json")
@@ -151,9 +155,9 @@ def get_dir_contents(unique_id):
 # preval --> compute cluster side worker queue
 
 @celery.task(queue='postval', options={'queue': 'postval'})
-def process_studies(callback_id, content):
+def process_studies(callback_id, content, minrows=None, forcevalid=False):
     if endpoints.create_studies(callback_id=callback_id, content=content):
-        validate_files_in_background.apply_async(args=[callback_id, content], link=store_validation_results.s(), retry=True)
+        validate_files_in_background.apply_async(args=[callback_id, content, minrows, forcevalid], link=store_validation_results.s(), retry=True)
     
 
 @celery.task(queue='preval', options={'queue': 'preval'})
