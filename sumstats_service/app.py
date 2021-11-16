@@ -154,29 +154,31 @@ def get_dir_contents(unique_id):
 # postval --> app side worker queue
 # preval --> compute cluster side worker queue
 
-@celery.task(queue='postval', options={'queue': 'postval'})
-def process_studies(callback_id, content, minrows=None, forcevalid=False):
-    if endpoints.create_studies(callback_id=callback_id, content=content):
-        validate_files_in_background.apply_async(args=[callback_id, content, minrows, forcevalid], link=store_validation_results.s(), retry=True)
-    
 
-@celery.task(queue='preval', options={'queue': 'preval'})
+@celery.task(queue=config.CELERY_QUEUE2, options={'queue': config.CELERY_QUEUE2})
+def process_studies(callback_id, content):
+    if endpoints.create_studies(callback_id=callback_id, content=content):
+        validate_files_in_background.apply_async(args=[callback_id, content, minrows, forcevalid], link=store_validation_results.s(), retry=True)   
+
+        
+@celery.task(queue=config.CELERY_QUEUE1, options={'queue': config.CELERY_QUEUE1})
 def validate_files_in_background(callback_id, content, minrows=None, forcevalid=False):
     results = au.validate_files_from_payload(callback_id=callback_id, content=content, minrows=minrows, forcevalid=forcevalid)
     return results
 
-@celery.task(queue='postval', options={'queue': 'postval'})
+
+@celery.task(queue=config.CELERY_QUEUE2, options={'queue': config.CELERY_QUEUE2})
 def store_validation_results(results):
     if results:
         au.store_validation_results_in_db(results)
 
 
-@celery.task(queue='preval', options={'queue': 'preval'})
+@celery.task(queue=config.CELERY_QUEUE1, options={'queue': config.CELERY_QUEUE1})
 def remove_payload_files(callback_id):
     au.remove_payload_files(callback_id)
 
 
-@celery.task(queue='preval', options={'queue': 'preval'})
+@celery.task(queue=config.CELERY_QUEUE1, options={'queue': config.CELERY_QUEUE1})
 def publish_sumstats(resp):
     au.publish_sumstats(resp)
 
