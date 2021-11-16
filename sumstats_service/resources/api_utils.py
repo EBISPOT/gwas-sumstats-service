@@ -334,3 +334,7 @@ def create_study_report(study):
               "gcst": study.get_gcst()
               }
     return report
+
+
+def val_from_dict(key, dict, default=None):
+    return dict[key] if key in dict else default
