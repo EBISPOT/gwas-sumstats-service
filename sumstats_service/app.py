@@ -76,10 +76,14 @@ def sumstats():
     resp = endpoints.generate_callback_id()
     resp_dict = json.loads(resp)
     callback_id = au.val_from_dict(key='callbackID', dict=resp_dict)
+    # minrows is the minimum number of rows for the validation to pass
     minrows = au.val_from_dict(key='minrows', dict=content)
-    bypass = au.val_from_dict(key='bypass', dict=content)
-    minrows = None if bypass is True and minrows else minrows
-    process_studies.apply_async(args=[callback_id, content, minrows, bypass], retry=True)
+    # option to force submission to be valid and continue the pipeline
+    force_valid = au.val_from_dict(key='forceValid', dict=content, default=False)
+    # option to bypass all validation and downstream steps
+    bypass = au.val_from_dict(key='skipValidation', dict=content, default=False)
+    minrows = None if force_valid is True else minrows
+    process_studies.apply_async(args=[callback_id, content, minrows, force_valid, bypass], retry=True)
     return Response(response=resp,
                     status=201,
                     mimetype="application/json")
@@ -156,14 +160,17 @@ def get_dir_contents(unique_id):
 
 
 @celery.task(queue=config.CELERY_QUEUE2, options={'queue': config.CELERY_QUEUE2})
-def process_studies(callback_id, content):
+def process_studies(callback_id, content, minrows=None, forcevalid=False, bypass=False):
     if endpoints.create_studies(callback_id=callback_id, content=content):
-        validate_files_in_background.apply_async(args=[callback_id, content, minrows, forcevalid], link=store_validation_results.s(), retry=True)   
+        validate_files_in_background.apply_async(args=[callback_id, content, minrows, forcevalid, bypass], link=store_validation_results.s(), retry=True)
 
         
 @celery.task(queue=config.CELERY_QUEUE1, options={'queue': config.CELERY_QUEUE1})
-def validate_files_in_background(callback_id, content, minrows=None, forcevalid=False):
-    results = au.validate_files_from_payload(callback_id=callback_id, content=content, minrows=minrows, forcevalid=forcevalid)
+def validate_files_in_background(callback_id, content, minrows=None, forcevalid=False, bypass=False):
+    if bypass is True:
+        results = au.skip_validation_completely(callback_id=callback_id, content=content)
+    else:
+        results = au.validate_files_from_payload(callback_id=callback_id, content=content, minrows=minrows, forcevalid=forcevalid)
     return results
 
 

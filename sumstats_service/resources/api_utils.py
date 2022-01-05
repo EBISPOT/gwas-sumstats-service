@@ -124,7 +124,19 @@ def validate_files_from_payload(callback_id, content, minrows=None, forcevalid=F
         nextflow_cmd = nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, forcevalid, nextflow_config_path)
         return validate_files_NOT_SSH(callback_id, content, par_dir, payload_path, nextflow_config_path, log_dir, nextflow_cmd)
 
-    
+def skip_validation_completely(callback_id, content):
+    results = {
+        "callbackID": callback_id,
+        "validationList": []
+    }
+    payload = pl.Payload(callback_id=callback_id, payload=content)
+    payload.create_study_obj_list()
+    study_list = [s.study_id for s in payload.study_obj_list]
+    for study in study_list:
+        results['validationList'].append({"id": study, "retrieved": 99, "dataValid": 99, "errorCode": None})
+    return json.dumps(results)
+
+
 def add_errors_if_study_missing(callback_id, content, results):
     if any([s['errorCode'] for s in results['validationList']]):
         # if we already identfied errors, there's no need to add them

@@ -39,6 +39,8 @@ class Payload:
             return 'INVALID'
         elif 'RETRIEVING' in study_statuses:
             return 'PROCESSING'
+        elif 'IGNORE' in study_statuses:
+            return 'IGNORE'
         else:
             return 'VALID'
 
