@@ -73,10 +73,10 @@ class mongoClient():
         return self.study_collection.count_documents({})
 
     def check_callback_id_in_db(self, callback_id):
-        studies = [i for i in  self.study_collection.find({"callbackID": callback_id})]
+        studies = [i for i in self.study_collection.find({"callbackID": callback_id})]
         if not len(studies):
             # check it hasn't been registered but not yet added to the studies db
-            callback_registered = [i for i in  self.callback_collection.find({"callbackID": callback_id})]
+            callback_registered = [i for i in self.callback_collection.find({"callbackID": callback_id})]
             if not len(callback_registered):
                 return False
         return True

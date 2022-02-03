@@ -26,6 +26,8 @@ ENV CELERY_USER "guest"
 ENV CELERY_PASSWORD "guest"
 ENV QUEUE_HOST "rabbitmq.rabbitmq"
 ENV QUEUE_PORT 5672
+ENV CELERY_QUEUE1 "preval"
+ENV CELERY_QUEUE2 "postval"
 ENV STORAGE_PATH "./data"
 ENV STAGING_PATH "./staging"
 ENV VALIDATED_PATH "./depo_ss_validated"
