@@ -292,7 +292,6 @@ def publish_and_clean_sumstats(study_list):
                         readme=s['readme'], entryUUID=s['entryUUID'],
                         author_name=s['author_name'], pmid=s['pmid'],
                         gcst=s['gcst'], raw_ss=s['rawSS'])
-        study.move_file_to_staging()
         if study.move_file_to_staging() is True:
             moved += 1
         if callback_id is None:
