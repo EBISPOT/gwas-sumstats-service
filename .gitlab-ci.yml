@@ -1,4 +1,4 @@
-image: docker:latest
+image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:latest
 
 stages:
   - build
@@ -19,7 +19,7 @@ build:
   stage: build
   script:
    - echo "$DOCKER_HUB_PASSWORD" > dhpw.txt
-   - docker login -u "${DOCKER_HUB_USER}" --password-stdin < dhpw.txt docker.io
+   - docker login -u "${DOCKER_HUB_USER}" --password-stdin < dhpw.txt
    - docker pull $CI_REGISTRY_IMAGE:latest
    - docker build --cache-from $CI_REGISTRY_IMAGE:latest -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
@@ -46,7 +46,7 @@ build_release:
 
 
 deploy_staging:
-  image: dtzar/helm-kubectl:2.13.1
+  image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/dtzar/helm-kubectl:2.13.1
   stage: deploy
   script:
     - echo "Deploy to staging server"
@@ -64,7 +64,7 @@ deploy_staging:
 
 
 deploy_fallback:
-  image: dtzar/helm-kubectl:2.13.1
+  image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/dtzar/helm-kubectl:2.13.1
   stage: deploy
   script:
     - echo "Deploy to production fallback server"
@@ -82,7 +82,7 @@ deploy_fallback:
 
 
 deploy_prod:
-  image: dtzar/helm-kubectl:2.13.1
+  image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/dtzar/helm-kubectl:2.13.1
   stage: deploy
   script:
     - echo "Deploy to production server"
