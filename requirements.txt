@@ -37,7 +37,7 @@ packaging==19.0
 pamqp==2.3.0
 pandas==0.25.0
 pandas-schema==0.3.4
-paramiko==2.6.0
+paramiko==2.10.1
 pbr==5.4.1
 pifpaf==2.2.2
 pluggy==0.12.0
