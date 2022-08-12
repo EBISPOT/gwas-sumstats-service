@@ -72,7 +72,7 @@ def validate_files_from_payload(callback_id, content, minrows=None, forcevalid=F
     payload_path = os.path.join(par_dir, "payload.json")
     nextflow_config_path = os.path.join(par_dir, "nextflow.config")
     log_dir = os.path.join(config.STORAGE_PATH, 'logs', callback_id)
-    nf_script_path =  os.path.join(par_dir, "validate_submission.nf")
+    nf_script_path =  os.path.join(par_dir, "process_submission.nf")
     if config.VALIDATE_WITH_SSH == 'true':
         nextflow_cmd = nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, forcevalid, nextflow_config_path, nf_script_path)
         logger.debug('Validate with ssh')
@@ -80,7 +80,7 @@ def validate_files_from_payload(callback_id, content, minrows=None, forcevalid=F
         ssh.mkdir(par_dir)
         ssh.write_data_to_file(json.dumps(content), payload_path)
         ssh.write_data_to_file(config.NEXTFLOW_CONFIG, nextflow_config_path)
-        with open("validate_submission.nf", "r") as f:
+        with open("process_submission.nf", "r") as f:
             ssh.write_data_to_file(f.read(), nf_script_path)
         memory = 5600
         ssh.write_data_to_file(json.dumps(content), payload_path)
@@ -187,7 +187,7 @@ def results_if_failure(callback_id, content):
     return results
 
 
-def nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, forcevalid, nextflow_config_path, nf_script_path='validate_submission.nf'):
+def nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, forcevalid, nextflow_config_path, nf_script_path='process_submission.nf'):
     nextflow_cmd =  """
                     nextflow -log {logs}/nextflow.log \
                             run {script} \
