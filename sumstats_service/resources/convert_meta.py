@@ -10,15 +10,17 @@
 """
 
 import argparse
+import pandas as pd
 import config
 
 class metadataConverter():
-    def __init__(self, accession_id, in_file, out_file, in_type, out_type):
+    def __init__(self, accession_id, in_file, out_file, in_type, out_type, schema):
         self.accession_id = accession_id
         self.in_file = in_file
         self.out_file = out_file
         self.in_type = in_type
         self.out_type = out_type
+        self.schema = schema
         self.metadata = None
         self.formatted_metadata = None
 
@@ -34,7 +36,13 @@ class metadataConverter():
         read all the sheets store in separate metadata dataframes
         store the metadata for the accession ID in self.metadata
         """
-        pass
+        study_df = pd.read_excel(self.in_file, sheet_name='study',
+                                 skiprows=[0, 2, 3])
+        sample_df = pd.read_excel(self.in_file, sheet_name='sample',
+                                  skiprows=[0, 2, 3])
+        merged_df = pd.merge(study_df, sample_df, on="Study tag")
+        return merged_df
+
 
     def write_metadata_to_file(self):
         self.formatted_metadata = self.format_metadata()
@@ -59,26 +67,32 @@ class metadataConverter():
 
     def convert_to_outfile(self):
         self.read_metadata_from_file()
-        self.write_metadata_to_file()
+        print(self.metadata)
+        #self.write_metadata_to_file()
 
 
 def main():
     argparser = argparse.ArgumentParser()
     argparser.add_argument("-id", help='Accession ID', required=True)
-    argparser.add_argument("-in", help='File to read in', required=True)
-    argparser.add_argument("-out", help='File to write metadata to', required=True)
+    argparser.add_argument("-in_file", help='File to read in', required=True)
+    argparser.add_argument("-out_file", help='File to write metadata to', required=True)
     argparser.add_argument("-in_type", help='Type of file being read', default='gwas_sub_xls')
     argparser.add_argument("-out_type", help='Type of file to convert to', default='ssf_yaml')
+    argparser.add_argument("-schema", help='Schema for output')
     args = argparser.parse_args()
+    accession_id = args.id
     in_file = args.in_file
     out_file = args.out_file
     in_type = args.in_type
     out_type = args.out_type
+    schema = args.schema
 
-    converter = metadataConverter(in_file=in_file,
+    converter = metadataConverter(accession_id=accession_id,
+                                  in_file=in_file,
                                   out_file=out_file,
                                   in_type=in_type,
-                                  out_type=out_type)
+                                  out_type=out_type,
+                                  schema=schema)
     converter.convert_to_outfile()
 
 

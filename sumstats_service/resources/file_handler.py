@@ -241,6 +241,9 @@ class SumStatFile:
 
 
     def tidy_files(self):
+        """
+        TODO: Don't move files to the validated path
+        """
         # copy files to validated path on ftp 
         # clean up any files on the the nfs
         self.set_parent_path()
@@ -268,6 +271,9 @@ class SumStatFile:
 
 
     def move_file_to_staging(self):
+        """
+        TODO: copy files from Globus folder to staging (as they will be verified valid)
+        """
         # ftp mv from validated to staging
         try:        
             self.set_valid_parent_path()

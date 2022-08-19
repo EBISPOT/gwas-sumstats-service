@@ -43,16 +43,4 @@ process validate_study {
 
 }
 
-process convert_metadata {
-// read metadata csv and convert to yaml
-// a python script in the docker image for this repo can do this.
-}
-
-process stage_sumstats_for_release {
-// rename file from source (globus) and move to the staging area with metadata file
-}
-
-
-
-
 result.view { it }
