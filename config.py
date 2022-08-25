@@ -112,3 +112,50 @@ NEXTFLOW_CONFIG = ("executor.name = 'lsf'\n"
                    "executor.queueSize = 100\n"
                    "singularity.cacheDir = '{sing_cache_dir}'\n").format(
         sing_cache_dir=_env_variable_else('SINGULARITY_CACHEDIR', './singularity_cache'))
+
+SUBMISSION_TEMPLATE_HEADER_MAP_pre1_8 = {
+    'Genotyping technology': 'genotypingTechnology',
+    'Number of individuals': 'sampleSize',
+    'Ancestry category': 'sampleAncestry',
+    'Reported trait': 'traitDescription',
+    'EAF lower limit': 'effectAlleleFreqLowerLimit',
+    'Ancestry method': 'ancestryMethod',
+    'Case control study': 'caseControlStudy',
+    'Number of cases': 'caseCount',
+    'Number of controls': 'controlCount',
+    'Summary statistics assembly': 'genomeAssembly',
+    'Neg Log10 p-values': 'pvalueIsNegLog10',
+    'Analysis Software': 'analysisSoftware',
+    'Imputation panel': 'imputationPanel',
+    'Imputation software': 'imputationSoftware',
+    'Adjusted covariates': 'adjustedCovariates',
+    'Mapped trait': 'ontologyMapping',
+    'Readme file': 'authorNotes'
+}
+
+SUBMISSION_TEMPLATE_HEADER_MAP = {
+    'Genotyping technology': 'genotypingTechnology',
+    'Number of individuals': 'sampleSize',
+    'Ancestry category': 'sampleAncestry',
+    'Reported trait': 'traitDescription',
+    'EAF lower limit': 'effectAlleleFreqLowerLimit',
+    'Ancestry method': 'ancestryMethod',
+    'Case control study': 'caseControlStudy',
+    'Number of cases': 'caseCount',
+    'Number of controls': 'controlCount',
+    'Summary statistics assembly': 'genomeAssembly',
+    'Neg Log10 p-values': 'pvalueIsNegLog10',
+    'Analysis Software': 'analysisSoftware',
+    'Imputation panel': 'imputationPanel',
+    'Imputation software': 'imputationSoftware',
+    'Adjusted covariates': 'adjustedCovariates',
+    'Mapped trait': 'ontologyMapping',
+    'Readme text': 'authorNotes'
+}
+
+YAML_DTYPES = {
+    'int': int,
+    'str': str,
+    'bool': bool,
+    'float': float,
+}

@@ -56,6 +56,7 @@ python-dateutil==2.8.0
 python-magic==0.4.15
 python-mimeparse==1.6.0
 pytz==2019.1
+PyYAML==6.0
 rabbitpy==2.0.0
 requests==2.22.0
 requests-mock==1.6.0
