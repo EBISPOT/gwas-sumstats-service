@@ -14,6 +14,7 @@ import validate.validator as val
 import pathlib
 from sumstats_service.resources.error_classes import *
 import sumstats_service.resources.globus as globus
+from sumstats_service.resources.convert_meta import MetadataConverter
 import ftplib
 
 
@@ -270,15 +271,30 @@ class SumStatFile:
         return True
 
 
+    def write_metadata_file(self, ext):
+        metadata_converter = MetadataConverter(accession_id=self.study_id,
+                                  md5sum=self.md5exp,
+                                  #in_file=#TEMPLATE_FILE,
+                                  #out_file=#OUTPATH,
+                                  #schema=#Read from package files,
+                                  data_file_ext=ext
+                                  )
+        return metadata_converter.convert_to_outfile()
+
     def move_file_to_staging(self):
         """
-        TODO: copy files from Globus folder to staging (as they will be verified valid)
+        TODO: 1. copy files from Globus folder to staging (as they will be verified valid)
+              2. no need to do anything regarding READMEs
+              3. create metadata file from template using the conver_meta.py
         """
+
+        
+
         # ftp mv from validated to staging
         try:        
             self.set_valid_parent_path()
             self.set_valid_path()
-            source_readme = os.path.join(self.valid_parent_path, str(self.study_id) + ".README")
+            #source_readme = os.path.join(self.valid_parent_path, str(self.study_id) + ".README")
 
             self.staging_dir_name = str(self.staging_dir_name.replace(' ', ''))
             self.staging_file_name = str(self.staging_file_name.replace(' ', '')) 
@@ -288,11 +304,22 @@ class SumStatFile:
             source_file, ext = get_source_file_from_id(self.valid_parent_path, self.valid_path)
             dest_file = os.path.join(dest_dir, self.staging_file_name + ext)
 
+            self.write_metadata_file(ext=ext)
+
             # move with globus
             # move readme
-            readme_status = mv_file_with_globus(source=source_readme, dest_dir=dest_dir, dest=os.path.join(dest_dir, "README.txt"))
+            #readme_status = mv_file_with_globus(source=source_readme, dest_dir=dest_dir, dest=os.path.join(dest_dir, "README.txt"))
             # move sumstats file
+
+            """
+            TODO: copy metadata file from K8 to staging dir  
+            """
+            
+            """
+            TODO: Change below to move submitted globus file, not the source file on the cluster 
+            """
             file_status = mv_file_with_globus(source=source_file, dest_dir=dest_dir, dest=dest_file)
+            
             # move raw sumstats
             if self.raw_ss:
                 raw_ss_source = os.path.join(self.entryUUID, self.raw_ss)

@@ -1,14 +1,3 @@
-"""
-# read in xls/csv
-# using a schema convert this to yaml
-# which schema?
-
-# Where does the schema live?
-# - validator?
-# - standard?
-# - here?
-"""
-
 import argparse
 import pandas as pd
 import yaml
@@ -18,7 +7,7 @@ import logging
 logging.basicConfig(level=logging.ERROR, format='(%(levelname)s): %(message)s')
 logger = logging.getLogger(__name__)
 
-class metadataConverter():
+class MetadataConverter:
     def __init__(self,
                  accession_id,
                  md5sum,
@@ -186,7 +175,6 @@ def main():
 
     """
     md5sum is used as a key to pull out the relevant information from the metadata file. 
-    TODO: add in the accession ID, md5 of the final compressed file, defaults, 
     """
     md5sum = args.md5sum
     accession_id = args.id
@@ -197,7 +185,7 @@ def main():
     schema = args.schema
     data_file_ext = args.file_ext
 
-    converter = metadataConverter(accession_id=accession_id,
+    converter = MetadataConverter(accession_id=accession_id,
                                   md5sum=md5sum,
                                   in_file=in_file,
                                   out_file=out_file,

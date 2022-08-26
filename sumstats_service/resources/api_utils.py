@@ -52,6 +52,7 @@ def store_validation_results_in_db(validation_response):
         if study.error_code:
             valid = False
     if valid == False:
+        reinstate_globus_permissions(globus_uuid)
         callback_id = json.loads(validation_response)['callbackID']
         payload = pl.Payload(callback_id=callback_id)
         payload.clear_validated_files()
@@ -61,11 +62,17 @@ def delete_globus_endpoint(globus_uuid):
     status = globus.remove_endpoint_and_all_contents(globus_uuid)
     return status
 
+def reinstate_globus_permissions(globus_uuid):
+    pass
+
+def restrict_globus_permissions(globus_uuid):
+    pass
 
 def validate_files_from_payload(callback_id, content, minrows=None, forcevalid=False):
     """
     TODO: restrict globus access to endpoint
     """
+    restrict_globus_permissions(globus_uuid)
     validate_metadata = vp.validate_metadata_for_payload(callback_id, content)
     if any([i['errorCode'] for i in json.loads(validate_metadata)['validationList']]):
         #metadata invalid stop here
