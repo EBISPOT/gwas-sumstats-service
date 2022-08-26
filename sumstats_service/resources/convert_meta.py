@@ -26,7 +26,8 @@ class metadataConverter():
                  out_file,
                  in_type,
                  out_type,
-                 schema):
+                 schema,
+                 data_file_ext):
         self.accession_id = accession_id
         self.md5sum = md5sum
         self.in_file = in_file
@@ -34,6 +35,7 @@ class metadataConverter():
         self.in_type = in_type
         self.out_type = out_type
         self.schema = schema
+        self.data_file_ext = data_file_ext
         self.metadata = None
         self.formatted_metadata = None
         self.header_mappings = config.SUBMISSION_TEMPLATE_HEADER_MAP
@@ -136,9 +138,35 @@ class metadataConverter():
             schema = yaml.safe_load(f)
         return schema
 
+    def extend_metadata(self):
+        self.add_id_to_meta()
+        self.add_data_file_name_to_meta()
+        self.add_md5_to_meta()
+        self.add_defaults_to_meta()
+        self.add_gwas_cat_link()
+
+    def add_data_file_name_to_meta(self):
+        if not str(self.data_file_ext).startswith("."):
+            self.data_file_ext = "." + self.data_file_ext
+        data_file_name = self.accession_id + self.data_file_ext
+        self.formatted_metadata['summaryStatisticsMetadata']['dataFileName'] = data_file_name
+
+    def add_id_to_meta(self):
+        self.formatted_metadata['summaryStatisticsMetadata']['GWASID'] = self.accession_id
+
+    def add_md5_to_meta(self):
+        self.formatted_metadata['summaryStatisticsMetadata']['dataFileMd5sum'] = self.md5sum
+
+    def add_defaults_to_meta(self):
+        self.formatted_metadata['summaryStatisticsMetadata']['fileType'] = config.SUMSTATS_FILE_TYPE
+
+    def add_gwas_cat_link(self):
+        self.formatted_metadata['summaryStatisticsMetadata']['GWASCatalogAPI'] = config.GWAS_CATALOG_REST_API_STUDY_URL + self.accession_id
+
     def convert_to_outfile(self):
         self.read_metadata_from_file()
         self.formatted_metadata = self.format_metadata()
+        self.extend_metadata()
         if self.formatted_metadata:
             logger.debug("writing to file")
             self.write_metadata_to_file()
@@ -152,11 +180,13 @@ def main():
     argparser.add_argument("-out_file", help='File to write metadata to', required=True)
     argparser.add_argument("-in_type", help='Type of file being read', default='gwas_sub_xls')
     argparser.add_argument("-out_type", help='Type of file to convert to', default='ssf_yaml')
-    argparser.add_argument("-schema", help='Schema for output')
+    argparser.add_argument("-schema", help='Schema for output', required=True)
+    argparser.add_argument("-file_ext", help='Data file extension', required=True)
     args = argparser.parse_args()
 
     """
     md5sum is used as a key to pull out the relevant information from the metadata file. 
+    TODO: add in the accession ID, md5 of the final compressed file, defaults, 
     """
     md5sum = args.md5sum
     accession_id = args.id
@@ -165,6 +195,7 @@ def main():
     in_type = args.in_type
     out_type = args.out_type
     schema = args.schema
+    data_file_ext = args.file_ext
 
     converter = metadataConverter(accession_id=accession_id,
                                   md5sum=md5sum,
@@ -172,7 +203,8 @@ def main():
                                   out_file=out_file,
                                   in_type=in_type,
                                   out_type=out_type,
-                                  schema=schema
+                                  schema=schema,
+                                  data_file_ext=data_file_ext
                                   )
     converter.convert_to_outfile()
 

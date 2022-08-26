@@ -159,3 +159,7 @@ YAML_DTYPES = {
     'bool': bool,
     'float': float,
 }
+
+SUMSTATS_FILE_TYPE = "GWAS-SFF v0.1"
+GWAS_CATALOG_REST_API_STUDY_URL = "https://www.ebi.ac.uk/gwas/rest/api/studies/"
+
