@@ -12,6 +12,7 @@ image:
   containerPort: 8000
   logMountPath: "/sumstats_service/logs"
   sshMountPath: "/root/.ssh"
+  dataMountPath: "/sumstats_service/data"
   env:
     celeryUser: "username"
     celeryPwd: "password"
