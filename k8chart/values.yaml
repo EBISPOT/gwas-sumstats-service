@@ -47,6 +47,10 @@ image:
 volume:
   log:
     ClaimName: gwas-depo-logs
+  data:
+    ClaimName: gwas-sumstats-data
+    nfsServer: "<host name or IP>"
+    path: "/path/to/files/"
 
 secrets:
   sshName: ssh-keys

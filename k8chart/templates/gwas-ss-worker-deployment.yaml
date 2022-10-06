@@ -34,6 +34,9 @@ spec:
         - mountPath: {{.Values.image.sshMountPath}}
           name: ssh
           readOnly: true
+        - mountPath: {{.Values.image.dataMountPath}}
+          name: data
+          readOnly: false
         env:
         - name: CELERY_USER
           value: {{.Values.image.env.celeryUser}}
@@ -105,3 +108,8 @@ spec:
         secret: 
            secretName: {{ .Values.secrets.sshName }}
            defaultMode: 0600
+      - name: data
+        nfs:
+          server: {{ .Values.volume.data.nfsServer }}
+          path: {{ .Values.volume.data.path }}
+          readOnly: false
