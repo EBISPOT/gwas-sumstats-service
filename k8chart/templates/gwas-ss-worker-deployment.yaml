@@ -8,8 +8,8 @@ metadata:
 spec:
   replicas: {{.Values.worker.replicaCount}}
   securityContext:
-    runAsUser: {{.Values.image.uid}}
-    runAsGroup: {{.Values.image.gid}}
+    runAsUser: {{.Values.image.env.uid}}
+    runAsGroup: {{.Values.image.env.gid}}
   selector:
     matchLabels:
       app: {{.Values.worker.name}}
