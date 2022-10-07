@@ -43,6 +43,9 @@ image:
     validatedPath: "./validated"
     swPath: "./bin"
     singularityCache: ""
+    uid: 1000
+    gid: 1000
+    user: virtual_user
     
 
 volume:

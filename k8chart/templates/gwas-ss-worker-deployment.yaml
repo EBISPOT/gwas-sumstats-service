@@ -7,6 +7,9 @@ metadata:
     version: {{.Values.image.tag}}
 spec:
   replicas: {{.Values.worker.replicaCount}}
+  securityContext:
+    runAsUser: {{.Values.image.uid}}
+    runAsGroup: {{.Values.image.gid}}
   selector:
     matchLabels:
       app: {{.Values.worker.name}}
@@ -36,7 +39,7 @@ spec:
           readOnly: true
         - mountPath: {{.Values.image.dataMountPath}}
           name: data
-          readOnly: true
+          readOnly: false
         env:
         - name: CELERY_USER
           value: {{.Values.image.env.celeryUser}}
@@ -100,6 +103,12 @@ spec:
           value: {{.Values.image.env.clientID}}
         - name: GWAS_ENDPOINT_ID
           value: {{.Values.image.env.gwasEndpointID}}
+        - name: UID
+          value: {{.Values.image.uid}}
+        - name: GID
+          value: {{.Values.image.gid}}
+        - name: USER
+          value: {{.Values.image.user}}
       volumes:
       - name: log
         persistentVolumeClaim:
@@ -112,4 +121,4 @@ spec:
         nfs:
           server: {{ .Values.volume.data.nfsServer }}
           path: {{ .Values.volume.data.path }}
-          readOnly: true
+          readOnly: false
