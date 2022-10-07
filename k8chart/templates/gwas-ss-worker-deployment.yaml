@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{.Values.worker.name}}
@@ -8,8 +8,8 @@ metadata:
 spec:
   replicas: {{.Values.worker.replicaCount}}
   securityContext:
-    runAsUser: {{.Values.image.env.uid}}
-    runAsGroup: {{.Values.image.env.gid}}
+    runAsUser: {{.Values.image.env.uid | quote}}
+    runAsGroup: {{.Values.image.env.gid | quote}}
   selector:
     matchLabels:
       app: {{.Values.worker.name}}
@@ -104,9 +104,9 @@ spec:
         - name: GWAS_ENDPOINT_ID
           value: {{.Values.image.env.gwasEndpointID}}
         - name: UID
-          value: {{.Values.image.env.uid}}
+          value: {{.Values.image.env.uid | quote}}
         - name: GID
-          value: {{.Values.image.env.gid}}
+          value: {{.Values.image.env.gid | quote}}
         - name: USER
           value: {{.Values.image.env.user}}
       volumes:
