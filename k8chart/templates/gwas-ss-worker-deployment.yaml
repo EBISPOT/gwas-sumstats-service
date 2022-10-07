@@ -39,7 +39,7 @@ spec:
           readOnly: true
         - mountPath: {{.Values.image.dataMountPath}}
           name: data
-          readOnly: false
+          readOnly: true
         env:
         - name: CELERY_USER
           value: {{.Values.image.env.celeryUser}}
@@ -121,4 +121,4 @@ spec:
         nfs:
           server: {{ .Values.volume.data.nfsServer }}
           path: {{ .Values.volume.data.path }}
-          readOnly: false
+          readOnly: true
