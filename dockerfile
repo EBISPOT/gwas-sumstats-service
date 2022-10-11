@@ -1,5 +1,7 @@
 FROM python:3.6-slim-buster
 
+ENV USER virtual_user
+RUN groupadd -r "$USER" && useradd -r --create-home -g "$USER" "$USER"
 ENV INSTALL_PATH /sumstats_service
 RUN mkdir -p $INSTALL_PATH
 WORKDIR $INSTALL_PATH
@@ -20,6 +22,7 @@ RUN pip install -e .
 EXPOSE 8000
 
 RUN mkdir -p logs
+RUN chown -R "$USER":"$USER" $INSTALL_PATH
 
 ENV CELERY_PROTOCOL "amqp"
 ENV CELERY_USER "guest"
@@ -56,7 +59,6 @@ ENV MONGO_DB ""
 ENV HTTP_PROXY ""
 ENV HTTPS_PROXY ""
 ENV no_proxy "localhost,.cluster.local"
-ENV USER docker
 ENV UID 1000
 ENV GID 1000
 
@@ -69,3 +71,5 @@ RUN addgroup --gid "$GID" "$USER" \
   --no-create-home \
   --uid "$UID" \
   "$USER"
+
+USER $USER
