@@ -1,6 +1,6 @@
 FROM python:3.6-slim-buster
 
-ENV USER virtual_user
+ENV USER docker_user
 RUN groupadd -r "$USER" && useradd -r --create-home -g "$USER" "$USER"
 ENV INSTALL_PATH /sumstats_service
 RUN mkdir -p $INSTALL_PATH
