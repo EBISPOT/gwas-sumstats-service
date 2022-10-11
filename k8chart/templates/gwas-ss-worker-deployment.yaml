@@ -103,12 +103,6 @@ spec:
           value: {{.Values.image.env.clientID}}
         - name: GWAS_ENDPOINT_ID
           value: {{.Values.image.env.gwasEndpointID}}
-        - name: UID
-          value: {{.Values.image.env.uid | quote}}
-        - name: GID
-          value: {{.Values.image.env.gid | quote}}
-        - name: USER
-          value: {{.Values.image.env.user}}
       volumes:
       - name: log
         persistentVolumeClaim:
