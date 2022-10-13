@@ -9,6 +9,7 @@ import config
 import hashlib
 import magic
 import csv
+import sys
 import logging
 import validate.validator as val
 import pathlib
@@ -25,7 +26,8 @@ logger = logging.getLogger(__name__)
 class SumStatFile:
     def __init__(self, file_path=None, callback_id=None, study_id=None, 
                 md5exp=None, readme=None, entryUUID=None,
-                staging_dir_name=None, staging_file_name=None, minrows=None, raw_ss=None):
+                staging_dir_name=None, staging_file_name=None, minrows=None,
+                raw_ss=None, uploaded_ss_filename=None):
         self.file_path = file_path
         self.callback_id = callback_id
         self.study_id = study_id
@@ -37,6 +39,7 @@ class SumStatFile:
         self.staging_file_name = staging_file_name
         self.minrows = minrows
         self.raw_ss = raw_ss
+        self.uploaded_ss_filename = uploaded_ss_filename
 
 
     def set_logfile(self):
@@ -162,7 +165,6 @@ class SumStatFile:
         return False
 
     def get_ext(self):
-        ext = None
         detect = magic.Magic(uncompress=True)
         description = detect.from_file(self.store_path)
         logger.info("file type description: " + description)
@@ -271,12 +273,12 @@ class SumStatFile:
         return True
 
 
-    def write_metadata_file(self, ext):
+    def write_metadata_file(self, ext, template_name):
         metadata_converter = MetadataConverter(accession_id=self.study_id,
                                   md5sum=self.md5exp,
-                                  #in_file=#TEMPLATE_FILE,
-                                  #out_file=#OUTPATH,
-                                  #schema=#Read from package files,
+                                  in_file=template_name,
+                                  out_file=os.path.join(config.METADATA_OUTPUT_PATH, self.study_id, "{}.yaml".format(self.study_id)),
+                                  schema=os.path.join(sys.prefix, "data_files", "meta_schema.yaml"),
                                   data_file_ext=ext
                                   )
         return metadata_converter.convert_to_outfile()
@@ -285,7 +287,8 @@ class SumStatFile:
         """
         TODO: 1. copy files from Globus folder to staging (as they will be verified valid)
               2. no need to do anything regarding READMEs
-              3. create metadata file from template using the conver_meta.py
+              3. fetch the metadata file safely store on NFS
+              4. create metadata file from template using the conver_meta.py store on NFS
         """
 
         
@@ -301,10 +304,14 @@ class SumStatFile:
 
             dest_dir = os.path.join(config.STAGING_PATH, self.staging_dir_name)
 
-            source_file, ext = get_source_file_from_id(self.valid_parent_path, self.valid_path)
+            #source_file, ext = get_source_file_from_id(self.valid_parent_path, self.valid_path)
+            source_file = os.path.join(self.entryUUID, self.uploaded_ss_filename)
             dest_file = os.path.join(dest_dir, self.staging_file_name + ext)
 
-            self.write_metadata_file(ext=ext)
+            input_meta_filename = config.METADATA_INPUT_PATH, "{}.xlsx".format(self.callback_id)
+
+            self.get_template(template_name=input_meta_filename)
+            self.write_metadata_file(ext=ext, template_name=input_meta_filename)
 
             # move with globus
             # move readme
@@ -312,12 +319,9 @@ class SumStatFile:
             # move sumstats file
 
             """
-            TODO: copy metadata file from K8 to staging dir  
+            TODO: copy metadata file from K8 to staging dir if not already there. 
             """
             
-            """
-            TODO: Change below to move submitted globus file, not the source file on the cluster 
-            """
             file_status = mv_file_with_globus(source=source_file, dest_dir=dest_dir, dest=dest_file)
             
             # move raw sumstats
@@ -335,6 +339,19 @@ class SumStatFile:
             logger.error("Error: {}\nCould not move file {} to staging, callback ID: {}".format(e, self.staging_file_name, self.callback_id))
             return False
         return True
+
+
+        def get_template(self, template_name):
+            """
+            download template
+            :param self: 
+            :param template_name: 
+            :return: 
+            """
+            pass
+
+
+
 
 def get_source_file_from_id(source_dir, source):
     files = globus.list_files(source_dir)

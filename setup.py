@@ -4,6 +4,7 @@ setup(
     name='gwas-sumstats-service',
     version='0.1',
     packages=find_packages(include=['sumstats_service.*','config.py']),
+    data_files=[('data_files',['schema/meta_schema.yaml'])],
     entry_points={
         "console_scripts": 
             ['validate-payload = sumstats_service.resources.validate_payload:main',

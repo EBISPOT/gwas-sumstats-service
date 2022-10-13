@@ -8,15 +8,18 @@ logging.basicConfig(level=logging.ERROR, format='(%(levelname)s): %(message)s')
 logger = logging.getLogger(__name__)
 
 class MetadataConverter:
+    
+    header_mappings = config.SUBMISSION_TEMPLATE_HEADER_MAP
+    
     def __init__(self,
                  accession_id,
                  md5sum,
                  in_file,
-                 out_file,
-                 in_type,
-                 out_type,
+                 out_file,                 
                  schema,
-                 data_file_ext):
+                 data_file_ext,
+                 in_type='gwas_sub_xls',
+                 out_type='ssf_yaml'):
         self.accession_id = accession_id
         self.md5sum = md5sum
         self.in_file = in_file
@@ -27,7 +30,6 @@ class MetadataConverter:
         self.data_file_ext = data_file_ext
         self.metadata = None
         self.formatted_metadata = None
-        self.header_mappings = config.SUBMISSION_TEMPLATE_HEADER_MAP
         self.template_version = None
 
     def read_metadata_from_file(self):

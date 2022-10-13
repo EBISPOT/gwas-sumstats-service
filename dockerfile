@@ -56,4 +56,6 @@ ENV MONGO_DB ""
 ENV HTTP_PROXY ""
 ENV HTTPS_PROXY ""
 ENV no_proxy "localhost,.cluster.local"
+ENV METADATA_INPUT_PATH "metadata/input"
+ENV METADATA_OUTPUT_PATH "metadata/output"
 

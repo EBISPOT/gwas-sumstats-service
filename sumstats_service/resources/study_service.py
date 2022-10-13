@@ -188,7 +188,7 @@ class Study:
                         if validation_status is True:
                             self.set_data_valid_status(1)
                             ssf.write_readme_file()
-                            ssf.tidy_files()
+                            #ssf.tidy_files()
                         else:
                             self.set_data_valid_status(0)
                             self.set_error_code(ssf.validation_error)
