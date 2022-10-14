@@ -3,6 +3,7 @@ import pandas as pd
 import yaml
 import config
 import logging
+import os
 
 logging.basicConfig(level=logging.ERROR, format='(%(levelname)s): %(message)s')
 logger = logging.getLogger(__name__)
@@ -62,6 +63,7 @@ class MetadataConverter:
 
     def write_metadata_to_file(self):
         if self.out_type == "ssf_yaml":
+            os.makedirs(os.path.dirname(self.out_file), exist_ok=True)
             with open(self.out_file, "w") as f:
                 yaml.dump(self.formatted_metadata, f, encoding='utf-8')
         else:

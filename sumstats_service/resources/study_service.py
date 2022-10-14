@@ -187,7 +187,7 @@ class Study:
                         validation_status = ssf.validate_file() if forcevalid is False else True
                         if validation_status is True:
                             self.set_data_valid_status(1)
-                            ssf.write_readme_file()
+                            #ssf.write_readme_file()
                             #ssf.tidy_files()
                         else:
                             self.set_data_valid_status(0)
