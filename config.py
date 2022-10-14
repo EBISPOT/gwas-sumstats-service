@@ -59,7 +59,6 @@ CLIENT_ID = _env_variable_else('CLIENT_ID', None)
 TRANSFER_CLIENT_ID = _env_variable_else('TRANSFER_CLIENT_ID', None)
 GWAS_GLOBUS_GROUP = _env_variable_else('GWAS_GLOBUS_GROUP', None)
 DEPO_API_AUTH_TOKEN = _env_variable_else('DEPO_API_AUTH_TOKEN', None)
-METADATA_INPUT_PATH = _env_variable_else('METADATA_INPUT_PATH', 'metadata/input')
 METADATA_OUTPUT_PATH = _env_variable_else('METADATA_OUTPUT_PATH', 'metadata/output')
 
 # --- SQLite schema --- # 
@@ -166,6 +165,3 @@ YAML_DTYPES = {
 SUMSTATS_FILE_TYPE = "GWAS-SFF v0.1"
 GWAS_CATALOG_REST_API_STUDY_URL = "https://www.ebi.ac.uk/gwas/rest/api/studies/"
 GWAS_DEPO_REST_API_URL = "https://wwwdev.ebi.ac.uk/gwas/deposition/api/v1/"
-
-
-

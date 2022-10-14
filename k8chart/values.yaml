@@ -42,6 +42,8 @@ image:
     validatedPath: "./validated"
     swPath: "./bin"
     singularityCache: ""
+    depoAPIToken: ""
+    metadataPath: "./metadata"
     
 
 volume:
