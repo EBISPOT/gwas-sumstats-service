@@ -71,8 +71,8 @@ service:
 
 worker:
   name: gwas-ss-worker
-  celeryCmd: '["celery", "-A", "sumstats_service.app.celery", "worker", "--log-config=log.conf", "--queues=preval,postval"]'
-  celeryCmdPostOnly:  '["celery", "-A", "sumstats_service.app.celery", "worker", "--log-config=log.conf", "--queues=postval"]'
+  celeryCmd: '["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=INFO", "--queues=preval,postval"]'
+  celeryCmdPostOnly:  '["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=INFO", "--queues=postval"]'
   replicaCount: 1
 
 ingress:
