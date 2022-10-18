@@ -10,7 +10,7 @@ image:
   tag: latest
   pullPolicy: Always
   containerPort: 8000
-  logMountPath: "/sumstats_service/logs"
+  logMountPath: "/var/log/gunicorn"
   sshMountPath: "/root/.ssh"
   dataMountPath: "/sumstats_service/data"
   env:
@@ -67,12 +67,12 @@ service:
   name: gwas-ss-service
   type: ClusterIP
   port: 8000
-  gunicornCmd: '["gunicorn", "-b", "0.0.0.0:8000", "sumstats_service.app:app", "-k=eventlet", "-t=3600", "-w=2", "--log-level=info","--access-logfile=logs/ss_access.log","--error-logfile=logs/ss_error.log"]'
+  gunicornCmd: '["gunicorn", "-b", "0.0.0.0:8000", "sumstats_service.app:app", "-k=eventlet", "-t=3600", "-w=2", "--log-config=log.conf"]'
 
 worker:
   name: gwas-ss-worker
-  celeryCmd: '["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=info", "--queues=preval,postval"]'
-  celeryCmdPostOnly:  '["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=info", "--queues=postval"]'
+  celeryCmd: '["celery", "-A", "sumstats_service.app.celery", "worker", "--log-config=log.conf", "--queues=preval,postval"]'
+  celeryCmdPostOnly:  '["celery", "-A", "sumstats_service.app.celery", "worker", "--log-config=log.conf", "--queues=postval"]'
   replicaCount: 1
 
 ingress:
