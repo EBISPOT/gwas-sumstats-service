@@ -1,5 +1,7 @@
 FROM python:3.6-slim-buster
 
+RUN groupadd -r sumstats-service && useradd -r --create-home -g sumstats-service sumstats-service
+
 ENV INSTALL_PATH /sumstats_service
 RUN mkdir -p $INSTALL_PATH
 WORKDIR $INSTALL_PATH
@@ -20,6 +22,7 @@ RUN pip install -e .
 EXPOSE 8000
 
 RUN mkdir -p logs
+RUN chown -R sumstats-service:sumstats-service $INSTALL_PATH
 
 ENV CELERY_PROTOCOL "amqp"
 ENV CELERY_USER "guest"
@@ -58,3 +61,5 @@ ENV HTTPS_PROXY ""
 ENV no_proxy "localhost,.cluster.local"
 ENV DEPO_API_AUTH_TOKEN ""
 ENV METADATA_OUTPUT_PATH "metadata/output"
+
+USER sumstats-service

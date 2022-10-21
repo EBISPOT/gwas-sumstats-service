@@ -19,7 +19,7 @@ spec:
       - name: {{.Values.worker.name}}
         image: "{{.Values.image.repository}}:{{.Values.image.tag}}"
         {{ if .Values.image.env.validateSSH }}
-        command: ["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=info", "--queues={{.Values.image.env.celeryQueue1}},{{.Values.image.env.celeryQueue2}}"]
+        command: ["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=INFO", "--queues={{.Values.image.env.celeryQueue1}},{{.Values.image.env.celeryQueue2}}"]
         {{ else }}
         command: {{.Values.worker.celeryCmdPostOnly}}        
         {{ end }}
@@ -34,6 +34,12 @@ spec:
         - mountPath: {{.Values.image.sshMountPath}}
           name: ssh
           readOnly: true
+        - mountPath: {{.Values.image.dataMountPath}}
+          name: data
+          readOnly: false
+        securityContext:
+          runAsUser: {{.Values.image.env.uid}}
+          runAsGroup: {{.Values.image.env.gid}}
         env:
         - name: CELERY_USER
           value: {{.Values.image.env.celeryUser}}
@@ -109,3 +115,8 @@ spec:
         secret: 
            secretName: {{ .Values.secrets.sshName }}
            defaultMode: 0600
+      - name: data
+        nfs:
+          server: {{ .Values.volume.data.nfsServer }}
+          path: {{ .Values.volume.data.path }}
+          readOnly: false
