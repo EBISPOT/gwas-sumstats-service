@@ -249,7 +249,7 @@ class SumStatFile:
                                   md5sum=self.md5exp,
                                   in_file=input_metadata,
                                   out_file=os.path.join(config.METADATA_OUTPUT_PATH, self.study_id, "{}.yaml".format(self.study_id)),
-                                  schema=os.path.join(sys.prefix, "data_files", "meta_schema.yaml"),
+                                  schema="schema/meta_schema.yaml",
                                   data_file_ext=ext
                                   )
         return metadata_converter.convert_to_outfile()
