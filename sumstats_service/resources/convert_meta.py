@@ -5,7 +5,7 @@ import config
 import logging
 import os
 
-logging.basicConfig(level=logging.ERROR, format='(%(levelname)s): %(message)s')
+logging.basicConfig(level=logging.INFO, format='(%(levelname)s): %(message)s')
 logger = logging.getLogger(__name__)
 
 class MetadataConverter:
@@ -78,6 +78,7 @@ class MetadataConverter:
             schema = self.read_schema()
             schema_fields = {key: value for key, value in schema['mapping']['summaryStatisticsMetadata']['mapping'].items()}
             for field, value in record_meta.items():
+                logger.debug(f"field: {field}, value: {value}")
                 if field in self.header_mappings:
                     key = self.header_mappings[field]
                     if key in schema_fields:
@@ -85,7 +86,8 @@ class MetadataConverter:
                         # format list type fields
                         if dtype == 'seq':
                             seq = [v for v in value.split("|")]
-                            vdtype = schema_fields[key]['sequence']['type']
+                            logger.debug(f"seq: {seq}")
+                            vdtype = schema_fields[key]['sequence'][0]['type']
                             formatted_value = [self.coerce_yaml_dtype(value=v, dtype=vdtype) for v in seq]
                         # format the other types of fields
                         else:
@@ -118,9 +120,9 @@ class MetadataConverter:
         key = self.md5sum
         record = self.metadata[self.metadata[key_field] == key]
         if len(record) == 0:
-            logger.error("key {} not found in metadata".format(key))
+            raise ValueError("key {} not found in metadata".format(key))
         elif len(record) > 1:
-            logger.error("more than 1 record found in metadata for key {}".format(key))
+            raise ValueError("more than 1 record found in metadata for key {}".format(key))
         else:
             # remove fields without values 
             record.dropna(axis='columns', inplace=True)
