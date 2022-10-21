@@ -43,5 +43,4 @@ process validate_study {
 
 }
 
-
 result.view { it }

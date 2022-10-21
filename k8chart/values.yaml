@@ -43,6 +43,8 @@ image:
     validatedPath: "./validated"
     swPath: "./bin"
     singularityCache: ""
+    depoAPIToken: ""
+    metadataPath: "./metadata"
     uid: 1000
     gid: 1000
     user: virtual_user

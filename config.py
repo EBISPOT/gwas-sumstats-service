@@ -58,6 +58,8 @@ GLOBUS_SECRET = _env_variable_else('GLOBUS_SECRET', None)
 CLIENT_ID = _env_variable_else('CLIENT_ID', None)
 TRANSFER_CLIENT_ID = _env_variable_else('TRANSFER_CLIENT_ID', None)
 GWAS_GLOBUS_GROUP = _env_variable_else('GWAS_GLOBUS_GROUP', None)
+DEPO_API_AUTH_TOKEN = _env_variable_else('DEPO_API_AUTH_TOKEN', None)
+METADATA_OUTPUT_PATH = _env_variable_else('METADATA_OUTPUT_PATH', 'metadata/output')
 
 # --- SQLite schema --- # 
 
@@ -112,3 +114,54 @@ NEXTFLOW_CONFIG = ("executor.name = 'lsf'\n"
                    "executor.queueSize = 100\n"
                    "singularity.cacheDir = '{sing_cache_dir}'\n").format(
         sing_cache_dir=_env_variable_else('SINGULARITY_CACHEDIR', './singularity_cache'))
+
+SUBMISSION_TEMPLATE_HEADER_MAP_pre1_8 = {
+    'Genotyping technology': 'genotypingTechnology',
+    'Number of individuals': 'sampleSize',
+    'Ancestry category': 'sampleAncestry',
+    'Reported trait': 'traitDescription',
+    'EAF lower limit': 'effectAlleleFreqLowerLimit',
+    'Ancestry method': 'ancestryMethod',
+    'Case control study': 'caseControlStudy',
+    'Number of cases': 'caseCount',
+    'Number of controls': 'controlCount',
+    'Summary statistics assembly': 'genomeAssembly',
+    'Neg Log10 p-values': 'pvalueIsNegLog10',
+    'Analysis Software': 'analysisSoftware',
+    'Imputation panel': 'imputationPanel',
+    'Imputation software': 'imputationSoftware',
+    'Adjusted covariates': 'adjustedCovariates',
+    'Mapped trait': 'ontologyMapping',
+    'Readme file': 'authorNotes'
+}
+
+SUBMISSION_TEMPLATE_HEADER_MAP = {
+    'Genotyping technology': 'genotypingTechnology',
+    'Number of individuals': 'sampleSize',
+    'Ancestry category': 'sampleAncestry',
+    'Reported trait': 'traitDescription',
+    'EAF lower limit': 'effectAlleleFreqLowerLimit',
+    'Ancestry method': 'ancestryMethod',
+    'Case control study': 'caseControlStudy',
+    'Number of cases': 'caseCount',
+    'Number of controls': 'controlCount',
+    'Summary statistics assembly': 'genomeAssembly',
+    'Neg Log10 p-values': 'pvalueIsNegLog10',
+    'Analysis Software': 'analysisSoftware',
+    'Imputation panel': 'imputationPanel',
+    'Imputation software': 'imputationSoftware',
+    'Adjusted covariates': 'adjustedCovariates',
+    'Mapped trait': 'ontologyMapping',
+    'Readme text': 'authorNotes'
+}
+
+YAML_DTYPES = {
+    'int': int,
+    'str': str,
+    'bool': bool,
+    'float': float,
+}
+
+SUMSTATS_FILE_TYPE = "GWAS-SFF v0.1"
+GWAS_CATALOG_REST_API_STUDY_URL = "https://www.ebi.ac.uk/gwas/rest/api/studies/"
+GWAS_DEPO_REST_API_URL = "https://wwwdev.ebi.ac.uk/gwas/deposition/api/v1/"

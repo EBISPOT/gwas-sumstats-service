@@ -9,11 +9,14 @@ import config
 import hashlib
 import magic
 import csv
+import sys
+import io
 import logging
 import validate.validator as val
 import pathlib
 from sumstats_service.resources.error_classes import *
 import sumstats_service.resources.globus as globus
+from sumstats_service.resources.convert_meta import MetadataConverter
 import ftplib
 
 
@@ -24,7 +27,8 @@ logger = logging.getLogger(__name__)
 class SumStatFile:
     def __init__(self, file_path=None, callback_id=None, study_id=None, 
                 md5exp=None, readme=None, entryUUID=None,
-                staging_dir_name=None, staging_file_name=None, minrows=None, raw_ss=None):
+                staging_dir_name=None, staging_file_name=None, minrows=None,
+                raw_ss=None, uploaded_ss_filename=None):
         self.file_path = file_path
         self.callback_id = callback_id
         self.study_id = study_id
@@ -36,6 +40,7 @@ class SumStatFile:
         self.staging_file_name = staging_file_name
         self.minrows = minrows
         self.raw_ss = raw_ss
+        self.uploaded_ss_filename = uploaded_ss_filename
 
 
     def set_logfile(self):
@@ -61,48 +66,18 @@ class SumStatFile:
         return True
 
     def retrieve(self):
-        download_status = False
         self.make_parent_dir()
         self.set_store_path()
-
-        # if Globus uploaded:
-        if self.entryUUID:
-            logger.debug("Fetching file {} from ftp, parent path: {}".format(self.file_path, self.entryUUID))  
-            source_path = os.path.join(self.entryUUID, self.file_path)
-            download_status = download_from_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=source_path, dest=self.store_path)
-
-        # else check to see if URL we can use
-        else:
-            try:
-                logger.debug("Fetching file from URL: {}".format(self.file_path))        
-                url_parts = parse_url(self.file_path)
-                if url_parts is False:
-                    return False
-                # check if gdrive
-                logger.debug(get_net_loc(self.file_path))
-                if "drive.google" in get_net_loc(self.file_path):
-                    logger.debug("gdrive file")
-                    download_status = self.download_from_gdrive()
-                elif "dropbox" in  get_net_loc(self.file_path):
-                    logger.debug("dropbox file")
-                    download_status = self.download_from_dropbox()
-                elif "http" in url_parts.scheme:
-                    logger.debug("http download")
-                    download_status = download_with_requests(self.file_path, self.store_path)
-                else:
-                    logger.debug("not http download")
-                    download_status = download_with_urllib(self.file_path, self.store_path)
-            except Exception as e:
-                logger.error(e)
-                return False
-
+        logger.debug("Fetching file {} from ftp, parent path: {}".format(self.file_path, self.entryUUID))  
+        source_path = os.path.join(self.entryUUID, self.file_path)
+        download_status = download_from_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=source_path, dest=self.store_path)
         if download_status == True:
             ext = self.get_ext()
             path_with_ext = self.store_path + ext
             os.rename(self.store_path, path_with_ext)
             self.store_path =  path_with_ext
             logger.debug("store path is {}".format(self.store_path))
-        return download_status # True or False
+        return download_status 
 
     def set_parent_path(self):
         logger.debug(config.STORAGE_PATH)
@@ -161,7 +136,6 @@ class SumStatFile:
         return False
 
     def get_ext(self):
-        ext = None
         detect = magic.Magic(uncompress=True)
         description = detect.from_file(self.store_path)
         logger.info("file type description: " + description)
@@ -241,6 +215,9 @@ class SumStatFile:
 
 
     def tidy_files(self):
+        """
+        TODO: Don't move files to the validated path
+        """
         # copy files to validated path on ftp 
         # clean up any files on the the nfs
         self.set_parent_path()
@@ -267,26 +244,49 @@ class SumStatFile:
         return True
 
 
+    def write_metadata_file(self, input_metadata, ext):
+        metadata_converter = MetadataConverter(accession_id=self.study_id,
+                                  md5sum=self.md5exp,
+                                  in_file=input_metadata,
+                                  out_file=os.path.join(config.METADATA_OUTPUT_PATH, self.study_id, "{}.yaml".format(self.study_id)),
+                                  schema=os.path.join(sys.prefix, "data_files", "meta_schema.yaml"),
+                                  data_file_ext=ext
+                                  )
+        return metadata_converter.convert_to_outfile()
+
     def move_file_to_staging(self):
+        """
+        TODO: 1. copy files from Globus folder to staging (as they will be verified valid)
+              2. no need to do anything regarding READMEs
+              3. fetch the metadata file safely store on NFS
+              4. create metadata file from template using the conver_meta.py store on NFS
+        """
         # ftp mv from validated to staging
         try:        
             self.set_valid_parent_path()
             self.set_valid_path()
-            source_readme = os.path.join(self.valid_parent_path, str(self.study_id) + ".README")
+            #source_readme = os.path.join(self.valid_parent_path, str(self.study_id) + ".README")
 
             self.staging_dir_name = str(self.staging_dir_name.replace(' ', ''))
             self.staging_file_name = str(self.staging_file_name.replace(' ', '')) 
 
             dest_dir = os.path.join(config.STAGING_PATH, self.staging_dir_name)
 
-            source_file, ext = get_source_file_from_id(self.valid_parent_path, self.valid_path)
+            #source_file, ext = get_source_file_from_id(self.valid_parent_path, self.valid_path)
+            source_file = os.path.join(self.entryUUID, self.uploaded_ss_filename)
+            # acceptable extensions are ".tsv.gz" and ".tsv"
+            ext = ".tsv.gz" if ".gz" in pathlib.Path(self.uploaded_ss_filename).suffixes else ".tsv"
             dest_file = os.path.join(dest_dir, self.staging_file_name + ext)
 
-            # move with globus
-            # move readme
-            readme_status = mv_file_with_globus(source=source_readme, dest_dir=dest_dir, dest=os.path.join(dest_dir, "README.txt"))
-            # move sumstats file
+            template = self.get_template()
+            if template is None:
+                logger.error(f"No template found for {self.callback_id}")
+            else:
+                with io.BytesIO(template) as fh:
+                    self.write_metadata_file(input_metadata=fh, ext=ext)
+
             file_status = mv_file_with_globus(source=source_file, dest_dir=dest_dir, dest=dest_file)
+            
             # move raw sumstats
             if self.raw_ss:
                 raw_ss_source = os.path.join(self.entryUUID, self.raw_ss)
@@ -302,6 +302,19 @@ class SumStatFile:
             logger.error("Error: {}\nCould not move file {} to staging, callback ID: {}".format(e, self.staging_file_name, self.callback_id))
             return False
         return True
+
+    def get_template(self):
+        """
+        Get template or None
+        download template
+        :param self: 
+        :return: bytes or None
+        """
+        url = urllib.parse.urljoin(config.GWAS_DEPO_REST_API_URL, "submissions/uploads")
+        params = {"callbackId": self.callback_id}
+        headers = {"jwt": config.DEPO_API_AUTH_TOKEN}
+        return download_with_requests(url=url, params=params, headers=headers)
+
 
 def get_source_file_from_id(source_dir, source):
     files = globus.list_files(source_dir)
@@ -375,24 +388,24 @@ def download_with_urllib(url, localpath):
         logger.error(e)
     return False
 
-def download_with_requests(url, localpath):
-    response = requests.head(url)
-    if response.status_code != 200:
-        logger.error("URL status code: {}".format(response.status_code))
-        return False
-    else:
-        try:
-            # stream prevents us from running into memory issues
-            with requests.get(url, stream=True) as r:
-                # for handling gzip/non-gzipped
-                r.raw.decode_content = True 
-                with open(localpath, 'wb') as f:
-                    shutil.copyfileobj(r.raw, f)
-                    logger.debug("File written: {}".format(url))        
-                    return True
-        except requests.exceptions.RequestException as e:
-            logger.error(e)
-            return False
+def download_with_requests(url, params=None, headers=None):
+    """
+    Return content from URL if status code is 200
+    :param url: 
+    :param headers: 
+    :return: content in bytes or None
+    """
+    try:
+        with requests.get(url, params=params, headers=headers) as r:
+            status_code = r.status_code
+            if status_code != 200:
+                logger.error(f"{url} returned {status_code} status code")
+                return None
+            else:
+                return r.content
+    except requests.exceptions.RequestException as e:
+        logger.error(e)
+        return None
 
 
 def get_net_loc(url):
