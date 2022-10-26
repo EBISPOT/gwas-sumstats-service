@@ -11,7 +11,7 @@ image:
   pullPolicy: Always
   containerPort: 8000
   logMountPath: "/var/log/gunicorn"
-  sshMountPath: "/root/.ssh"
+  sshMountPath: "~/.ssh"
   dataMountPath: "/sumstats_service/data"
   env:
     celeryUser: "username"
