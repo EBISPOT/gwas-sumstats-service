@@ -1,7 +1,7 @@
 import argparse
 import pandas as pd
 import yaml
-import config
+from sumstats_service import config
 import logging
 import os
 
@@ -72,14 +72,16 @@ class MetadataConverter:
     def format_metadata(self):
         if self.template_version < 1.8:
             self.header_mappings = config.SUBMISSION_TEMPLATE_HEADER_MAP_pre1_8
-        meta_dict = {'summaryStatisticsMetadata':{}}
+        meta_dict = {}
         if self.out_type == "ssf_yaml":
             record_meta = self.get_record_from_metadata()[0]
             schema = self.read_schema()
-            schema_fields = {key: value for key, value in schema['mapping']['summaryStatisticsMetadata']['mapping'].items()}
+            schema_fields = {key: value for key, value in schema['mapping'].items()}
+            print(schema_fields)
             for field, value in record_meta.items():
                 logger.debug(f"field: {field}, value: {value}")
                 if field in self.header_mappings:
+                    print(field)
                     key = self.header_mappings[field]
                     if key in schema_fields:
                         dtype = schema_fields[key]['type']
@@ -92,7 +94,7 @@ class MetadataConverter:
                         # format the other types of fields
                         else:
                             formatted_value = self.coerce_yaml_dtype(value=value, dtype=dtype)
-                        meta_dict['summaryStatisticsMetadata'][key] = formatted_value
+                        meta_dict[key] = formatted_value
         else:
             logger.error("Output type not recognised")
         return meta_dict
@@ -144,19 +146,19 @@ class MetadataConverter:
         if not str(self.data_file_ext).startswith("."):
             self.data_file_ext = "." + self.data_file_ext
         data_file_name = self.accession_id + self.data_file_ext
-        self.formatted_metadata['summaryStatisticsMetadata']['dataFileName'] = data_file_name
+        self.formatted_metadata['dataFileName'] = data_file_name
 
     def add_id_to_meta(self):
-        self.formatted_metadata['summaryStatisticsMetadata']['GWASID'] = self.accession_id
+        self.formatted_metadata['GWASID'] = self.accession_id
 
     def add_md5_to_meta(self):
-        self.formatted_metadata['summaryStatisticsMetadata']['dataFileMd5sum'] = self.md5sum
+        self.formatted_metadata['dataFileMd5sum'] = self.md5sum
 
     def add_defaults_to_meta(self):
-        self.formatted_metadata['summaryStatisticsMetadata']['fileType'] = config.SUMSTATS_FILE_TYPE
+        self.formatted_metadata['fileType'] = config.SUMSTATS_FILE_TYPE
 
     def add_gwas_cat_link(self):
-        self.formatted_metadata['summaryStatisticsMetadata']['GWASCatalogAPI'] = config.GWAS_CATALOG_REST_API_STUDY_URL + self.accession_id
+        self.formatted_metadata['GWASCatalogAPI'] = config.GWAS_CATALOG_REST_API_STUDY_URL + self.accession_id
 
     def convert_to_outfile(self):
         self.read_metadata_from_file()

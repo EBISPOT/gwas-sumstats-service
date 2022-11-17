@@ -1,7 +1,7 @@
 import json
 from urllib.parse import unquote
 from flask import url_for
-import config
+from sumstats_service import config
 import subprocess
 from sumstats_service.resources.error_classes import *
 import sumstats_service.resources.payload as pl

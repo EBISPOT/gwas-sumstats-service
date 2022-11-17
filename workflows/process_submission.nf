@@ -22,9 +22,17 @@ entries = []
 payload["requestEntries"].each { it -> entries.add( it.id ) }
 ids = Channel.from(entries)
 
+process get_submitted_files {
+
+  queue 'datamover'
+
+  input:
+
+}
 
 process validate_study {
 
+  queue 'short'
   containerOptions "--bind $params.storePath"
   memory { 2.GB * task.attempt }
   time { 6.hour * task.attempt }

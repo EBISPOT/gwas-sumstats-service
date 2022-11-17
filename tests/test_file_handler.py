@@ -1,7 +1,7 @@
 import unittest
 import os
 import shutil
-import config
+from sumstats_service import config
 import sumstats_service.resources.file_handler as fh
 
 

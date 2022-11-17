@@ -5,7 +5,7 @@ from urllib.parse import urlparse, parse_qs, urlunparse
 import requests
 import gzip
 import shutil
-import config
+from sumstats_service import config
 import hashlib
 import magic
 import csv

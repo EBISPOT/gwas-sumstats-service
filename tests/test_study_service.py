@@ -1,6 +1,6 @@
 import unittest
 import os
-import config
+from sumstats_service import config
 from sumstats_service.resources.sqlite_client import sqlClient
 import sumstats_service.resources.study_service as st
 from pymongo import MongoClient

@@ -8,7 +8,7 @@ import sumstats_service.resources.api_utils as au
 from tests.test_constants import *
 from sumstats_service.resources.sqlite_client import sqlClient
 import sumstats_service.resources.payload as pl
-import config
+from sumstats_service import config
 from pymongo import MongoClient
 
 class TestAPP:

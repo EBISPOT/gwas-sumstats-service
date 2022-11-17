@@ -1,5 +1,5 @@
 import re
-import config
+from sumstats_service import config
 from sumstats_service.resources.error_classes import *
 import sumstats_service.resources.file_handler as fh
 from sumstats_service.resources.mongo_client import mongoClient

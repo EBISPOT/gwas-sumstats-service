@@ -1,5 +1,5 @@
 import simplejson
-import config
+from sumstats_service import config
 import json
 from flask import Flask, make_response, Response, jsonify, request, abort
 import sumstats_service.resources.api_endpoints as endpoints

@@ -4,7 +4,7 @@ from sumstats_service.resources.mongo_client import mongoClient
 from sumstats_service.resources.error_classes import *
 import sumstats_service.resources.study_service as st
 import sumstats_service.resources.file_handler as fh
-import config
+from sumstats_service import config
 
 
 class Payload:
