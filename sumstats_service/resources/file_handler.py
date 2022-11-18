@@ -1,7 +1,7 @@
 import os
 from glob import glob
 import urllib
-from urllib.parse import urlparse, parse_qs, urlunparse
+from urllib.parse import urlparse
 import requests
 import gzip
 import shutil
@@ -64,18 +64,26 @@ class SumStatFile:
         return True
 
     def retrieve(self):
-        #TODO don't use FTP to download. copy the file.
         self.make_parent_dir()
         self.set_store_path()
-        source_path = os.path.join(config.DEPO_PATH, self.entryUUID, self.file_path)
-        download_status = download_from_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=source_path, dest=self.store_path)
-        if download_status == True:
+        source_path = self._get_source_file()
+        # copy from source_path to store_path
+        try:
+            shutil.copyfile(source_path, self.store_path)
             ext = self.get_ext()
             path_with_ext = self.store_path + ext
             os.rename(self.store_path, path_with_ext)
             self.store_path =  path_with_ext
             logger.debug("store path is {}".format(self.store_path))
-        return download_status 
+            return True
+        except FileNotFoundError:
+            return False
+
+    def _get_source_dir(self):
+        return os.path.join(config.DEPO_PATH, self.entryUUID)
+
+    def _get_source_file(self):
+        return os.path.join(self._get_source_dir(), self.file_path)
 
     def set_parent_path(self):
         logger.debug(config.STORAGE_PATH)
@@ -93,24 +101,6 @@ class SumStatFile:
     def set_valid_path(self):
         if self.study_id: 
                self.valid_path = os.path.join(self.valid_parent_path, str(self.study_id))
-
-    def download_from_dropbox(self):
-        url = self.file_path
-        url_parse = parse_url(url)
-        if url_parse.query:
-            download_true_query = url_parse.query.replace("dl=0", "dl=1")
-            url = urlunparse(url_parse._replace(query=download_true_query))
-        return download_with_requests(url, self.store_path)
-
-    def download_from_gdrive(self):
-        file_id = get_gdrive_id(self.file_path)
-        if file_id:
-            try:
-                download_file_from_google_drive(file_id, self.store_path)
-                return True
-            except requests.exceptions.RequestException as e:
-                logger.error(e)
-        return False
 
     def get_store_path(self):
         if not self.store_path:
@@ -375,16 +365,6 @@ def parse_url(url):
     else:
         return url_parse
 
-def download_with_urllib(url, localpath):
-    try:
-        urllib.request.urlretrieve(url, localpath)
-        logger.debug("File written: {}".format(url))        
-        return True
-    except urllib.error.URLError as e:
-        logger.error(e)
-    except ValueError as e:
-        logger.error(e)
-    return False
 
 def download_with_requests(url, params=None, headers=None):
     """
@@ -404,67 +384,6 @@ def download_with_requests(url, params=None, headers=None):
     except requests.exceptions.RequestException as e:
         logger.error(e)
         return None
-
-
-def get_net_loc(url):
-    return urlparse(url).netloc
-
-
-def get_gdrive_id(url):
-    file_id = None
-    url_parse = parse_url(url)
-    if url_parse.query and "id" in parse_qs(url_parse.query):
-        file_id = parse_qs(url_parse.query)["id"]
-    else:
-        try:
-            file_id = url_parse.path.split("/d/")[1].split("/")[0]
-        except IndexError:
-            logger.error("Couldn't parse id from url path: {}".format(url_parse.path))
-    if not file_id:
-        logger.error("Gdrive URL given but no id given")
-    return file_id
-
-
-def download_file_from_google_drive(id, destination):
-    def get_confirm_token(response):
-        for key, value in response.cookies.items():
-            if key.startswith('download_warning'):
-                return value
-        return None
-
-    def save_response_content(response, destination):
-        CHUNK_SIZE = 32768
-        with open(destination, "wb") as f:
-            for chunk in response.iter_content(CHUNK_SIZE):
-                if chunk: # filter out keep-alive new chunks
-                    f.write(chunk)
-
-    URL = "https://docs.google.com/uc?export=download"
-    session = requests.Session()
-    response = session.get(URL, params = { 'id' : id }, stream = True)
-    token = get_confirm_token(response)
-    if token:
-        params = { 'id' : id, 'confirm' : token }
-        response = session.get(URL, params = params, stream = True)
-    save_response_content(response, destination)
-
-
-def download_from_ftp(server, user, password, source, dest):
-    try:
-        ftp = ftplib.FTP(server)
-        ftp.login(user, password)
-        if ftp.nlst(source):
-            with open(dest, "wb") as f:
-                ftp.retrbinary("RETR " + source, f.write)
-                ftp.quit()
-                return True
-        else:
-            logger.error("couldn't find {}".format(source))
-            ftp.quit()
-            return False
-    except ftplib.all_errors as e:
-            logger.error(e)
-            return False
 
 
 def upload_to_ftp(server, user, password, source, parent_dir, dest_dir, dest_file):
