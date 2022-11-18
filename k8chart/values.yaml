@@ -11,7 +11,7 @@ image:
   pullPolicy: Always
   containerPort: 8000
   logMountPath: "/var/log/gunicorn"
-  sshMountPath: "/.ssh"
+  sshMountPath: "/sumstats_service/.ssh"
   dataMountPath: "/sumstats_service/data"
   env:
     celeryUser: "username"
@@ -41,6 +41,7 @@ image:
     httpsProxy: ""
     stagingPath: "./staging"
     validatedPath: "./validated"
+    depoPath: "./depo_data"
     swPath: "./bin"
     singularityCache: ""
     depoAPIToken: ""

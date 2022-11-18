@@ -9,12 +9,10 @@ from sumstats_service import config
 import hashlib
 import magic
 import csv
-import sys
 import io
 import logging
 import validate.validator as val
 import pathlib
-from sumstats_service.resources.error_classes import *
 import sumstats_service.resources.globus as globus
 from sumstats_service.resources.convert_meta import MetadataConverter
 import ftplib
@@ -66,10 +64,10 @@ class SumStatFile:
         return True
 
     def retrieve(self):
+        #TODO don't use FTP to download. copy the file.
         self.make_parent_dir()
         self.set_store_path()
-        logger.debug("Fetching file {} from ftp, parent path: {}".format(self.file_path, self.entryUUID))  
-        source_path = os.path.join(self.entryUUID, self.file_path)
+        source_path = os.path.join(config.DEPO_PATH, self.entryUUID, self.file_path)
         download_status = download_from_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=source_path, dest=self.store_path)
         if download_status == True:
             ext = self.get_ext()
