@@ -10,7 +10,7 @@ LOGGING_PATH = "../logs"
 STAGING_PATH = _env_variable_else('STAGING_PATH', 'depo_ss_staging')
 VALIDATED_PATH = _env_variable_else('VALIDATED_PATH', 'depo_ss_validated')
 SW_PATH =  _env_variable_else('SW_PATH', './bin')
-DEPO_PATH = './depo_data'
+DEPO_PATH = _env_variable_else('DEPO_PATH', './depo_data')
 
 
 # --- Rabbit and Celery --- #
@@ -60,7 +60,7 @@ CLIENT_ID = _env_variable_else('CLIENT_ID', None)
 TRANSFER_CLIENT_ID = _env_variable_else('TRANSFER_CLIENT_ID', None)
 GWAS_GLOBUS_GROUP = _env_variable_else('GWAS_GLOBUS_GROUP', None)
 DEPO_API_AUTH_TOKEN = _env_variable_else('DEPO_API_AUTH_TOKEN', None)
-METADATA_OUTPUT_PATH = _env_variable_else('METADATA_OUTPUT_PATH', 'metadata/output')
+OUTPUT_PATH = _env_variable_else('OUTPUT_PATH', 'metadata/output')
 
 # --- SQLite schema --- # 
 

@@ -39,6 +39,8 @@ class SumStatFile:
         self.minrows = minrows
         self.raw_ss = raw_ss
         self.uploaded_ss_filename = uploaded_ss_filename
+        self.store_path = None
+        self.parent_path = None
 
 
     def set_logfile(self):
@@ -70,13 +72,9 @@ class SumStatFile:
         # copy from source_path to store_path
         try:
             shutil.copyfile(source_path, self.store_path)
-            ext = self.get_ext()
-            path_with_ext = self.store_path + ext
-            os.rename(self.store_path, path_with_ext)
-            self.store_path =  path_with_ext
-            logger.debug("store path is {}".format(self.store_path))
             return True
         except FileNotFoundError:
+            logger.error(f"Could not find {source_path}")
             return False
 
     def _get_source_dir(self):
@@ -91,8 +89,10 @@ class SumStatFile:
         self.parent_path = os.path.join(config.STORAGE_PATH, self.callback_id)
 
     def set_store_path(self):
-        if self.study_id: 
-               self.store_path = os.path.join(self.parent_path, str(self.study_id))
+        if self.study_id:
+            if not self.parent_path:
+                self.set_parent_path()
+            self.store_path = os.path.join(self.parent_path, str(self.study_id))
 
     def set_valid_parent_path(self):
         if self.study_id: 
@@ -105,9 +105,6 @@ class SumStatFile:
     def get_store_path(self):
         if not self.store_path:
             self.set_store_path()
-            ext = self.get_ext()
-            path_with_ext = self.store_path + ext
-            self.store_path =  path_with_ext
         return self.store_path
 
     def write_readme_file(self):
@@ -135,7 +132,15 @@ class SumStatFile:
                 ext = self.get_dialect(f)
         return ext
 
+    def rename_file_with_ext(self):
+        ext = self.get_ext()
+        path_with_ext = self.store_path + ext
+        os.rename(self.store_path, path_with_ext)
+        self.store_path = path_with_ext
+        logger.info(self.store_path)
+
     def validate_file(self):
+        self.rename_file_with_ext()
         self.set_logfile()
         self.validation_error = 3
         if self.minrows:
@@ -202,41 +207,11 @@ class SumStatFile:
             return ".tsv"
 
 
-    def tidy_files(self):
-        """
-        TODO: Don't move files to the validated path
-        """
-        # copy files to validated path on ftp 
-        # clean up any files on the the nfs
-        self.set_parent_path()
-        self.set_store_path()
-        # We know the readme name exactly, but we don't know the extension of the sumstats file
-        source_readme =  os.path.join(self.parent_path, str(self.study_id)) + ".README"
-        upload_to_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=source_readme, parent_dir=config.VALIDATED_PATH, dest_dir=self.callback_id, dest_file=str(self.study_id) + ".README")
-        try:
-            matching_files = glob(self.store_path + ".*[!log|!README|!json]")
-            logger.info("files to sync: {}".format(matching_files))
-            if len(matching_files) == 1:
-                self.store_path = matching_files[0]
-                if self.store_path:
-                    file_ext = self.get_ext()
-                    dest_file = self.study_id + file_ext
-                    logger.info("syncing file: {} --> {}/{}".format(self.store_path, config.VALIDATED_PATH, os.path.join(self.callback_id, dest_file)))
-                    upload_to_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=self.store_path, parent_dir=config.VALIDATED_PATH, dest_dir=self.callback_id, dest_file=dest_file)
-            else:
-                logger.error("Error: {}\nCould not locate file for {}".format(self.study_id))
-                return False
-        except (IndexError, FileNotFoundError, OSError) as e:
-            logger.error("Error: {}\nCould not move file {} to validated".format(e, self.store_path))
-            return False
-        return True
-
-
     def write_metadata_file(self, input_metadata, ext):
         metadata_converter = MetadataConverter(accession_id=self.study_id,
                                   md5sum=self.md5exp,
                                   in_file=input_metadata,
-                                  out_file=os.path.join(config.METADATA_OUTPUT_PATH, self.study_id, "{}.yaml".format(self.study_id)),
+                                  out_file=os.path.join(config.OUTPUT_PATH, self.study_id, "{}.yaml".format(self.study_id)),
                                   schema="schema/meta_schema.yaml",
                                   data_file_ext=ext
                                   )

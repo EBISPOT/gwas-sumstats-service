@@ -1,3 +1,4 @@
+nextflow.enable.dsl=2
 //run with:
 //nextflow run validate_submission.nf --payload test/data/test1234/payload.json --storepath test/data/ -w test/data/test1234/work --ftpServer <> --ftpUser <> --ftpPWD <> --cid test1234
 
@@ -10,6 +11,7 @@ params.ftpUser = ''
 params.minrows = '10'
 params.forcevalid = 'False'
 params.validatedPath = 'test_depo_validated'
+params.depo_data = ''
 
 
 // parse json payload
@@ -22,12 +24,26 @@ entries = []
 payload["requestEntries"].each { it -> entries.add( it.id ) }
 ids = Channel.from(entries)
 
+
 process get_submitted_files {
 
   queue 'datamover'
+  containerOptions "--bind $params.storePath"
+  memory { 2.GB }
+  time { 6.hour * task.attempt }
+  maxRetries 5
+  errorStrategy { task.exitStatus in 130..255 ? 'retry' : 'terminate' }
 
   input:
+  val id
 
+  output:
+  val id
+
+
+  """
+  validate-study -cid $params.cid -id $id -payload $params.payload -storepath $params.storePath --copy_only True
+  """
 }
 
 process validate_study {
@@ -37,18 +53,24 @@ process validate_study {
   memory { 2.GB * task.attempt }
   time { 6.hour * task.attempt }
   maxRetries 5  
-  errorStrategy { task.exitStatus in 2..140 ? 'retry' : 'terminate' }
+  errorStrategy { task.exitStatus in 130..255 ? 'retry' : 'terminate' }
 
   input:
-  val(id) from ids
+  val id
   
   output:
-  stdout into result
+  stdout
 
   """
-  validate-study -cid $params.cid -id $id -payload $params.payload -storepath $params.storePath -ftpserver $params.ftpServer -ftpuser $params.ftpUser -ftppass $params.ftpPWD -minrows $params.minrows -forcevalid $params.forcevalid -out "${id}".json -validated_path $params.validatedPath
+  validate-study -cid $params.cid -id $id -payload $params.payload -storepath $params.storePath -minrows $params.minrows -forcevalid $params.forcevalid -out "${id}".json -validated_path $params.validatedPath
   """
 
 }
 
-result.view { it }
+workflow {
+    ids = channel.from(entries)
+    get_submitted_files(ids)
+    validate_study(get_submitted_files.out)
+}
+
+

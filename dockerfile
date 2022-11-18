@@ -61,6 +61,6 @@ ENV HTTP_PROXY ""
 ENV HTTPS_PROXY ""
 ENV no_proxy "localhost,.cluster.local"
 ENV DEPO_API_AUTH_TOKEN ""
-ENV METADATA_OUTPUT_PATH "metadata/output"
+ENV OUTPUT_PATH "metadata/output"
 
 USER sumstats-service

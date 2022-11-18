@@ -23,7 +23,9 @@ class TestStudyService(unittest.TestCase):
         self.file_path = "path.tsv"
         self.entryUUID = "ABC1234"
         self.md5 = "b1d7e0a58d36502d59d036a17336ddf5"
+        self.valid_file_md5 = "a1195761f082f8cbc2f5a560743077cc"
         self.assembly = "GRCh38"
+        self.valid_file = "test_sumstats_file.tsv"
 
 
     def tearDown(self):
@@ -120,8 +122,16 @@ class TestStudyService(unittest.TestCase):
         study = st.Study(study_id=self.study_id, file_path=None, md5=self.md5, assembly=self.assembly)
         self.assertFalse(study.mandatory_metadata_check())
 
+    def test_retrieve_file(self):
+        study = st.Study(study_id=self.study_id, file_path=self.valid_file,
+                         callback_id="1234abcd", entryUUID=self.entryUUID)
+        study.retrieve_study_file()
+        self.assertEqual(study.retrieved, 1)
+
     def test_validate_study_missing_metadata(self):
-        study = st.Study(study_id=self.study_id, file_path=self.file_path, md5=self.md5, assembly="")
+        study = st.Study(study_id=self.study_id, file_path=self.valid_file, md5=self.md5, assembly="",
+                         callback_id="1234abcd", entryUUID=self.entryUUID)
+        study.retrieve_study_file()
         study.validate_study()
         self.assertEqual(study.error_code, 4)
 
@@ -133,15 +143,31 @@ class TestStudyService(unittest.TestCase):
     def test_validate_study_invalid_file_path(self):
         study = st.Study(study_id=self.study_id, file_path=self.file_path, md5=self.md5, assembly=self.assembly,
                          callback_id="1234abcd", entryUUID=self.entryUUID)
-        study.validate_study()
+        study.retrieve_study_file()
         self.assertEqual(study.error_code, 1)
 
     def test_validate_study_md5_invalid(self):
-        valid_file = "test_sumstats_file.tsv"
-        study = st.Study(study_id=self.study_id, file_path=valid_file, md5=self.md5, assembly=self.assembly,
+        study = st.Study(study_id=self.study_id, file_path=self.valid_file, md5=self.md5, assembly=self.assembly,
                          callback_id="1234abcd", entryUUID=self.entryUUID)
+        study.retrieve_study_file()
         study.validate_study()
         self.assertEqual(study.error_code, 2)
+
+    def test_validate_valid_study(self):
+        study = st.Study(study_id=self.study_id, file_path=self.valid_file, md5=self.valid_file_md5, assembly=self.assembly,
+                         callback_id="1234abcd", entryUUID=self.entryUUID)
+        study.retrieve_study_file()
+        study.validate_study(minrows=2)
+        self.assertEqual(study.data_valid, 1)
+
+    def test_validate_study_not_enough_rows(self):
+        study = st.Study(study_id=self.study_id, file_path=self.valid_file, md5=self.valid_file_md5,
+                         assembly=self.assembly,
+                         callback_id="1234abcd", entryUUID=self.entryUUID)
+        study.retrieve_study_file()
+        study.validate_study(minrows=100)
+        self.assertEqual(study.data_valid, 0)
+
 
 
 

@@ -5,6 +5,11 @@ import argparse
 import sys
 from sumstats_service import config
 import os
+import logging
+
+
+logging.basicConfig(level=logging.DEBUG, format='(%(levelname)s): %(message)s')
+logger = logging.getLogger(__name__)
 
 
 def parse_payload(content, studyid, callback_id):
@@ -21,17 +26,25 @@ def parse_payload(content, studyid, callback_id):
 def validate_study(callback_id, study_id, filepath, md5, assembly, readme, entryUUID, out=None, minrows=None, forcevalid=False):
     study = st.Study(callback_id=callback_id, study_id=study_id, file_path=filepath, md5=md5, assembly=assembly, readme=readme, entryUUID=entryUUID)
     study.validate_study(minrows=minrows, forcevalid=forcevalid)
-    result = { 
+    result = {
                 "id": study.study_id,
                 "retrieved": study.retrieved,
                 "dataValid": study.data_valid,
                 "errorCode": study.error_code
              }
-    print(result)
-    if out:           
+    if out:
         with open(out, 'w') as f:
             f.write(json.dumps(result))
     if study.data_valid != 1:
+        sys.exit(1)
+    else:
+        sys.exit(0)
+
+def copy_file_for_validation(callback_id, study_id, filepath, entryUUID, md5, assembly):
+    study = st.Study(callback_id=callback_id, study_id=study_id, file_path=filepath, entryUUID=entryUUID, md5=md5, assembly=assembly)
+    study.retrieve_study_file()
+    logger.info(study.retrieved)
+    if study.retrieved != 1:
         sys.exit(1)
     else:
         sys.exit(0)
@@ -68,6 +81,7 @@ def main():
     argparser.add_argument("-ftppass", help='The FTP password', required=False, default=config.FTP_PASSWORD)
     argparser.add_argument("-minrows", help='The minimum required rows in a sumsats file for validation to pass', required=False, default=None)
     argparser.add_argument("-forcevalid", help='Setting to True will force the validation to be true', type=str2bool, nargs='?', const=True, required=False, default=False)
+    argparser.add_argument("--copy_only", help='Setting to True will only copy the file to the validation path', type=str2bool, nargs='?', const=True, required=False, default=False)
 
     
     args = argparser.parse_args()
@@ -89,11 +103,13 @@ def main():
         # if content is given as json string
         content = json.loads(args.payload)
 
-
-    out = os.path.join(args.storepath, args.cid, args.out)
     filepath, md5, assembly, readme, entryUUID = parse_payload(content, args.id, args.cid)
-    minrows = None if len(args.minrows) == 0 or args.minrows == "None" else args.minrows
-    validate_study(args.cid, args.id, filepath, md5, assembly, readme, entryUUID, out, minrows, args.forcevalid)
+    if args.copy_only:
+        copy_file_for_validation(callback_id=args.cid, study_id=args.id, filepath=filepath, entryUUID=entryUUID, md5=md5, assembly=assembly)
+    else:
+        out = os.path.join(args.storepath, args.cid, args.out)
+        minrows = None if len(args.minrows) == 0 or args.minrows == "None" else args.minrows
+        validate_study(args.cid, args.id, filepath, md5, assembly, readme, entryUUID, out, minrows, args.forcevalid)
 
 
 if __name__ == '__main__':
