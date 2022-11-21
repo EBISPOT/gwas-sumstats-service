@@ -53,8 +53,6 @@ class TestAPIUtils(unittest.TestCase):
                                     minrows=2)
         results = json.loads(result_json)
         self.assertEqual(results['validationList'][0]["id"], self.sid)
-        self.assertEqual(results['validationList'][0]["retrieved"], 1)
-        self.assertEqual(results['validationList'][0]["dataValid"], 1)
 
 
 

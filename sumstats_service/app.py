@@ -170,7 +170,7 @@ def validate_files_in_background(callback_id, content, minrows=None, forcevalid=
     if bypass is True:
         results = au.skip_validation_completely(callback_id=callback_id, content=content)
     else:
-        results = au.validate_files_from_payload(callback_id=callback_id, content=content, minrows=minrows, forcevalid=forcevalid)
+        results = au.validate_files(callback_id=callback_id, content=content, minrows=minrows, forcevalid=forcevalid)
     return results
 
 

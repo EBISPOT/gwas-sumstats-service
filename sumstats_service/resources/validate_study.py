@@ -107,7 +107,7 @@ def main():
     if args.copy_only:
         copy_file_for_validation(callback_id=args.cid, study_id=args.id, filepath=filepath, entryUUID=entryUUID, md5=md5, assembly=assembly)
     else:
-        out = os.path.join(args.storepath, args.cid, args.out)
+        out = os.path.join(args.validated_path, args.cid, args.out)
         minrows = None if len(args.minrows) == 0 or args.minrows == "None" else args.minrows
         validate_study(args.cid, args.id, filepath, md5, assembly, readme, entryUUID, out, minrows, args.forcevalid)
 

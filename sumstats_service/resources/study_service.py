@@ -192,7 +192,11 @@ class Study:
             if not ssf.md5_ok():
                 self.set_data_valid_status(0)
                 self.set_error_code(2)
+                # retrieved must be true
+                self.set_retrieved_status(1)
             else:
+                # retrieved must be true
+                self.set_retrieved_status(1)
                 if ssf.check_raw_ss():
                     validation_status = ssf.validate_file() if forcevalid is False else True
                     if validation_status is True:

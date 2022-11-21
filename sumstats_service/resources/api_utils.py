@@ -58,7 +58,7 @@ def store_validation_results_in_db(validation_response):
         #reinstate_globus_permissions(globus_uuid)
         callback_id = json.loads(validation_response)['callbackID']
         payload = pl.Payload(callback_id=callback_id)
-        payload.clear_validated_files()
+        payload.remove_payload_directory()
 
 
 def delete_globus_endpoint(globus_uuid):
@@ -170,21 +170,16 @@ def validate_files(callback_id, content, minrows=None, forcevalid=False):
     if any([i['errorCode'] for i in json.loads(validate_metadata)['validationList']]):
         # metadata invalid stop here
         return validate_metadata
-    par_dir = os.path.join(config.STORAGE_PATH, callback_id)
-    payload_path = os.path.join(par_dir, "payload.json")
-    nextflow_config_path = os.path.join(par_dir, "nextflow.config")
-    log_dir = os.path.join(config.STORAGE_PATH, 'logs', callback_id)
+    wd, payload_path, nextflow_config_path, log_dir = setup_dir_for_validation(callback_id)
     nextflow_cmd = nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, forcevalid,
-                                           nextflow_config_path)
-    Path(par_dir).mkdir(parents=True, exist_ok=True)
-    Path(log_dir).mkdir(parents=True, exist_ok=True)
+                                           nextflow_config_path, wd)
+    logger.info(nextflow_cmd)
     with open(payload_path, 'w') as f:
         f.write(json.dumps(content))
     with open(nextflow_config_path, 'w') as f:
         f.write(config.NEXTFLOW_CONFIG)
-    pipe_ps = subprocess.run(nextflow_cmd.split())
-    logger.info('pipeline process output:\n{}'.format(pipe_ps))
-    json_out_files = glob.glob(os.path.join(par_dir, '[!payload]*.json'))
+    pipe_ps = subprocess.run(nextflow_cmd.split(),capture_output=True)
+    json_out_files = glob.glob(os.path.join(wd, '[!payload]*.json'))
     results = {
                 "callbackID": callback_id,
                 "validationList": []
@@ -196,9 +191,22 @@ def validate_files(callback_id, content, minrows=None, forcevalid=False):
         add_errors_if_study_missing(callback_id, content, results)
     else:
         results = results_if_failure(callback_id, content)
-    logger.info(json.dumps(results))
-    remove_payload_files(callback_id)
+    logger.info("results: " + json.dumps(results))
+    #remove_payload_files(callback_id)
     return json.dumps(results)
+
+
+def setup_dir_for_validation(callback_id):
+    # fast access dir
+    par_dir = os.path.join(config.STORAGE_PATH, callback_id)
+    # working dir
+    wd = os.path.join(config.VALIDATED_PATH, callback_id)
+    payload_path = os.path.join(wd, "payload.json")
+    nextflow_config_path = os.path.join(wd, "nextflow.config")
+    log_dir = os.path.join(wd, 'logs')
+    Path(par_dir).mkdir(parents=True, exist_ok=True)
+    Path(log_dir).mkdir(parents=True, exist_ok=True)
+    return wd, payload_path, nextflow_config_path, log_dir
 
 
 def results_if_failure(callback_id, content):
@@ -208,7 +216,8 @@ def results_if_failure(callback_id, content):
     return results
 
 
-def nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, forcevalid, nextflow_config_path, nf_script_path='workflows/process_submission.nf'):
+def nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, forcevalid,
+                            nextflow_config_path, wd, nf_script_path='workflows/process_submission.nf'):
     nextflow_cmd =  """
                     nextflow -log {logs}/nextflow.log \
                             run {script} \
@@ -223,8 +232,8 @@ def nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows
                             --validatedPath {vp} \
                             -w {wd} \
                             -c {conf} \
-                            -with-singularity docker://{image}:{tag}
-                    """.format(image=config.SINGULARITY_IMAGE, 
+                            -with-singularity docker://{image}: {tag}
+                    """.format(image=config.SINGULARITY_IMAGE,
                             tag=config.SINGULARITY_TAG,
                             script=nf_script_path,
                             cid=callback_id, 
@@ -235,11 +244,12 @@ def nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows
                             ftpp=config.FTP_PASSWORD, 
                             plp=payload_path,
                             logs=log_dir,
-                            wd=par_dir,
+                            wd=wd,
                             mr=minrows,
                             fv=forcevalid,
                             conf=nextflow_config_path)
     return nextflow_cmd
+
 
 def cluster_command(par_dir, log_dir, memory, nextflow_cmd):
     command = ("export http_proxy={hp}; "

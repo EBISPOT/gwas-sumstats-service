@@ -12,7 +12,7 @@ class TestSumStatsFile(unittest.TestCase):
         config.BROKER_PORT = 5682
         config.BROKER_HOST = "localhost"
         config.DEPO_PATH = './tests'
-        self.cid = "TiQS2yxV"
+        self.cid = "TiQS2yxVa"
         self.sid = "mKoYvoLH8L"
         self.entryUUID = "ABC1234"
         self.valid_file = "test_sumstats_file.tsv"

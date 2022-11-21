@@ -18,7 +18,7 @@ class MetadataConverter:
                  in_file,
                  out_file,                 
                  schema,
-                 data_file_ext,
+                 data_file,
                  in_type='gwas_sub_xls',
                  out_type='ssf_yaml'):
         self.accession_id = accession_id
@@ -28,7 +28,7 @@ class MetadataConverter:
         self.in_type = in_type
         self.out_type = out_type
         self.schema = schema
-        self.data_file_ext = data_file_ext
+        self.data_file_name = data_file
         self.metadata = None
         self.formatted_metadata = None
         self.template_version = None
@@ -143,10 +143,7 @@ class MetadataConverter:
         self.add_gwas_cat_link()
 
     def add_data_file_name_to_meta(self):
-        if not str(self.data_file_ext).startswith("."):
-            self.data_file_ext = "." + self.data_file_ext
-        data_file_name = self.accession_id + self.data_file_ext
-        self.formatted_metadata['dataFileName'] = data_file_name
+        self.formatted_metadata['dataFileName'] = self.data_file_name
 
     def add_id_to_meta(self):
         self.formatted_metadata['GWASID'] = self.accession_id
@@ -178,7 +175,7 @@ def main():
     argparser.add_argument("-in_type", help='Type of file being read', default='gwas_sub_xls')
     argparser.add_argument("-out_type", help='Type of file to convert to', default='ssf_yaml')
     argparser.add_argument("-schema", help='Schema for output', required=True)
-    argparser.add_argument("-file_ext", help='Data file extension', required=True)
+    argparser.add_argument("-data_file", help='Data file name', required=True)
     args = argparser.parse_args()
 
     """
@@ -191,7 +188,7 @@ def main():
     in_type = args.in_type
     out_type = args.out_type
     schema = args.schema
-    data_file_ext = args.file_ext
+    data_file = args.data_file
 
     converter = MetadataConverter(accession_id=accession_id,
                                   md5sum=md5sum,
@@ -200,7 +197,7 @@ def main():
                                   in_type=in_type,
                                   out_type=out_type,
                                   schema=schema,
-                                  data_file_ext=data_file_ext
+                                  data_file=data_file
                                   )
     converter.convert_to_outfile()
 

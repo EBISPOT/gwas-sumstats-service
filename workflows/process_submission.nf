@@ -2,6 +2,7 @@ nextflow.enable.dsl=2
 //run with:
 //nextflow run validate_submission.nf --payload test/data/test1234/payload.json --storepath test/data/ -w test/data/test1234/work --ftpServer <> --ftpUser <> --ftpPWD <> --cid test1234
 
+// Path to store files for fast accesss
 params.storePath = ''
 params.cid = ''
 params.payload = ''
@@ -10,7 +11,11 @@ params.ftpPWD = ''
 params.ftpUser = ''
 params.minrows = '10'
 params.forcevalid = 'False'
+
+// path to do the work
 params.validatedPath = 'test_depo_validated'
+
+// path where files are deposited by users
 params.depo_data = ''
 
 

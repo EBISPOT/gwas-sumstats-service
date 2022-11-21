@@ -46,7 +46,7 @@ class SumStatFile:
     def set_logfile(self):
         for handler in logger.handlers[:]:  # remove all old handlers
             logger.removeHandler(handler)
-        self.logfile = os.path.join(self.parent_path, str(self.study_id + ".log"))
+        self.logfile = os.path.join(config.VALIDATED_PATH, self.callback_id, str(self.study_id + ".log"))
         handler = logging.FileHandler(self.logfile)
         handler.setLevel(logging.INFO)
         logger.addHandler(handler)
@@ -207,64 +207,44 @@ class SumStatFile:
             return ".tsv"
 
 
-    def write_metadata_file(self, input_metadata, ext):
+    def write_metadata_file(self, input_metadata, dest_file):
+        data_file = pathlib.Path(dest_file).name
         metadata_converter = MetadataConverter(accession_id=self.study_id,
                                   md5sum=self.md5exp,
                                   in_file=input_metadata,
-                                  out_file=os.path.join(config.OUTPUT_PATH, self.study_id, "{}.yaml".format(self.study_id)),
+                                  out_file=dest_file + "-meta.yaml",
                                   schema="schema/meta_schema.yaml",
-                                  data_file_ext=ext
+                                  data_file=data_file
                                   )
         return metadata_converter.convert_to_outfile()
 
     def move_file_to_staging(self):
         """
-        TODO: 1. copy files from Globus folder to staging (as they will be verified valid)
-              2. no need to do anything regarding READMEs
-              3. fetch the metadata file safely store on NFS
-              4. create metadata file from template using the conver_meta.py store on NFS
+        TODO: move raw ss if needed
         """
-        # ftp mv from validated to staging
-        try:        
-            self.set_valid_parent_path()
-            self.set_valid_path()
-            #source_readme = os.path.join(self.valid_parent_path, str(self.study_id) + ".README")
-
-            self.staging_dir_name = str(self.staging_dir_name.replace(' ', ''))
-            self.staging_file_name = str(self.staging_file_name.replace(' ', '')) 
-
+        try:
+            source_dir = os.path.join(config.STORAGE_PATH, self.callback_id)
+            source_file_without_ext = os.path.join(source_dir, self.study_id)
+            source_file = add_ext_to_file_without_ext(source_file_without_ext)
             dest_dir = os.path.join(config.STAGING_PATH, self.staging_dir_name)
-
-            #source_file, ext = get_source_file_from_id(self.valid_parent_path, self.valid_path)
-            source_file = os.path.join(self.entryUUID, self.uploaded_ss_filename)
-            # acceptable extensions are ".tsv.gz" and ".tsv"
-            ext = ".tsv.gz" if ".gz" in pathlib.Path(self.uploaded_ss_filename).suffixes else ".tsv"
+            ext = get_ext_for_file(file_path=source_file)
             dest_file = os.path.join(dest_dir, self.staging_file_name + ext)
+            shutil.move(source_file, dest_file)
 
             template = self.get_template()
             if template is None:
                 logger.error(f"No template found for {self.callback_id}")
             else:
                 with io.BytesIO(template) as fh:
-                    self.write_metadata_file(input_metadata=fh, ext=ext)
+                    self.write_metadata_file(input_metadata=fh, dest_file=pathlib.Path(dest_file).name)
 
-            file_status = mv_file_with_globus(source=source_file, dest_dir=dest_dir, dest=dest_file)
-            
-            # move raw sumstats
-            if self.raw_ss:
-                raw_ss_source = os.path.join(self.entryUUID, self.raw_ss)
-                raw_ss_dest = os.path.join(dest_dir, self.raw_ss)
-                raw_ss_status = mv_file_with_globus(source=raw_ss_source, dest_dir=dest_dir, dest=raw_ss_dest)
-                if raw_ss_status is False:
-                    logger.error("Error could not move {}".format(raw_ss_dest))
-            if readme_status is False:
-                logger.error("Error could not move {}".format(str(os.path.join(dest_dir, "README.txt"))))
-            if file_status is False:
-                logger.error("Error could not move {}".format(dest_file))
         except (IndexError, FileNotFoundError, OSError) as e:
-            logger.error("Error: {}\nCould not move file {} to staging, callback ID: {}".format(e, self.staging_file_name, self.callback_id))
+            logger.error("Error: {}\nCould not move file {} to staging, callback ID: {}".format(e,
+                                                                                                self.staging_file_name,
+                                                                                                self.callback_id))
             return False
         return True
+
 
     def get_template(self):
         """
@@ -277,6 +257,30 @@ class SumStatFile:
         params = {"callbackId": self.callback_id}
         headers = {"jwt": config.DEPO_API_AUTH_TOKEN}
         return download_with_requests(url=url, params=params, headers=headers)
+
+
+def get_ext_for_file(file_path):
+    """
+    Get the full extension for a file path
+    :param file_path:
+    :return: extension
+    """
+    suffixes = pathlib.Path(file_path).suffixes
+    ext = "".join(suffixes)
+    return ext
+
+def add_ext_to_file_without_ext(file_without_ext):
+    """
+    Add the extension to the file name.
+    There will only be one glob match for the file without ext.
+    :param file_without_ext:
+    :return: file with ext
+    """
+    matching_files = glob(file_without_ext + '*')
+    if len(matching_files) != 1:
+        raise ValueError(f"Could not find one and only one matching file for {file_without_ext}")
+    else:
+        return matching_files[0]
 
 
 def get_source_file_from_id(source_dir, source):
