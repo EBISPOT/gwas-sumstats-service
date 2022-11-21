@@ -18,11 +18,14 @@ class TestSumStatsFile(unittest.TestCase):
         self.valid_file = "test_sumstats_file.tsv"
         self.valid_file_md5 = "a1195761f082f8cbc2f5a560743077cc"
         os.makedirs(config.STORAGE_PATH, exist_ok=True)
+        self.test_validate_path = os.path.join(config.VALIDATED_PATH, self.cid)
+        os.makedirs(self.test_validate_path, exist_ok=True)
         self.invalid_file = "test_invalid.tsv"
 
 
     def tearDown(self):
         shutil.rmtree(self.test_storepath)
+        shutil.rmtree(self.test_validate_path)
 
     def test_make_parent_dir(self):
         ssf = fh.SumStatFile(callback_id=self.cid, study_id=self.sid)
@@ -59,7 +62,7 @@ class TestSumStatsFile(unittest.TestCase):
         ssf.retrieve()
         result = ssf.validate_file()
         self.assertTrue(result)
-        self.assertTrue(os.path.exists(os.path.join(ssf.parent_path, str(self.sid + ".log"))))
+        self.assertTrue(os.path.exists(os.path.join(ssf.get_valid_parent_path(), str(self.sid + ".log"))))
 
     def test_validate_false_when_invalid(self):
         ssf = fh.SumStatFile(file_path=self.invalid_file, callback_id=self.cid,
@@ -67,7 +70,7 @@ class TestSumStatsFile(unittest.TestCase):
         ssf.retrieve()
         result = ssf.validate_file()
         self.assertFalse(result)
-        self.assertTrue(os.path.exists(os.path.join(ssf.parent_path, str(self.sid + ".log"))))
+        self.assertTrue(os.path.exists(os.path.join(ssf.get_valid_parent_path(), str(self.sid + ".log"))))
 
 
 

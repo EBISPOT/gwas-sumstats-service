@@ -171,7 +171,7 @@ def validate_files(callback_id, content, minrows=None, forcevalid=False):
         # metadata invalid stop here
         return validate_metadata
     wd, payload_path, nextflow_config_path, log_dir = setup_dir_for_validation(callback_id)
-    nextflow_cmd = nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, forcevalid,
+    nextflow_cmd = nextflow_command_string(callback_id, payload_path, log_dir, minrows, forcevalid,
                                            nextflow_config_path, wd)
     logger.info(nextflow_cmd)
     with open(payload_path, 'w') as f:
@@ -216,7 +216,7 @@ def results_if_failure(callback_id, content):
     return results
 
 
-def nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, forcevalid,
+def nextflow_command_string(callback_id, payload_path, log_dir, minrows, forcevalid,
                             nextflow_config_path, wd, nf_script_path='workflows/process_submission.nf'):
     nextflow_cmd =  """
                     nextflow -log {logs}/nextflow.log \

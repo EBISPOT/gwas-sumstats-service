@@ -46,7 +46,7 @@ class SumStatFile:
     def set_logfile(self):
         for handler in logger.handlers[:]:  # remove all old handlers
             logger.removeHandler(handler)
-        self.logfile = os.path.join(config.VALIDATED_PATH, self.callback_id, str(self.study_id + ".log"))
+        self.logfile = os.path.join(self.get_valid_parent_path(), str(self.study_id + ".log"))
         handler = logging.FileHandler(self.logfile)
         handler.setLevel(logging.INFO)
         logger.addHandler(handler)
@@ -94,9 +94,11 @@ class SumStatFile:
                 self.set_parent_path()
             self.store_path = os.path.join(self.parent_path, str(self.study_id))
 
-    def set_valid_parent_path(self):
+    def get_valid_parent_path(self):
         if self.study_id: 
-               self.valid_parent_path = os.path.join(config.VALIDATED_PATH, self.callback_id)
+            self.valid_parent_path = os.path.join(config.VALIDATED_PATH, self.callback_id)
+            return self.valid_parent_path
+
 
     def set_valid_path(self):
         if self.study_id: 

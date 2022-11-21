@@ -1,5 +1,6 @@
 import unittest
 import os
+import shutil
 from sumstats_service import config
 from sumstats_service.resources.sqlite_client import sqlClient
 import sumstats_service.resources.study_service as st
@@ -17,7 +18,7 @@ class TestStudyService(unittest.TestCase):
         sq = sqlClient(self.testDB)
         sq.create_conn()
         sq.cur.executescript(config.DB_SCHEMA)
-        
+        config.DEPO_PATH = './tests'
         self.study_id = "123abc123"
         self.callback_id = "abc123xyz"
         self.file_path = "path.tsv"
@@ -26,10 +27,15 @@ class TestStudyService(unittest.TestCase):
         self.valid_file_md5 = "a1195761f082f8cbc2f5a560743077cc"
         self.assembly = "GRCh38"
         self.valid_file = "test_sumstats_file.tsv"
+        self.test_validate_path = os.path.join(config.VALIDATED_PATH, self.callback_id)
+        os.makedirs(config.STORAGE_PATH, exist_ok=True)
+        os.makedirs(self.test_validate_path, exist_ok=True)
 
 
     def tearDown(self):
         os.remove(self.testDB)
+        shutil.rmtree(self.test_storepath)
+        shutil.rmtree(self.test_validate_path)
         client = MongoClient(config.MONGO_URI)
         client.drop_database(config.MONGO_DB)
 
@@ -155,7 +161,7 @@ class TestStudyService(unittest.TestCase):
 
     def test_validate_valid_study(self):
         study = st.Study(study_id=self.study_id, file_path=self.valid_file, md5=self.valid_file_md5, assembly=self.assembly,
-                         callback_id="1234abcd", entryUUID=self.entryUUID)
+                         callback_id=self.callback_id, entryUUID=self.entryUUID)
         study.retrieve_study_file()
         study.validate_study(minrows=2)
         self.assertEqual(study.data_valid, 1)
@@ -163,7 +169,7 @@ class TestStudyService(unittest.TestCase):
     def test_validate_study_not_enough_rows(self):
         study = st.Study(study_id=self.study_id, file_path=self.valid_file, md5=self.valid_file_md5,
                          assembly=self.assembly,
-                         callback_id="1234abcd", entryUUID=self.entryUUID)
+                         callback_id=self.callback_id, entryUUID=self.entryUUID)
         study.retrieve_study_file()
         study.validate_study(minrows=100)
         self.assertEqual(study.data_valid, 0)
