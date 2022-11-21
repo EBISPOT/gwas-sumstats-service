@@ -1,20 +1,18 @@
 import os
 from glob import glob
 import urllib
-from urllib.parse import urlparse, parse_qs, urlunparse
+from urllib.parse import urlparse
 import requests
 import gzip
 import shutil
-import config
+from sumstats_service import config
 import hashlib
 import magic
 import csv
-import sys
 import io
 import logging
 import validate.validator as val
 import pathlib
-from sumstats_service.resources.error_classes import *
 import sumstats_service.resources.globus as globus
 from sumstats_service.resources.convert_meta import MetadataConverter
 import ftplib
@@ -41,12 +39,14 @@ class SumStatFile:
         self.minrows = minrows
         self.raw_ss = raw_ss
         self.uploaded_ss_filename = uploaded_ss_filename
+        self.store_path = None
+        self.parent_path = None
 
 
     def set_logfile(self):
         for handler in logger.handlers[:]:  # remove all old handlers
             logger.removeHandler(handler)
-        self.logfile = os.path.join(self.parent_path, str(self.study_id + ".log"))
+        self.logfile = os.path.join(self.get_valid_parent_path(), str(self.study_id + ".log"))
         handler = logging.FileHandler(self.logfile)
         handler.setLevel(logging.INFO)
         logger.addHandler(handler)
@@ -68,16 +68,20 @@ class SumStatFile:
     def retrieve(self):
         self.make_parent_dir()
         self.set_store_path()
-        logger.debug("Fetching file {} from ftp, parent path: {}".format(self.file_path, self.entryUUID))  
-        source_path = os.path.join(self.entryUUID, self.file_path)
-        download_status = download_from_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=source_path, dest=self.store_path)
-        if download_status == True:
-            ext = self.get_ext()
-            path_with_ext = self.store_path + ext
-            os.rename(self.store_path, path_with_ext)
-            self.store_path =  path_with_ext
-            logger.debug("store path is {}".format(self.store_path))
-        return download_status 
+        source_path = self._get_source_file()
+        # copy from source_path to store_path
+        try:
+            shutil.copyfile(source_path, self.store_path)
+            return True
+        except FileNotFoundError:
+            logger.error(f"Could not find {source_path}")
+            return False
+
+    def _get_source_dir(self):
+        return os.path.join(config.DEPO_PATH, self.entryUUID)
+
+    def _get_source_file(self):
+        return os.path.join(self._get_source_dir(), self.file_path)
 
     def set_parent_path(self):
         logger.debug(config.STORAGE_PATH)
@@ -85,41 +89,24 @@ class SumStatFile:
         self.parent_path = os.path.join(config.STORAGE_PATH, self.callback_id)
 
     def set_store_path(self):
-        if self.study_id: 
-               self.store_path = os.path.join(self.parent_path, str(self.study_id))
+        if self.study_id:
+            if not self.parent_path:
+                self.set_parent_path()
+            self.store_path = os.path.join(self.parent_path, str(self.study_id))
 
-    def set_valid_parent_path(self):
+    def get_valid_parent_path(self):
         if self.study_id: 
-               self.valid_parent_path = os.path.join(config.VALIDATED_PATH, self.callback_id)
+            self.valid_parent_path = os.path.join(config.VALIDATED_PATH, self.callback_id)
+            return self.valid_parent_path
+
 
     def set_valid_path(self):
         if self.study_id: 
                self.valid_path = os.path.join(self.valid_parent_path, str(self.study_id))
 
-    def download_from_dropbox(self):
-        url = self.file_path
-        url_parse = parse_url(url)
-        if url_parse.query:
-            download_true_query = url_parse.query.replace("dl=0", "dl=1")
-            url = urlunparse(url_parse._replace(query=download_true_query))
-        return download_with_requests(url, self.store_path)
-
-    def download_from_gdrive(self):
-        file_id = get_gdrive_id(self.file_path)
-        if file_id:
-            try:
-                download_file_from_google_drive(file_id, self.store_path)
-                return True
-            except requests.exceptions.RequestException as e:
-                logger.error(e)
-        return False
-
     def get_store_path(self):
         if not self.store_path:
             self.set_store_path()
-            ext = self.get_ext()
-            path_with_ext = self.store_path + ext
-            self.store_path =  path_with_ext
         return self.store_path
 
     def write_readme_file(self):
@@ -147,7 +134,15 @@ class SumStatFile:
                 ext = self.get_dialect(f)
         return ext
 
+    def rename_file_with_ext(self):
+        ext = self.get_ext()
+        path_with_ext = self.store_path + ext
+        os.rename(self.store_path, path_with_ext)
+        self.store_path = path_with_ext
+        logger.info(self.store_path)
+
     def validate_file(self):
+        self.rename_file_with_ext()
         self.set_logfile()
         self.validation_error = 3
         if self.minrows:
@@ -214,94 +209,44 @@ class SumStatFile:
             return ".tsv"
 
 
-    def tidy_files(self):
-        """
-        TODO: Don't move files to the validated path
-        """
-        # copy files to validated path on ftp 
-        # clean up any files on the the nfs
-        self.set_parent_path()
-        self.set_store_path()
-        # We know the readme name exactly, but we don't know the extension of the sumstats file
-        source_readme =  os.path.join(self.parent_path, str(self.study_id)) + ".README"
-        upload_to_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=source_readme, parent_dir=config.VALIDATED_PATH, dest_dir=self.callback_id, dest_file=str(self.study_id) + ".README")
-        try:
-            matching_files = glob(self.store_path + ".*[!log|!README|!json]")
-            logger.info("files to sync: {}".format(matching_files))
-            if len(matching_files) == 1:
-                self.store_path = matching_files[0]
-                if self.store_path:
-                    file_ext = self.get_ext()
-                    dest_file = self.study_id + file_ext
-                    logger.info("syncing file: {} --> {}/{}".format(self.store_path, config.VALIDATED_PATH, os.path.join(self.callback_id, dest_file)))
-                    upload_to_ftp(server=config.FTP_SERVER, user=config.FTP_USERNAME, password=config.FTP_PASSWORD, source=self.store_path, parent_dir=config.VALIDATED_PATH, dest_dir=self.callback_id, dest_file=dest_file)
-            else:
-                logger.error("Error: {}\nCould not locate file for {}".format(self.study_id))
-                return False
-        except (IndexError, FileNotFoundError, OSError) as e:
-            logger.error("Error: {}\nCould not move file {} to validated".format(e, self.store_path))
-            return False
-        return True
-
-
-    def write_metadata_file(self, input_metadata, ext):
+    def write_metadata_file(self, input_metadata, dest_file):
+        data_file = pathlib.Path(dest_file).name
         metadata_converter = MetadataConverter(accession_id=self.study_id,
                                   md5sum=self.md5exp,
                                   in_file=input_metadata,
-                                  out_file=os.path.join(config.METADATA_OUTPUT_PATH, self.study_id, "{}.yaml".format(self.study_id)),
+                                  out_file=dest_file + "-meta.yaml",
                                   schema="schema/meta_schema.yaml",
-                                  data_file_ext=ext
+                                  data_file=data_file
                                   )
         return metadata_converter.convert_to_outfile()
 
     def move_file_to_staging(self):
         """
-        TODO: 1. copy files from Globus folder to staging (as they will be verified valid)
-              2. no need to do anything regarding READMEs
-              3. fetch the metadata file safely store on NFS
-              4. create metadata file from template using the conver_meta.py store on NFS
+        TODO: move raw ss if needed
         """
-        # ftp mv from validated to staging
-        try:        
-            self.set_valid_parent_path()
-            self.set_valid_path()
-            #source_readme = os.path.join(self.valid_parent_path, str(self.study_id) + ".README")
-
-            self.staging_dir_name = str(self.staging_dir_name.replace(' ', ''))
-            self.staging_file_name = str(self.staging_file_name.replace(' ', '')) 
-
+        try:
+            source_dir = os.path.join(config.STORAGE_PATH, self.callback_id)
+            source_file_without_ext = os.path.join(source_dir, self.study_id)
+            source_file = add_ext_to_file_without_ext(source_file_without_ext)
             dest_dir = os.path.join(config.STAGING_PATH, self.staging_dir_name)
-
-            #source_file, ext = get_source_file_from_id(self.valid_parent_path, self.valid_path)
-            source_file = os.path.join(self.entryUUID, self.uploaded_ss_filename)
-            # acceptable extensions are ".tsv.gz" and ".tsv"
-            ext = ".tsv.gz" if ".gz" in pathlib.Path(self.uploaded_ss_filename).suffixes else ".tsv"
+            ext = get_ext_for_file(file_path=source_file)
             dest_file = os.path.join(dest_dir, self.staging_file_name + ext)
+            shutil.move(source_file, dest_file)
 
             template = self.get_template()
             if template is None:
                 logger.error(f"No template found for {self.callback_id}")
             else:
                 with io.BytesIO(template) as fh:
-                    self.write_metadata_file(input_metadata=fh, ext=ext)
+                    self.write_metadata_file(input_metadata=fh, dest_file=pathlib.Path(dest_file).name)
 
-            file_status = mv_file_with_globus(source=source_file, dest_dir=dest_dir, dest=dest_file)
-            
-            # move raw sumstats
-            if self.raw_ss:
-                raw_ss_source = os.path.join(self.entryUUID, self.raw_ss)
-                raw_ss_dest = os.path.join(dest_dir, self.raw_ss)
-                raw_ss_status = mv_file_with_globus(source=raw_ss_source, dest_dir=dest_dir, dest=raw_ss_dest)
-                if raw_ss_status is False:
-                    logger.error("Error could not move {}".format(raw_ss_dest))
-            if readme_status is False:
-                logger.error("Error could not move {}".format(str(os.path.join(dest_dir, "README.txt"))))
-            if file_status is False:
-                logger.error("Error could not move {}".format(dest_file))
         except (IndexError, FileNotFoundError, OSError) as e:
-            logger.error("Error: {}\nCould not move file {} to staging, callback ID: {}".format(e, self.staging_file_name, self.callback_id))
+            logger.error("Error: {}\nCould not move file {} to staging, callback ID: {}".format(e,
+                                                                                                self.staging_file_name,
+                                                                                                self.callback_id))
             return False
         return True
+
 
     def get_template(self):
         """
@@ -314,6 +259,30 @@ class SumStatFile:
         params = {"callbackId": self.callback_id}
         headers = {"jwt": config.DEPO_API_AUTH_TOKEN}
         return download_with_requests(url=url, params=params, headers=headers)
+
+
+def get_ext_for_file(file_path):
+    """
+    Get the full extension for a file path
+    :param file_path:
+    :return: extension
+    """
+    suffixes = pathlib.Path(file_path).suffixes
+    ext = "".join(suffixes)
+    return ext
+
+def add_ext_to_file_without_ext(file_without_ext):
+    """
+    Add the extension to the file name.
+    There will only be one glob match for the file without ext.
+    :param file_without_ext:
+    :return: file with ext
+    """
+    matching_files = glob(file_without_ext + '*')
+    if len(matching_files) != 1:
+        raise ValueError(f"Could not find one and only one matching file for {file_without_ext}")
+    else:
+        return matching_files[0]
 
 
 def get_source_file_from_id(source_dir, source):
@@ -377,16 +346,6 @@ def parse_url(url):
     else:
         return url_parse
 
-def download_with_urllib(url, localpath):
-    try:
-        urllib.request.urlretrieve(url, localpath)
-        logger.debug("File written: {}".format(url))        
-        return True
-    except urllib.error.URLError as e:
-        logger.error(e)
-    except ValueError as e:
-        logger.error(e)
-    return False
 
 def download_with_requests(url, params=None, headers=None):
     """
@@ -406,67 +365,6 @@ def download_with_requests(url, params=None, headers=None):
     except requests.exceptions.RequestException as e:
         logger.error(e)
         return None
-
-
-def get_net_loc(url):
-    return urlparse(url).netloc
-
-
-def get_gdrive_id(url):
-    file_id = None
-    url_parse = parse_url(url)
-    if url_parse.query and "id" in parse_qs(url_parse.query):
-        file_id = parse_qs(url_parse.query)["id"]
-    else:
-        try:
-            file_id = url_parse.path.split("/d/")[1].split("/")[0]
-        except IndexError:
-            logger.error("Couldn't parse id from url path: {}".format(url_parse.path))
-    if not file_id:
-        logger.error("Gdrive URL given but no id given")
-    return file_id
-
-
-def download_file_from_google_drive(id, destination):
-    def get_confirm_token(response):
-        for key, value in response.cookies.items():
-            if key.startswith('download_warning'):
-                return value
-        return None
-
-    def save_response_content(response, destination):
-        CHUNK_SIZE = 32768
-        with open(destination, "wb") as f:
-            for chunk in response.iter_content(CHUNK_SIZE):
-                if chunk: # filter out keep-alive new chunks
-                    f.write(chunk)
-
-    URL = "https://docs.google.com/uc?export=download"
-    session = requests.Session()
-    response = session.get(URL, params = { 'id' : id }, stream = True)
-    token = get_confirm_token(response)
-    if token:
-        params = { 'id' : id, 'confirm' : token }
-        response = session.get(URL, params = params, stream = True)
-    save_response_content(response, destination)
-
-
-def download_from_ftp(server, user, password, source, dest):
-    try:
-        ftp = ftplib.FTP(server)
-        ftp.login(user, password)
-        if ftp.nlst(source):
-            with open(dest, "wb") as f:
-                ftp.retrbinary("RETR " + source, f.write)
-                ftp.quit()
-                return True
-        else:
-            logger.error("couldn't find {}".format(source))
-            ftp.quit()
-            return False
-    except ftplib.all_errors as e:
-            logger.error(e)
-            return False
 
 
 def upload_to_ftp(server, user, password, source, parent_dir, dest_dir, dest_file):

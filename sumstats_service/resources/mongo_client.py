@@ -1,6 +1,6 @@
 from pymongo import MongoClient
 from bson.objectid import ObjectId
-import config
+from sumstats_service import config
 
 
 class mongoClient():

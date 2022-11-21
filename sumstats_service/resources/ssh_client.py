@@ -1,6 +1,6 @@
 import paramiko
 import re
-import config
+from sumstats_service import config
 import os
 
 

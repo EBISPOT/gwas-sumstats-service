@@ -1,5 +1,5 @@
 import re
-import config
+from sumstats_service import config
 from sumstats_service.resources.error_classes import *
 import sumstats_service.resources.file_handler as fh
 from sumstats_service.resources.mongo_client import mongoClient
@@ -171,33 +171,45 @@ class Study:
                 self.set_error_code(5)
             return True
 
+    def retrieve_study_file(self):
+        ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id,
+                             entryUUID=self.entryUUID)
+        retrieved = ssf.retrieve()
+        if retrieved:
+            self.set_retrieved_status(1)
+            return True
+        else:
+            self.set_retrieved_status(0)
+            self.set_error_code(1)
+            return False
 
     def validate_study(self, minrows=None, forcevalid=False):
         # Step through the validation
         if self.mandatory_metadata_check() is True:
-            ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id, 
-                    md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID, minrows=minrows, raw_ss=self.raw_ss)
-            if ssf.retrieve() is True:
+            ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id,
+                                 md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID, minrows=minrows,
+                                 raw_ss=self.raw_ss)
+            if not ssf.md5_ok():
+                self.set_data_valid_status(0)
+                self.set_error_code(2)
+                # retrieved must be true
                 self.set_retrieved_status(1)
-                if not ssf.md5_ok():
-                    self.set_data_valid_status(0)
-                    self.set_error_code(2)
-                else:
-                    if ssf.check_raw_ss():
-                        validation_status = ssf.validate_file() if forcevalid is False else True
-                        if validation_status is True:
-                            self.set_data_valid_status(1)
-                            #ssf.write_readme_file()
-                            #ssf.tidy_files()
-                        else:
-                            self.set_data_valid_status(0)
-                            self.set_error_code(ssf.validation_error)
+            else:
+                # retrieved must be true
+                self.set_retrieved_status(1)
+                if ssf.check_raw_ss():
+                    validation_status = ssf.validate_file() if forcevalid is False else True
+                    if validation_status is True:
+                        self.set_data_valid_status(1)
+                        #ssf.write_readme_file()
+                        #ssf.tidy_files()
                     else:
                         self.set_data_valid_status(0)
-                        self.set_error_code(11)
-            else:
-                self.set_retrieved_status(0)
-                self.set_error_code(1)
+                        self.set_error_code(ssf.validation_error)
+                else:
+                    self.set_data_valid_status(0)
+                    self.set_error_code(11)
+
     
     def move_file_to_staging(self):
         dir_name = self.gcst

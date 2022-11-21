@@ -1,6 +1,6 @@
 import unittest
 import os
-import config
+from sumstats_service import config
 from tests.test_constants import *
 import sumstats_service.resources.payload as pl
 from sumstats_service.resources.error_classes import *

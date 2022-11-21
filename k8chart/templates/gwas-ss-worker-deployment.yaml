@@ -51,6 +51,8 @@ spec:
           value: {{.Values.image.env.celeryQueue2}}
         - name: STORAGE_PATH
           value: {{.Values.image.env.storagePath}}
+        - name: DEPO_PATH
+          value: {{.Values.image.env.depoPath}}
         - name: STAGING_PATH
           value: {{.Values.image.env.stagingPath}}
         - name: VALIDATED_PATH
@@ -105,8 +107,8 @@ spec:
           value: {{.Values.image.env.gwasEndpointID}}
         - name: DEPO_API_AUTH_TOKEN
           value: {{.Values.image.env.depoAPIToken}}
-        - name: METADATA_OUTPUT_PATH
-          value: {{.Values.image.env.metadataPath}}
+        - name: OUTPUT_PATH
+          value: {{.Values.image.env.outputDataPath}}
       volumes:
       - name: log
         persistentVolumeClaim:

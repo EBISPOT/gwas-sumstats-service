@@ -1,7 +1,7 @@
 import json
 from urllib.parse import unquote
 from flask import url_for
-import config
+from sumstats_service import config
 import subprocess
 from sumstats_service.resources.error_classes import *
 import sumstats_service.resources.payload as pl
@@ -58,7 +58,7 @@ def store_validation_results_in_db(validation_response):
         #reinstate_globus_permissions(globus_uuid)
         callback_id = json.loads(validation_response)['callbackID']
         payload = pl.Payload(callback_id=callback_id)
-        payload.clear_validated_files()
+        payload.remove_payload_directory()
 
 
 def delete_globus_endpoint(globus_uuid):
@@ -85,8 +85,8 @@ def validate_files_from_payload(callback_id, content, minrows=None, forcevalid=F
     payload_path = os.path.join(par_dir, "payload.json")
     nextflow_config_path = os.path.join(par_dir, "nextflow.config")
     log_dir = os.path.join(config.STORAGE_PATH, 'logs', callback_id)
-    nf_script_path =  os.path.join(par_dir, "validate_submission.nf")
     if config.VALIDATE_WITH_SSH == 'true':
+        nf_script_path = os.path.join(par_dir, "validate_submission.nf")
         nextflow_cmd = nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, forcevalid, nextflow_config_path, nf_script_path)
         logger.debug('Validate with ssh')
         ssh = sshc.SSHClient(host=config.COMPUTE_FARM_LOGIN_NODE, username=config.COMPUTE_FARM_USERNAME)
@@ -95,10 +95,10 @@ def validate_files_from_payload(callback_id, content, minrows=None, forcevalid=F
         ssh.write_data_to_file(config.NEXTFLOW_CONFIG, nextflow_config_path)
         with open("workflows/validate_submission.nf", "r") as f:
             ssh.write_data_to_file(f.read(), nf_script_path)
-        memory = 5600
         ssh.write_data_to_file(json.dumps(content), payload_path)
         logger.info('content:\n{}'.format(content))
-        command = ssh_command_string(par_dir, log_dir, memory, nextflow_cmd)
+        memory = 5600
+        command = cluster_command(par_dir, log_dir, memory, nextflow_cmd)
         logger.info('command:\n{}'.format(command))
         stdin, stdout, stderr = ssh.exec_command(command)
         jobid = ssh.parse_jobid(stdout)
@@ -165,21 +165,24 @@ def add_errors_if_study_missing(callback_id, content, results):
         return results
             
     
-def validate_files_NOT_SSH(callback_id, content, par_dir, payload_path, nextflow_config_path, log_dir, nextflow_cmd):
-    # maintain this for the sandbox which cannot ssh ebi farm
-    logger.debug('Validate without ssh')
-    Path(par_dir).mkdir(parents=True, exist_ok=True)
-    Path(log_dir).mkdir(parents=True, exist_ok=True)
+def validate_files(callback_id, content, minrows=None, forcevalid=False):
+    validate_metadata = vp.validate_metadata_for_payload(callback_id, content)
+    if any([i['errorCode'] for i in json.loads(validate_metadata)['validationList']]):
+        # metadata invalid stop here
+        return validate_metadata
+    wd, payload_path, nextflow_config_path, log_dir = setup_dir_for_validation(callback_id)
+    nextflow_cmd = nextflow_command_string(callback_id, payload_path, log_dir, minrows, forcevalid,
+                                           nextflow_config_path, wd)
+    logger.info(nextflow_cmd)
     with open(payload_path, 'w') as f:
         f.write(json.dumps(content))
     with open(nextflow_config_path, 'w') as f:
         f.write(config.NEXTFLOW_CONFIG)
-    pipe_ps = subprocess.run(nextflow_cmd.split())
-    logger.debug('pipeline process output:\n{}'.format(pipe_ps))
-    json_out_files = glob.glob(os.path.join(par_dir, '[!payload]*.json'))
+    pipe_ps = subprocess.run(nextflow_cmd.split(),capture_output=True)
+    json_out_files = glob.glob(os.path.join(wd, '[!payload]*.json'))
     results = {
                 "callbackID": callback_id,
-                "validationList" : []
+                "validationList": []
               }
     if len(json_out_files) > 0:
         for j in json_out_files:
@@ -188,9 +191,22 @@ def validate_files_NOT_SSH(callback_id, content, par_dir, payload_path, nextflow
         add_errors_if_study_missing(callback_id, content, results)
     else:
         results = results_if_failure(callback_id, content)
-    logger.info(json.dumps(results))
-    remove_payload_files(callback_id)
+    logger.info("results: " + json.dumps(results))
+    #remove_payload_files(callback_id)
     return json.dumps(results)
+
+
+def setup_dir_for_validation(callback_id):
+    # fast access dir
+    par_dir = os.path.join(config.STORAGE_PATH, callback_id)
+    # working dir
+    wd = os.path.join(config.VALIDATED_PATH, callback_id)
+    payload_path = os.path.join(wd, "payload.json")
+    nextflow_config_path = os.path.join(wd, "nextflow.config")
+    log_dir = os.path.join(wd, 'logs')
+    Path(par_dir).mkdir(parents=True, exist_ok=True)
+    Path(log_dir).mkdir(parents=True, exist_ok=True)
+    return wd, payload_path, nextflow_config_path, log_dir
 
 
 def results_if_failure(callback_id, content):
@@ -200,7 +216,8 @@ def results_if_failure(callback_id, content):
     return results
 
 
-def nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, forcevalid, nextflow_config_path, nf_script_path='validate_submission.nf'):
+def nextflow_command_string(callback_id, payload_path, log_dir, minrows, forcevalid,
+                            nextflow_config_path, wd, nf_script_path='workflows/process_submission.nf'):
     nextflow_cmd =  """
                     nextflow -log {logs}/nextflow.log \
                             run {script} \
@@ -215,8 +232,8 @@ def nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows
                             --validatedPath {vp} \
                             -w {wd} \
                             -c {conf} \
-                            -with-singularity docker://{image}:{tag}
-                    """.format(image=config.SINGULARITY_IMAGE, 
+                            -with-singularity docker://{image}: {tag}
+                    """.format(image=config.SINGULARITY_IMAGE,
                             tag=config.SINGULARITY_TAG,
                             script=nf_script_path,
                             cid=callback_id, 
@@ -227,13 +244,14 @@ def nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows
                             ftpp=config.FTP_PASSWORD, 
                             plp=payload_path,
                             logs=log_dir,
-                            wd=par_dir,
+                            wd=wd,
                             mr=minrows,
                             fv=forcevalid,
                             conf=nextflow_config_path)
     return nextflow_cmd
 
-def ssh_command_string(par_dir, log_dir, memory, nextflow_cmd):
+
+def cluster_command(par_dir, log_dir, memory, nextflow_cmd):
     command = ("export http_proxy={hp}; "
                "export https_proxy={hsp}; "
                "export VALIDATE_WITH_SSH={ssh}; "
@@ -243,14 +261,14 @@ def ssh_command_string(par_dir, log_dir, memory, nextflow_cmd):
                "-q {q} "
                "-M {mem} -R 'rusage[mem={mem}]' "
                "'{nextflow_cmd}'").format(
-                    pd=par_dir, 
+                    pd=par_dir,
                     q=config.COMPUTE_FARM_QUEUE_LONG,
                     logs=log_dir,
                     sw=config.SW_PATH,
-                    mem=memory, 
-                    nextflow_cmd=nextflow_cmd, 
-                    hp=config.REMOTE_HTTP_PROXY, 
-                    hsp=config.REMOTE_HTTPS_PROXY, 
+                    mem=memory,
+                    nextflow_cmd=nextflow_cmd,
+                    hp=config.REMOTE_HTTP_PROXY,
+                    hsp=config.REMOTE_HTTPS_PROXY,
                     ssh=config.VALIDATE_WITH_SSH
                     )
     return command
