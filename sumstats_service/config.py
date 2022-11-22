@@ -9,7 +9,7 @@ STORAGE_PATH = _env_variable_else('STORAGE_PATH', './data')
 LOGGING_PATH = "../logs"
 STAGING_PATH = _env_variable_else('STAGING_PATH', 'depo_ss_staging')
 VALIDATED_PATH = _env_variable_else('VALIDATED_PATH', 'depo_ss_validated')
-SW_PATH =  _env_variable_else('SW_PATH', './bin')
+SW_PATH = _env_variable_else('SW_PATH', './bin')
 DEPO_PATH = _env_variable_else('DEPO_PATH', './depo_data')
 
 
@@ -29,8 +29,8 @@ CELERY_QUEUE2 = _env_variable_else('CELERY_QUEUE2', 'postval')
 VALIDATE_WITH_SSH = _env_variable_else('VALIDATE_WITH_SSH', False)
 COMPUTE_FARM_LOGIN_NODE = _env_variable_else('COMPUTE_FARM_LOGIN_NODE', None)
 COMPUTE_FARM_USERNAME = _env_variable_else('COMPUTE_FARM_USERNAME', None)
-COMPUTE_FARM_QUEUE = 'production-rh74'
-COMPUTE_FARM_QUEUE_LONG = _env_variable_else('COMPUTE_FARM_QUEUE_LONG', 'production-rh74')
+COMPUTE_FARM_QUEUE = 'production'
+COMPUTE_FARM_QUEUE_LONG = _env_variable_else('COMPUTE_FARM_QUEUE_LONG', 'production')
 REMOTE_HTTP_PROXY = _env_variable_else('REMOTE_HTTP_PROXY', None)
 REMOTE_HTTPS_PROXY = _env_variable_else('REMOTE_HTTPS_PROXY', None)
 SINGULARITY_IMAGE = _env_variable_else('SINGULARITY_IMAGE', 'ebispot/gwas-sumstats-service')

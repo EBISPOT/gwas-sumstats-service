@@ -26,15 +26,7 @@ def parse_payload(content, studyid, callback_id):
 def validate_study(callback_id, study_id, filepath, md5, assembly, readme, entryUUID, out=None, minrows=None, forcevalid=False):
     study = st.Study(callback_id=callback_id, study_id=study_id, file_path=filepath, md5=md5, assembly=assembly, readme=readme, entryUUID=entryUUID)
     study.validate_study(minrows=minrows, forcevalid=forcevalid)
-    result = {
-                "id": study.study_id,
-                "retrieved": study.retrieved,
-                "dataValid": study.data_valid,
-                "errorCode": study.error_code
-             }
-    if out:
-        with open(out, 'w') as f:
-            f.write(json.dumps(result))
+    write_result(study, out)
     if study.data_valid != 1:
         sys.exit(1)
     else:
@@ -45,9 +37,22 @@ def copy_file_for_validation(callback_id, study_id, filepath, entryUUID, md5, as
     study.retrieve_study_file()
     logger.info(study.retrieved)
     if study.retrieved != 1:
+        write_result(study, out)
         sys.exit(1)
     else:
         sys.exit(0)
+
+def write_result(study, out):
+    result = {
+        "id": study.study_id,
+        "retrieved": study.retrieved,
+        "dataValid": study.data_valid,
+        "errorCode": study.error_code
+    }
+    with open(out, 'w') as f:
+        f.write(json.dumps(result))
+
+
 
 
 def str2bool(v):
@@ -76,6 +81,7 @@ def main():
     argparser.add_argument("-out", help='JSON output file (e.g. SOME_ID.json)', required=False, default='validation.json')
     argparser.add_argument("-storepath", help='The storage path you want the data written to e.g. /path/to/data', required=False, default=config.STORAGE_PATH)
     argparser.add_argument("-validated_path", help='The path you want the validated files written to e.g. /path/to/data', required=False, default=config.VALIDATED_PATH)
+    argparser.add_argument("-depo_path", help='The path you want the submitted files written to e.g. /path/to/data', required=False, default=config.DEPO_PATH)
     argparser.add_argument("-ftpserver", help='The FTP server name where your files are', required=False, default=config.FTP_SERVER)
     argparser.add_argument("-ftpuser", help='The FTP username', required=False, default=config.FTP_USERNAME)
     argparser.add_argument("-ftppass", help='The FTP password', required=False, default=config.FTP_PASSWORD)
@@ -89,6 +95,8 @@ def main():
         config.STORAGE_PATH = args.storepath
     if args.validated_path:
         config.VALIDATED_PATH = args.validated_path
+    if args.depo_path:
+        config.DEPO_PATH = args.depo_path
     if args.ftpserver:
         config.FTP_SERVER = args.ftpserver
     if args.ftpuser:
