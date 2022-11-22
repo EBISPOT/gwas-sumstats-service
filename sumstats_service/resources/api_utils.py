@@ -170,15 +170,15 @@ def validate_files(callback_id, content, minrows=None, forcevalid=False):
     if any([i['errorCode'] for i in json.loads(validate_metadata)['validationList']]):
         # metadata invalid stop here
         return validate_metadata
-    wd, payload_path, nextflow_config_path, log_dir = setup_dir_for_validation(callback_id)
+    wd, payload_path, nextflow_config_path, log_dir, nf_script_path = setup_dir_for_validation(callback_id)
     nextflow_cmd = nextflow_command_string(callback_id, payload_path, log_dir, minrows, forcevalid,
-                                           nextflow_config_path, wd)
+                                           nextflow_config_path, wd, nf_script_path)
     logger.info(nextflow_cmd)
-    with open(payload_path, 'w') as f:
-        f.write(json.dumps(content))
-    with open(nextflow_config_path, 'w') as f:
-        f.write(config.NEXTFLOW_CONFIG)
-    pipe_ps = subprocess.run(nextflow_cmd.split(),capture_output=True)
+    write_data_to_path(data=json.dumps(content), path=payload_path)
+    write_data_to_path(data=config.NEXTFLOW_CONFIG, path=nextflow_config_path)
+    with open("workflows/process_submission.nf", 'r') as f:
+        write_data_to_path(data=f.read(), path=nf_script_path)
+    subprocess.run(nextflow_cmd.split(),capture_output=True)
     json_out_files = glob.glob(os.path.join(wd, '[!payload]*.json'))
     results = {
                 "callbackID": callback_id,
@@ -195,6 +195,9 @@ def validate_files(callback_id, content, minrows=None, forcevalid=False):
     #remove_payload_files(callback_id)
     return json.dumps(results)
 
+def write_data_to_path(data, path):
+    with open(path, "w") as f:
+        f.write(data)
 
 def setup_dir_for_validation(callback_id):
     # fast access dir
@@ -203,10 +206,11 @@ def setup_dir_for_validation(callback_id):
     wd = os.path.join(config.VALIDATED_PATH, callback_id)
     payload_path = os.path.join(wd, "payload.json")
     nextflow_config_path = os.path.join(wd, "nextflow.config")
+    nf_script_path = os.path.join(wd, "validate_submission.nf")
     log_dir = os.path.join(wd, 'logs')
     Path(par_dir).mkdir(parents=True, exist_ok=True)
     Path(log_dir).mkdir(parents=True, exist_ok=True)
-    return wd, payload_path, nextflow_config_path, log_dir
+    return wd, payload_path, nextflow_config_path, log_dir, nf_script_path
 
 
 def results_if_failure(callback_id, content):
@@ -232,7 +236,7 @@ def nextflow_command_string(callback_id, payload_path, log_dir, minrows, forceva
                             --validatedPath {vp} \
                             -w {wd} \
                             -c {conf} \
-                            -with-singularity docker://{image}: {tag}
+                            -with-singularity docker://{image}:{tag}
                     """.format(image=config.SINGULARITY_IMAGE,
                             tag=config.SINGULARITY_TAG,
                             script=nf_script_path,
