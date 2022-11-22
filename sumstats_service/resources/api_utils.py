@@ -228,9 +228,7 @@ def nextflow_command_string(callback_id, payload_path, log_dir, minrows, forceva
                             --payload {plp} \
                             --storePath {sp} \
                             --cid {cid} \
-                            --ftpServer {ftps} \
-                            --ftpUser {ftpu} \
-                            --ftpPWD {ftpp} \
+                            --depo_data {dd} \
                             --minrows {mr} \
                             --forcevalid {fv} \
                             --validatedPath {vp} \
@@ -242,10 +240,8 @@ def nextflow_command_string(callback_id, payload_path, log_dir, minrows, forceva
                             script=nf_script_path,
                             cid=callback_id, 
                             sp=config.STORAGE_PATH, 
-                            vp=config.VALIDATED_PATH, 
-                            ftps=config.FTP_SERVER, 
-                            ftpu=config.FTP_USERNAME, 
-                            ftpp=config.FTP_PASSWORD, 
+                            vp=config.VALIDATED_PATH,
+                            dd=config.DEPO_PATH,
                             plp=payload_path,
                             logs=log_dir,
                             wd=wd,
