@@ -32,7 +32,7 @@ def validate_study(callback_id, study_id, filepath, md5, assembly, readme, entry
     else:
         sys.exit(0)
 
-def copy_file_for_validation(callback_id, study_id, filepath, entryUUID, md5, assembly):
+def copy_file_for_validation(callback_id, study_id, filepath, entryUUID, md5, assembly, out=None):
     study = st.Study(callback_id=callback_id, study_id=study_id, file_path=filepath, entryUUID=entryUUID, md5=md5, assembly=assembly)
     study.retrieve_study_file()
     logger.info(study.retrieved)
@@ -113,7 +113,7 @@ def main():
 
     filepath, md5, assembly, readme, entryUUID = parse_payload(content, args.id, args.cid)
     if args.copy_only:
-        copy_file_for_validation(callback_id=args.cid, study_id=args.id, filepath=filepath, entryUUID=entryUUID, md5=md5, assembly=assembly)
+        copy_file_for_validation(callback_id=args.cid, study_id=args.id, filepath=filepath, entryUUID=entryUUID, md5=md5, assembly=assembly, out=out)
     else:
         out = os.path.join(args.validated_path, args.cid, args.out)
         minrows = None if len(args.minrows) == 0 or args.minrows == "None" else args.minrows

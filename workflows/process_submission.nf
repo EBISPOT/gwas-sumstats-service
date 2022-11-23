@@ -34,8 +34,9 @@ process get_submitted_files {
 
   queue 'datamover'
   containerOptions "--bind $params.storePath"
+  containerOptions "--bind $params.depo_data"
   memory { 2.GB }
-  time { 6.hour * task.attempt }
+  time { 2.hour * task.attempt }
   maxRetries 5
   errorStrategy { task.exitStatus in 130..255 ? 'retry' : 'terminate' }
 
@@ -56,7 +57,7 @@ process validate_study {
   queue 'short'
   containerOptions "--bind $params.storePath"
   memory { 2.GB * task.attempt }
-  time { 6.hour * task.attempt }
+  time { 2.hour * task.attempt }
   maxRetries 5  
   errorStrategy { task.exitStatus in 130..255 ? 'retry' : 'terminate' }
 
