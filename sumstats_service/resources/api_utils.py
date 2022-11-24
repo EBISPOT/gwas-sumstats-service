@@ -222,32 +222,30 @@ def results_if_failure(callback_id, content):
 
 def nextflow_command_string(callback_id, payload_path, log_dir, minrows, forcevalid,
                             nextflow_config_path, wd, nf_script_path='workflows/process_submission.nf'):
-    nextflow_cmd =  """
-                    nextflow -log {logs}/nextflow.log \
-                            run {script} \
-                            --payload {plp} \
-                            --storePath {sp} \
-                            --cid {cid} \
-                            --depo_data {dd} \
-                            --minrows {mr} \
-                            --forcevalid {fv} \
-                            --validatedPath {vp} \
-                            -w {wd} \
-                            -c {conf} \
-                            -with-singularity docker://{image}:{tag}
-                    """.format(image=config.SINGULARITY_IMAGE,
-                            tag=config.SINGULARITY_TAG,
-                            script=nf_script_path,
-                            cid=callback_id, 
-                            sp=config.STORAGE_PATH, 
-                            vp=config.VALIDATED_PATH,
-                            dd=config.DEPO_PATH,
-                            plp=payload_path,
-                            logs=log_dir,
-                            wd=wd,
-                            mr=minrows,
-                            fv=forcevalid,
-                            conf=nextflow_config_path)
+    nextflow_cmd = ("nextflow -log {logs}/nextflow.log "
+                    "run {script} "
+                    "--payload {plp} "
+                    "--storePath {sp} "
+                    "--cid {cid} "
+                    "--depo_data {dd} "
+                    "--minrows {mr} "
+                    "--forcevalid {fv} "
+                    "--validatedPath {vp} "
+                    "-w {wd} "
+                    "-c {conf} "
+                    "-with-singularity docker://{image}:{tag}").format(image=config.SINGULARITY_IMAGE,
+                                                                       tag=config.SINGULARITY_TAG,
+                                                                       script=nf_script_path,
+                                                                       cid=callback_id,
+                                                                       sp=config.STORAGE_PATH,
+                                                                       vp=config.VALIDATED_PATH,
+                                                                       dd=config.DEPO_PATH,
+                                                                       plp=payload_path,
+                                                                       logs=log_dir,
+                                                                       wd=wd,
+                                                                       mr=minrows,
+                                                                       fv=forcevalid,
+                                                                       conf=nextflow_config_path)
     return nextflow_cmd
 
 

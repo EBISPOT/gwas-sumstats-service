@@ -44,14 +44,25 @@ class MetadataConverter:
         read all the sheets store in separate metadata dataframes
         store the metadata for the accession ID in self.metadata
         """
-        study_df = pd.read_excel(self.in_file, sheet_name='study',
-                                 skiprows=[0, 2, 3])
-        sample_df = pd.read_excel(self.in_file, sheet_name='sample',
-                                  skiprows=[0, 2, 3])
-        meta_df = pd.read_excel(self.in_file, sheet_name='meta')
+        study_df = None
+        sample_df = None
+        with pd.ExcelFile(self.in_file) as xlsx_meta:
+            if 'study' in xlsx_meta.sheet_names:
+                study_df = pd.read_excel(xlsx_meta, sheet_name='study',
+                                         skiprows=[0, 2, 3])
+            if 'sample' in xlsx_meta.sheet_names:
+                sample_df = pd.read_excel(xlsx_meta, sheet_name='sample',
+                                          skiprows=[0, 2, 3])
+            if 'meta' in xlsx_meta.sheet_names:
+                meta_df = pd.read_excel(xlsx_meta, sheet_name='meta')
         self.get_template_version(meta_df=meta_df)
-        merged_df = pd.merge(study_df, sample_df, on="Study tag")
-        return merged_df
+        if study_df is not None and sample_df is not None:
+            meta_df = pd.merge(study_df, sample_df, on="Study tag")
+        elif sample_df is None:
+            meta_df = study_df
+        else:
+            raise ValueError("No study sheet")
+        return meta_df
     
     
     def get_template_version(self, meta_df):

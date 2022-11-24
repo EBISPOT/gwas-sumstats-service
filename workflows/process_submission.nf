@@ -48,7 +48,7 @@ process get_submitted_files {
 
 
   """
-  validate-study -cid $params.cid -id $id -payload $params.payload -storepath $params.storePath -validated_path $params.validatedPath -depo_path $params.depo_data --copy_only True
+  validate-study -cid $params.cid -id $id -payload $params.payload -storepath $params.storePath -validated_path $params.validatedPath -depo_path $params.depo_data --copy_only True -out "${id}".json
   """
 }
 

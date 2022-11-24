@@ -220,6 +220,15 @@ class SumStatFile:
                                   )
         return metadata_converter.convert_to_outfile()
 
+    def convert_metadata_to_yaml(self, dest_file):
+        template = self.get_template()
+        if template is None:
+            raise ValueError(f"No template found for {self.callback_id}")
+        else:
+            with io.BytesIO(template) as fh:
+                self.write_metadata_file(input_metadata=fh, dest_file=pathlib.Path(dest_file).name)
+
+
     def move_file_to_staging(self):
         """
         TODO: move raw ss if needed
@@ -231,22 +240,15 @@ class SumStatFile:
             dest_dir = os.path.join(config.STAGING_PATH, self.staging_dir_name)
             ext = get_ext_for_file(file_path=source_file)
             dest_file = os.path.join(dest_dir, self.staging_file_name + ext)
+            pathlib.Path(dest_dir).mkdir(parents=True, exist_ok=True)
             shutil.move(source_file, dest_file)
-
-            template = self.get_template()
-            if template is None:
-                logger.error(f"No template found for {self.callback_id}")
-            else:
-                with io.BytesIO(template) as fh:
-                    self.write_metadata_file(input_metadata=fh, dest_file=pathlib.Path(dest_file).name)
-
+            self.convert_metadata_to_yaml(dest_file)
         except (IndexError, FileNotFoundError, OSError) as e:
-            logger.error("Error: {}\nCould not move file {} to staging, callback ID: {}".format(e,
-                                                                                                self.staging_file_name,
-                                                                                                self.callback_id))
-            return False
+            raise IOError("Error: {}\nCould not move file {} to staging,\ "
+                         "callback ID: {}".format(e,
+                                                  self.staging_file_name,
+                                                  self.callback_id))
         return True
-
 
     def get_template(self):
         """
@@ -365,27 +367,3 @@ def download_with_requests(url, params=None, headers=None):
     except requests.exceptions.RequestException as e:
         logger.error(e)
         return None
-
-
-def upload_to_ftp(server, user, password, source, parent_dir, dest_dir, dest_file):
-    try:
-        ftp = ftplib.FTP(server)
-        ftp.login(user, password)
-        ftp.cwd(parent_dir)
-        filelist = []
-        ftp.retrlines('LIST',filelist.append)
-        dir_exists = False
-        for f in filelist: 
-            if f.split()[-1] == dest_dir and f.upper().startswith('D'):
-                dir_exists = True
-        if not dir_exists:
-            ftp.mkd(dest_dir)
-        with open(source, "rb") as f:
-            logger.info("Starting transfer to {}/{}".format(dest_dir, dest_file))
-            dest = os.path.join(dest_dir, dest_file)
-            ftp.storbinary("STOR " + dest, f)
-            ftp.quit()
-            return True
-    except ftplib.all_errors as e:
-            logger.error(e)
-            return False    
