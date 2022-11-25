@@ -216,7 +216,8 @@ class Study:
         sumstats_file_name = self.gcst 
         ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, 
                 study_id=self.study_id, readme=self.readme, entryUUID=self.entryUUID, 
-                staging_dir_name=dir_name, staging_file_name=sumstats_file_name, raw_ss=self.raw_ss)
+                staging_dir_name=dir_name, staging_file_name=sumstats_file_name,
+                md5exp=self.md5, raw_ss=self.raw_ss)
         return ssf.move_file_to_staging()
     
     

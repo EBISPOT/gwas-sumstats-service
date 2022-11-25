@@ -15,7 +15,6 @@ import validate.validator as val
 import pathlib
 import sumstats_service.resources.globus as globus
 from sumstats_service.resources.convert_meta import MetadataConverter
-import ftplib
 
 
 logging.basicConfig(level=logging.DEBUG, format='(%(levelname)s): %(message)s')

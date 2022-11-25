@@ -320,7 +320,7 @@ def publish_and_clean_sumstats(study_list):
                         assembly=s['assembly'], callback_id=s['callback_id'],
                         readme=s['readme'], entryUUID=s['entryUUID'],
                         author_name=s['author_name'], pmid=s['pmid'],
-                        gcst=s['gcst'], raw_ss=s['rawSS'])
+                        gcst=s['gcst'], raw_ss=s['rawSS'], md5=s['md5'])
         if study.move_file_to_staging() is True:
             moved += 1
         if callback_id is None:
@@ -374,7 +374,8 @@ def update_payload(callback_id, content):
                         "readme": study.readme,
                         "entryUUID": study.entryUUID,
                         "author_name": study.author_name,
-                        "rawSS": study.raw_ss
+                        "rawSS": study.raw_ss,
+                        "md5": study.md5
                        }
         study_list.append(study_report)
     response = {"callbackID": str(callback_id),
