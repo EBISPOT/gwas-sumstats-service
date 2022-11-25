@@ -210,7 +210,7 @@ class SumStatFile:
 
     def write_metadata_file(self, input_metadata, dest_file):
         data_file = pathlib.Path(dest_file).name
-        metadata_converter = MetadataConverter(accession_id=self.study_id,
+        metadata_converter = MetadataConverter(accession_id=self.staging_file_name,
                                   md5sum=self.md5exp,
                                   in_file=input_metadata,
                                   out_file=dest_file + "-meta.yaml",
@@ -225,7 +225,7 @@ class SumStatFile:
             raise ValueError(f"No template found for {self.callback_id}")
         else:
             with io.BytesIO(template) as fh:
-                self.write_metadata_file(input_metadata=fh, dest_file=pathlib.Path(dest_file).name)
+                self.write_metadata_file(input_metadata=fh, dest_file=dest_file)
 
 
     def move_file_to_staging(self):

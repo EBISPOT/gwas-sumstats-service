@@ -163,6 +163,6 @@ YAML_DTYPES = {
     'float': float,
 }
 
-SUMSTATS_FILE_TYPE = "GWAS-SFF v0.1"
+SUMSTATS_FILE_TYPE = _env_variable_else('SSF_VERSION', "GWAS-SFF v0.1")
 GWAS_CATALOG_REST_API_STUDY_URL = "https://www.ebi.ac.uk/gwas/rest/api/studies/"
 GWAS_DEPO_REST_API_URL = "https://wwwdev.ebi.ac.uk/gwas/deposition/api/v1/"
