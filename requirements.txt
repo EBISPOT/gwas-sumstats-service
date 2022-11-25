@@ -67,7 +67,7 @@ ss-validate==1.0.0-dev0
 testtools==2.3.0
 toml==0.10.0
 tox==3.13.2
-tqdm==4.36.1
+tqdm==4.64.1
 traceback2==1.4.0
 unittest2==1.1.0
 urllib3==1.25.3

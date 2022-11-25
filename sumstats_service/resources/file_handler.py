@@ -11,7 +11,7 @@ import magic
 import csv
 import io
 import logging
-import validate.validator as val
+import ss_validate.validator as val
 import pathlib
 import sumstats_service.resources.globus as globus
 from sumstats_service.resources.convert_meta import MetadataConverter
@@ -145,9 +145,9 @@ class SumStatFile:
         self.set_logfile()
         self.validation_error = 3
         if self.minrows:
-            validator = val.Validator(file=self.store_path, filetype='gwas-upload', error_limit=1, logfile=self.logfile, minrows=self.minrows)
+            validator = val.Validator(file=self.store_path, error_limit=1, logfile=self.logfile, minrows=self.minrows)
         else:
-            validator = val.Validator(file=self.store_path, filetype='gwas-upload', error_limit=1, logfile=self.logfile)
+            validator = val.Validator(file=self.store_path, error_limit=1, logfile=self.logfile)
         try:
             logger.info("Validating file extension...")
             if not validator.validate_file_extension():

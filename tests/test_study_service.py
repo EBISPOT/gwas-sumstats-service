@@ -24,7 +24,7 @@ class TestStudyService(unittest.TestCase):
         self.file_path = "path.tsv"
         self.entryUUID = "ABC1234"
         self.md5 = "b1d7e0a58d36502d59d036a17336ddf5"
-        self.valid_file_md5 = "a1195761f082f8cbc2f5a560743077cc"
+        self.valid_file_md5 = "ba95292befc54781fb549c3e5ca37a1f"
         self.assembly = "GRCh38"
         self.valid_file = "test_sumstats_file.tsv"
         self.test_validate_path = os.path.join(config.VALIDATED_PATH, self.callback_id)

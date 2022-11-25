@@ -16,7 +16,7 @@ class TestSumStatsFile(unittest.TestCase):
         self.sid = "mKoYvoLH8L"
         self.entryUUID = "ABC1234"
         self.valid_file = "test_sumstats_file.tsv"
-        self.valid_file_md5 = "a1195761f082f8cbc2f5a560743077cc"
+        self.valid_file_md5 = "ba95292befc54781fb549c3e5ca37a1f"
         os.makedirs(config.STORAGE_PATH, exist_ok=True)
         self.test_validate_path = os.path.join(config.VALIDATED_PATH, self.cid)
         os.makedirs(self.test_validate_path, exist_ok=True)
