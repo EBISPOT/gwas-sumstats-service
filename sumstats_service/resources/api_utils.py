@@ -65,17 +65,7 @@ def delete_globus_endpoint(globus_uuid):
     status = globus.remove_endpoint_and_all_contents(globus_uuid)
     return status
 
-def reinstate_globus_permissions(globus_uuid):
-    pass
-
-def restrict_globus_permissions(globus_uuid):
-    pass
-
 def validate_files_from_payload(callback_id, content, minrows=None, forcevalid=False):
-    """
-    TODO: restrict globus access to endpoint
-    """
-    #restrict_globus_permissions(globus_uuid)
     validate_metadata = vp.validate_metadata_for_payload(callback_id, content)
     if any([i['errorCode'] for i in json.loads(validate_metadata)['validationList']]):
         #metadata invalid stop here
@@ -221,7 +211,9 @@ def results_if_failure(callback_id, content):
 
 
 def nextflow_command_string(callback_id, payload_path, log_dir, minrows, forcevalid,
-                            nextflow_config_path, wd, nf_script_path='workflows/process_submission.nf'):
+                            nextflow_config_path, wd, 
+                            nf_script_path='workflows/process_submission.nf',
+                            containerise=config.CONTAINERISE):
     nextflow_cmd = ("nextflow -log {logs}/nextflow.log "
                     "run {script} "
                     "--payload {plp} "
@@ -246,6 +238,8 @@ def nextflow_command_string(callback_id, payload_path, log_dir, minrows, forceva
                                                                        mr=minrows,
                                                                        fv=forcevalid,
                                                                        conf=nextflow_config_path)
+    if containerise is False:
+        nextflow_cmd = nextflow_cmd.split("-with-singularity")[0]
     return nextflow_cmd
 
 

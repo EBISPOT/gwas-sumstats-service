@@ -11,6 +11,7 @@ STAGING_PATH = _env_variable_else('STAGING_PATH', 'depo_ss_staging')
 VALIDATED_PATH = _env_variable_else('VALIDATED_PATH', 'depo_ss_validated')
 SW_PATH = _env_variable_else('SW_PATH', './bin')
 DEPO_PATH = _env_variable_else('DEPO_PATH', './depo_data')
+CONTAINERISE = _env_variable_else('CONTAINERISE', './depo_data')
 
 
 # --- Rabbit and Celery --- #
@@ -156,11 +157,19 @@ SUBMISSION_TEMPLATE_HEADER_MAP = {
     'Readme text': 'authorNotes'
 }
 
+SAMPLE_FIELDS = {'sampleSize',
+                 'sampleAncestry',
+                 'ancestryMethod',
+                 'caseControlStudy',
+                 'caseCount',
+                 'controlCount'}
+
 YAML_DTYPES = {
     'int': int,
     'str': str,
     'bool': bool,
     'float': float,
+    'seq':str
 }
 
 SUMSTATS_FILE_TYPE = _env_variable_else('SSF_VERSION', "GWAS-SFF v0.1")

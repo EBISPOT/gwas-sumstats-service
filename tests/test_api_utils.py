@@ -12,12 +12,13 @@ class TestAPIUtils(unittest.TestCase):
     def setUp(self):
         self.testDB = "./tests/study_meta.db"
         self.test_storepath = os.path.abspath("./tests/data")
-        config.STORAGE_PATH = self.test_storepath
+        config.STORAGE_PATH = os.path.abspath(self.test_storepath)
         config.DB_PATH = self.testDB
         config.DEPO_PATH = os.path.abspath('./tests')
         config.BROKER_PORT = 5682
         config.BROKER_HOST = "localhost"
         config.NEXTFLOW_CONFIG = "executor.name = 'local'\nexecutor.queueSize = 3"
+        config.CONTAINERISE = False
         sq = sqlClient(self.testDB)
         sq.create_conn()
         sq.cur.executescript(config.DB_SCHEMA)

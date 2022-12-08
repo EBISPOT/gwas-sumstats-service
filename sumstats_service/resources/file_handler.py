@@ -2,7 +2,6 @@ import os
 from glob import glob
 import urllib
 from urllib.parse import urlparse
-import requests
 import gzip
 import shutil
 from sumstats_service import config
@@ -15,6 +14,7 @@ import ss_validate.validator as val
 import pathlib
 import sumstats_service.resources.globus as globus
 from sumstats_service.resources.convert_meta import MetadataConverter
+from sumstats_service.resources.utils import download_with_requests
 
 
 logging.basicConfig(level=logging.DEBUG, format='(%(levelname)s): %(message)s')
@@ -346,23 +346,3 @@ def parse_url(url):
         return False
     else:
         return url_parse
-
-
-def download_with_requests(url, params=None, headers=None):
-    """
-    Return content from URL if status code is 200
-    :param url: 
-    :param headers: 
-    :return: content in bytes or None
-    """
-    try:
-        with requests.get(url, params=params, headers=headers) as r:
-            status_code = r.status_code
-            if status_code != 200:
-                logger.error(f"{url} returned {status_code} status code")
-                return None
-            else:
-                return r.content
-    except requests.exceptions.RequestException as e:
-        logger.error(e)
-        return None

@@ -35,7 +35,6 @@ def validate_study(callback_id, study_id, filepath, md5, assembly, readme, entry
 def copy_file_for_validation(callback_id, study_id, filepath, entryUUID, md5, assembly, out=None):
     study = st.Study(callback_id=callback_id, study_id=study_id, file_path=filepath, entryUUID=entryUUID, md5=md5, assembly=assembly)
     study.retrieve_study_file()
-    logger.info(study.retrieved)
     if study.retrieved != 1:
         write_result(study, out)
         sys.exit(1)
