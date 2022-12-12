@@ -63,5 +63,6 @@ ENV no_proxy "localhost,.cluster.local"
 ENV DEPO_API_AUTH_TOKEN ""
 ENV OUTPUT_PATH "metadata/output"
 ENV SUMSTATS_FILE_TYPE ""
+ENV GWAS_DEPO_REST_API_URL ""
 
 USER sumstats-service

@@ -157,22 +157,6 @@ SUBMISSION_TEMPLATE_HEADER_MAP = {
     'Readme text': 'authorNotes'
 }
 
-SAMPLE_FIELDS = {'sampleSize',
-                 'sampleAncestry',
-                 'ancestryMethod',
-                 'caseControlStudy',
-                 'caseCount',
-                 'controlCount'}
-
-YAML_DTYPES = {
-    'int': int,
-    'str': str,
-    'bool': bool,
-    'float': float
-}
-
-PIPE_SEP_FIELDS = {'study':('genotypingTechnology', 'traitDescription'), 'samples': ('sampleAncestry', 'ancestryMethod')}
-
 SUMSTATS_FILE_TYPE = _env_variable_else('SSF_VERSION', "GWAS-SFF v0.1")
 GWAS_CATALOG_REST_API_STUDY_URL = "https://www.ebi.ac.uk/gwas/rest/api/studies/"
-GWAS_DEPO_REST_API_URL = "https://wwwdev.ebi.ac.uk/gwas/deposition/api/v1/"
+GWAS_DEPO_REST_API_URL = _env_variable_else('GWAS_DEPO_REST_API_URL',"https://www.ebi.ac.uk/gwas/deposition/api/v1/")
