@@ -168,9 +168,10 @@ YAML_DTYPES = {
     'int': int,
     'str': str,
     'bool': bool,
-    'float': float,
-    'seq':str
+    'float': float
 }
+
+PIPE_SEP_FIELDS = {'study':('genotypingTechnology', 'traitDescription'), 'samples': ('sampleAncestry', 'ancestryMethod')}
 
 SUMSTATS_FILE_TYPE = _env_variable_else('SSF_VERSION', "GWAS-SFF v0.1")
 GWAS_CATALOG_REST_API_STUDY_URL = "https://www.ebi.ac.uk/gwas/rest/api/studies/"

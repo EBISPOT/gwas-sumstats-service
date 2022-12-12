@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from typing import List, Optional
 from datetime import date
 from enum import Enum
@@ -17,6 +17,12 @@ class SampleMetadata(BaseModel):
     controlCount: Optional[int] = None
     sampleSize: int
     sampleAncestry: List[str]
+
+    @validator('ancestryMethod', 'sampleAncestry', pre=True)
+    def split_str(cls, v):
+        if isinstance(v, str):
+            return v.split('|')
+        return v
 
 
 class SumStatsMetadata(BaseModel):
@@ -42,6 +48,12 @@ class SumStatsMetadata(BaseModel):
     ontologyMapping: Optional[str] = None
     authorNotes: Optional[str] = None
     samples: List[SampleMetadata]
+
+    @validator('genotypingTechnology', 'traitDescription', pre=True)
+    def split_str(cls, v):
+        if isinstance(v, str):
+            return v.split('|')
+        return v
 
     class Config:
         use_enum_values = True  

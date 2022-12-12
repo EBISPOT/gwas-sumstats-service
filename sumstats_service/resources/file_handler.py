@@ -214,7 +214,6 @@ class SumStatFile:
                                   md5sum=self.md5exp,
                                   in_file=input_metadata,
                                   out_file=dest_file + "-meta.yaml",
-                                  schema="schema/meta_schema.yaml",
                                   data_file=data_file
                                   )
         return metadata_converter.convert_to_outfile()
