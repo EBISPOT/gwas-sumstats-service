@@ -4,7 +4,6 @@ import yaml
 import json
 from datetime import date
 from sumstats_service import config
-from collections import defaultdict
 import logging
 from sumstats_service.resources.utils import download_with_requests
 from sumstats_service.models.metadata import SumStatsMetadata
