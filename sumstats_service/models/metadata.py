@@ -15,8 +15,8 @@ class SampleMetadata(BaseModel):
     caseControlStudy: Optional[bool] = None
     caseCount: Optional[int] = None
     controlCount: Optional[int] = None
-    sampleSize: int
-    sampleAncestry: List[str]
+    sampleSize: int = None
+    sampleAncestry: List[str] = None
 
     @validator('ancestryMethod', 'sampleAncestry', pre=True)
     def split_str(cls, v):
@@ -24,19 +24,28 @@ class SampleMetadata(BaseModel):
             return v.split('|')
         return v
 
+    @validator('caseControlStudy', pre=True)
+    def str_to_bool(cls, v):
+        if str(v).lower() in {'no', 'false', 'n'}:
+            return False
+        elif str(v).lower() in {'yes', 'true', 'y'}:
+            return True
+        else:
+            return v
+
 
 class SumStatsMetadata(BaseModel):
-    genotypingTechnology: List[str]
-    GWASID: str
+    genotypingTechnology: List[str] = []
+    GWASID: str = None
     traitDescription: List[str] = None
     effectAlleleFreqLowerLimit: Optional[float] = None
-    dataFileName: str
-    fileType: str
-    dataFileMd5sum: str
+    dataFileName: str = None
+    fileType: str = None
+    dataFileMd5sum: str = None
     isHarmonised: Optional[bool] = False
     isSorted: Optional[bool] = False
-    dateLastModified: date
-    genomeAssembly: str
+    dateLastModified: date = None
+    genomeAssembly: str = None
     effectStatistic: Optional[EffectStatisticEnum] = None
     pvalueIsNegLog10: Optional[bool] = False
     analysisSoftware: Optional[str] = None
@@ -47,13 +56,23 @@ class SumStatsMetadata(BaseModel):
     adjustedCovariates: Optional[str] = None
     ontologyMapping: Optional[str] = None
     authorNotes: Optional[str] = None
-    samples: List[SampleMetadata]
+    samples: List[SampleMetadata] = []
 
     @validator('genotypingTechnology', 'traitDescription', pre=True)
     def split_str(cls, v):
         if isinstance(v, str):
             return v.split('|')
         return v
+
+    @validator('isHarmonised', 'isSorted', 'pvalueIsNegLog10',
+               pre=True)
+    def str_to_bool(cls, v):
+        if str(v).lower() in {'no', 'false', 'n'}:
+            return False
+        elif str(v).lower() in {'yes', 'true', 'y'}:
+            return True
+        else:
+            return v
 
     class Config:
         use_enum_values = True  

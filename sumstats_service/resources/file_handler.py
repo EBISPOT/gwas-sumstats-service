@@ -248,6 +248,16 @@ class SumStatFile:
                                                   self.callback_id))
         return True
 
+    def create_metadata_file(self):
+        source_dir = os.path.join(config.STORAGE_PATH, self.callback_id)
+        source_file_without_ext = os.path.join(source_dir, self.study_id)
+        source_file = add_ext_to_file_without_ext(source_file_without_ext)
+        dest_dir = os.path.join(config.STAGING_PATH, self.staging_dir_name)
+        ext = get_ext_for_file(file_path=source_file)
+        dest_file = os.path.join(dest_dir, self.staging_file_name + ext)
+        pathlib.Path(dest_dir).mkdir(parents=True, exist_ok=True)
+        self.convert_metadata_to_yaml(dest_file)
+
     def get_template(self):
         """
         Get template or None
