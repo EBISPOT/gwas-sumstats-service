@@ -118,11 +118,14 @@ class MetadataConverter:
     def _get_sample_metadata_from_gwas_api(self):
         study_url = config.GWAS_CATALOG_REST_API_STUDY_URL + self._accession_id
         content = download_with_requests(url=study_url)
-        study_metadata = json.loads(content)
-        ancestries = study_metadata['ancestries']
-        sample_metadata = [sample for sample in ancestries if sample['type'] == 'initial']
+        sample_metadata = []
+        if content:
+            study_metadata = json.loads(content)
+            ancestries = study_metadata['ancestries']
+            sample_metadata = [sample for sample in ancestries if sample['type'] == 'initial']
         formatted_sample_metadata = self._format_sample_metadata_from_api(sample_metadata)
         return formatted_sample_metadata
+            
 
     def _format_sample_metadata_from_api(self, sample_metadata):
         formatted = {'samples': []}
