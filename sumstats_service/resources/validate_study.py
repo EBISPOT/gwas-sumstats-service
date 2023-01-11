@@ -21,8 +21,7 @@ def parse_payload(content, studyid, callback_id):
         print("could not find only one matching study id in payload")
         return False
     return (study_meta[0].file_path, study_meta[0].md5, study_meta[0].assembly, study_meta[0].readme,  study_meta[0].entryUUID )
-    
-    
+
 def validate_study(callback_id, study_id, filepath, md5, assembly, readme, entryUUID, out=None, minrows=None, forcevalid=False):
     study = st.Study(callback_id=callback_id, study_id=study_id, file_path=filepath, md5=md5, assembly=assembly, readme=readme, entryUUID=entryUUID)
     study.validate_study(minrows=minrows, forcevalid=forcevalid)
@@ -48,10 +47,9 @@ def write_result(study, out):
         "dataValid": study.data_valid,
         "errorCode": study.error_code
     }
+    logger.debug("result obj: {}".format(json.dumps(result)))
     with open(out, 'w') as f:
         f.write(json.dumps(result))
-
-
 
 
 def str2bool(v):
@@ -112,6 +110,7 @@ def main():
 
     filepath, md5, assembly, readme, entryUUID = parse_payload(content, args.id, args.cid)
     out = os.path.join(args.validated_path, args.cid, args.out)
+    logger.debug(f"validation out json: {out}")
     if args.copy_only:
         copy_file_for_validation(callback_id=args.cid, study_id=args.id, filepath=filepath, entryUUID=entryUUID, md5=md5, assembly=assembly, out=out)
     else:
