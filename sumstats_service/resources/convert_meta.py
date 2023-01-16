@@ -3,6 +3,7 @@ import pandas as pd
 import yaml
 import json
 from datetime import date
+from packaging import version
 from sumstats_service import config
 import logging
 from sumstats_service.resources.utils import download_with_requests
@@ -102,7 +103,7 @@ class MetadataConverter:
             if 'meta' in xlsx_meta.sheet_names:
                 meta_df = pd.read_excel(xlsx_meta, sheet_name='meta')
             self._get_template_version(meta_df=meta_df)
-            if self._template_version < 1.8:
+            if version.parse(self._template_version) < version.parse("1.8"):
                 self.HEADER_MAPPINGS = config.SUBMISSION_TEMPLATE_HEADER_MAP_pre1_8
             if 'study' in xlsx_meta.sheet_names:
                 self._study_sheet = pd.read_excel(xlsx_meta,
@@ -113,7 +114,7 @@ class MetadataConverter:
                 self._sample_sheet = pd.read_excel(xlsx_meta,
                                                    sheet_name='sample',
                                                    skiprows=[0, 2, 3])
-                self._sample_sheet.rename(columns=self.HEADER_MAPPINGS, inplace=True)              
+                self._sample_sheet.rename(columns=self.HEADER_MAPPINGS, inplace=True)
 
     def _get_sample_metadata_from_gwas_api(self):
         study_url = config.GWAS_CATALOG_REST_API_STUDY_URL + self._accession_id
@@ -125,7 +126,6 @@ class MetadataConverter:
             sample_metadata = [sample for sample in ancestries if sample['type'] == 'initial']
         formatted_sample_metadata = self._format_sample_metadata_from_api(sample_metadata)
         return formatted_sample_metadata
-            
 
     def _format_sample_metadata_from_api(self, sample_metadata):
         formatted = {'samples': []}
@@ -140,7 +140,7 @@ class MetadataConverter:
 
     def _get_template_version(self, meta_df):
         try:
-            self._template_version = float(meta_df[meta_df['Key'] == 'schemaVersion']['Value'].values[0])
+            self._template_version = meta_df[meta_df['Key'] == 'schemaVersion']['Value'].values[0]
             logger.debug(self._template_version)
         except IndexError:
             logger.warning('Cannot determine template version, assuming latest')
