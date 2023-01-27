@@ -74,7 +74,7 @@ class MetadataConverter:
     def _get_sample_records(self):
         study_tag_key = 'Study tag'
         if self._sample_sheet is not None:
-            study_tag = self._study_record[study_tag_key][0]
+            study_tag = self._study_record[study_tag_key].values[0]
             sample_records = self._get_record_from_df(df=self._sample_sheet,
                                                       key=study_tag_key,
                                                       value=study_tag)
