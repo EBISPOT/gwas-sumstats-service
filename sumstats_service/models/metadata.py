@@ -57,6 +57,8 @@ class SumStatsMetadata(BaseModel):
     ontologyMapping: Optional[str] = None
     authorNotes: Optional[str] = None
     GWASCatalogAPI: Optional[str] = None
+    sex: Optional[str] = None
+    coordinateSystem: Optional[str] = None
     samples: List[SampleMetadata] = []
 
     @validator('genotypingTechnology', 'traitDescription', pre=True)

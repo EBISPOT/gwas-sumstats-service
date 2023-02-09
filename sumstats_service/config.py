@@ -154,7 +154,9 @@ SUBMISSION_TEMPLATE_HEADER_MAP = {
     'Imputation software': 'imputationSoftware',
     'Adjusted covariates': 'adjustedCovariates',
     'Mapped trait': 'ontologyMapping',
-    'Readme text': 'authorNotes'
+    'Readme text': 'authorNotes',
+    'Coordinate system': 'coordinateSystem',
+    'Sex': 'sex'
 }
 
 SUMSTATS_FILE_TYPE = _env_variable_else('SSF_VERSION', "GWAS-SFF v0.1")
