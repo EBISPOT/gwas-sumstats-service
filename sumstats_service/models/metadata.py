@@ -53,15 +53,15 @@ class SumStatsMetadata(BaseModel):
     imputationSoftware: Optional[str] = None
     hmCodeDefinition: Optional[dict] = None
     harmonisationReference: Optional[str] = None
-    adjustedCovariates: List[str] = []
-    ontologyMapping: List[str] = []
+    adjustedCovariates: Optional[List[str]] = None
+    ontologyMapping: Optional[List[str]] = None
     authorNotes: Optional[str] = None
     GWASCatalogAPI: Optional[str] = None
     sex: Optional[str] = None
     coordinateSystem: Optional[str] = None
     samples: List[SampleMetadata] = []
 
-    @validator('genotypingTechnology', 'traitDescription', pre=True)
+    @validator('genotypingTechnology', 'traitDescription', 'adjustedCovariates', pre=True)
     def split_str(cls, v):
         if isinstance(v, str):
             return v.split('|')
