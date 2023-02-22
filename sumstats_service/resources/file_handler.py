@@ -208,7 +208,7 @@ class SumStatFile:
             return ".tsv"
 
 
-    def write_metadata_file(self, input_metadata, dest_file):
+    def write_metadata_file(self, dest_file, input_metadata=None,):
         data_file = pathlib.Path(dest_file).name
         metadata_converter = MetadataConverter(accession_id=self.staging_file_name,
                                   md5sum=self.md5exp,
@@ -221,7 +221,8 @@ class SumStatFile:
     def convert_metadata_to_yaml(self, dest_file):
         template = self.get_template()
         if template is None:
-            raise ValueError(f"No template found for {self.callback_id}")
+            logger.warning(f"No template found for {self.callback_id}. Minimal metadata file only will be generated for {self.study_id}")
+            self.write_metadata_file(dest_file=dest_file)
         else:
             with io.BytesIO(template) as fh:
                 self.write_metadata_file(input_metadata=fh, dest_file=dest_file)

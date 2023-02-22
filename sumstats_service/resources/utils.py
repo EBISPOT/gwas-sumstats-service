@@ -24,7 +24,7 @@ def download_with_requests(url, params=None, headers=None):
         if status_code == 200:
             return r.content
         else:
-            logger.error(f"{url} returned {status_code} status code")
+            logger.warning(f"{url} returned {status_code} status code")
             return None
     except requests.exceptions.RequestException as e:
         logger.error(e)

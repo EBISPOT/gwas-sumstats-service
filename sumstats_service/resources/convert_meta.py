@@ -43,15 +43,16 @@ class MetadataConverter:
         self.metadata = None
 
     def convert_to_outfile(self):
-        self._read_metadata()
-        self._study_record = self._get_study_record()
+        if self._in_file:
+            self._read_metadata()
+            self._study_record = self._get_study_record()
         self._get_sample_metadata()
         self.metadata = self._create_metadata_model(self._study_record,
                                                     self._sample_records)
         if self.metadata:
             logger.debug("writing to file")
             self._write_metadata_to_file()
-
+            
     def _get_study_record(self):
         key = 'md5 sum'
         records = self._get_record_from_df(df=self._study_sheet,
@@ -153,7 +154,7 @@ class MetadataConverter:
             logger.error("Output type not recognised")
 
     def _create_metadata_model(self, record_meta, sample_records):
-        self._formatted_metadata = record_meta.to_dict(orient='records')[0]
+        self._formatted_metadata = record_meta.to_dict(orient='records')[0] if len(record_meta) > 0 else {}
         self._extend_metadata()
         self._formatted_metadata.update(sample_records)
         return SumStatsMetadata.parse_obj(self._formatted_metadata)
@@ -194,7 +195,7 @@ def main():
     argparser = argparse.ArgumentParser()
     argparser.add_argument("-md5sum", help='md5sum of the submitted sumstats file, which is used as a key for the metadata', required=True)
     argparser.add_argument("-id", help='GWAS accession id', required=True)
-    argparser.add_argument("-in_file", help='File to read in', required=True)
+    argparser.add_argument("-in_file", help='File to read in', required=False)
     argparser.add_argument("-out_file", help='File to write metadata to', required=True)
     argparser.add_argument("-in_type", help='Type of file being read', default='gwas_sub_xls')
     argparser.add_argument("-out_type", help='Type of file to convert to', default='ssf_yaml')
