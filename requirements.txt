@@ -8,7 +8,7 @@ bsub==0.3.5
 cachetools==5.3.0
 celery==4.3.0
 certifi==2022.12.7
-cffi==1.12.3
+cffi==1.15.1
 chardet==5.1.0
 charset-normalizer==3.0.1
 click==8.1.3

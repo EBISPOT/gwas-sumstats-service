@@ -10,13 +10,14 @@ COPY requirements.txt requirements.txt
 RUN apt-get update \
     && apt-get install -y --no-install-recommends gcc openssh-client python-dev libmagic-dev \
     && rm -rf /var/lib/apt/lists/* \
+    && pip install --upgrade pip \
     && pip install -r requirements.txt \
     && apt-get purge -y --auto-remove gcc python-dev
 # the --no-install-recommends helps limit some of the install so that you can be more explicit about what gets installed
 
 COPY . .
 
-RUN pip install -e .
+RUN pip install .
 
 # Expose port:
 EXPOSE 8000
