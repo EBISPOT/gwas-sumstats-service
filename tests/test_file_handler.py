@@ -16,7 +16,7 @@ class TestSumStatsFile(unittest.TestCase):
         self.sid = "mKoYvoLH8L"
         self.entryUUID = "ABC1234"
         self.valid_file = "test_sumstats_file.tsv"
-        self.valid_file_md5 = "ba95292befc54781fb549c3e5ca37a1f"
+        self.valid_file_md5 = "9b5f307016408b70cde2c9342648aa9b"
         os.makedirs(config.STORAGE_PATH, exist_ok=True)
         self.test_validate_path = os.path.join(config.VALIDATED_PATH, self.cid)
         os.makedirs(self.test_validate_path, exist_ok=True)
@@ -58,7 +58,7 @@ class TestSumStatsFile(unittest.TestCase):
 
     def test_validate_true_when_valid(self):        
         ssf = fh.SumStatFile(file_path=self.valid_file, callback_id=self.cid,
-                study_id=self.sid, md5exp=self.valid_file_md5, minrows=10, entryUUID=self.entryUUID)
+                study_id=self.sid, md5exp=self.valid_file_md5, minrows=9, entryUUID=self.entryUUID)
         ssf.retrieve()
         result = ssf.validate_file()
         self.assertTrue(result)
@@ -66,12 +66,19 @@ class TestSumStatsFile(unittest.TestCase):
 
     def test_validate_false_when_invalid(self):
         ssf = fh.SumStatFile(file_path=self.invalid_file, callback_id=self.cid,
-                study_id=self.sid, md5exp=self.valid_file_md5, minrows=10, entryUUID=self.entryUUID)
+                study_id=self.sid, md5exp='a2b650372e97a80fb4991aeedb297fec', minrows=9, entryUUID=self.entryUUID)
         ssf.retrieve()
         result = ssf.validate_file()
         self.assertFalse(result)
+        self.assertEqual(ssf.validation_error, 3)
         self.assertTrue(os.path.exists(os.path.join(ssf.get_valid_parent_path(), str(self.sid + ".log"))))
-
-
-
+        
+    def test_validate_false_when_too_few_lines(self):
+        ssf = fh.SumStatFile(file_path=self.invalid_file, callback_id=self.cid,
+                study_id=self.sid, md5exp='a2b650372e97a80fb4991aeedb297fec', entryUUID=self.entryUUID)
+        ssf.retrieve()
+        result = ssf.validate_file()
+        self.assertFalse(result)
+        self.assertEqual(ssf.validation_error, 9)
+        self.assertTrue(os.path.exists(os.path.join(ssf.get_valid_parent_path(), str(self.sid + ".log"))))
 

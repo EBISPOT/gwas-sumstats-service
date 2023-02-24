@@ -11,6 +11,7 @@ import csv
 import io
 import logging
 import ss_validate.validator as val
+from gwas_sumstats_tools.validate import Validator
 import pathlib
 import sumstats_service.resources.globus as globus
 from sumstats_service.resources.convert_meta import MetadataConverter
@@ -145,47 +146,20 @@ class SumStatFile:
         self.set_logfile()
         self.validation_error = 3
         if self.minrows:
-            validator = val.Validator(file=self.store_path, error_limit=1, logfile=self.logfile, minrows=self.minrows)
+            validator = Validator(sumstats_file=self.store_path, minimum_rows=self.minrows)
         else:
-            validator = val.Validator(file=self.store_path, error_limit=1, logfile=self.logfile)
-        try:
-            logger.info("Validating file extension...")
-            if not validator.validate_file_extension():
-                logger.info("VALIDATION FAILED")
-                self.validation_error = 6
-                return False
-            logger.info("Validating headers...")
-            if not validator.validate_headers():
-                logger.info("Invalid headers...exiting before any further checks")
-                logger.info("VALIDATION FAILED")
-                self.validation_error = 7
-                return False
-
-            logger.info("Validating file for squareness...")
-            if not validator.validate_file_squareness():
-                logger.info("Rows are malformed..exiting before any further checks")
-                self.validation_error = 8
-                return False
-
-            logger.info("Validating rows...")
-            if not validator.validate_rows():
-                logger.info("File contains too few rows..exiting before any further checks")
-                self.validation_error = 9
-                return False
-
-            logger.info("Validating data...")
-            if validator.validate_data():
-                logger.info("VALIDATION SUCCESSFUL")
-                return True
-            else:
-                logger.info("VALIDATION FAILED")
-                self.validation_error = 3
-                return False
-
-        except Exception as e:
-            logger.error(e)
-            logger.info("VALIDATION FAILED")
-            return False
+            validator = Validator(sumstats_file=self.store_path)
+        status, message = validator.validate()
+        logger.info(message)
+        if status is False:
+            error_to_code_dict = {'file_ext': 6,
+                                  'headers': 7,
+                                  'minrows': 9,
+                                  'data': 3}
+            self.validation_error = error_to_code_dict.get(validator.primary_error_type)
+            if validator.errors_table:
+                logger.info(validator.errors_table.head(10))
+        return status
 
 
     def get_dialect(self, csv_file):
@@ -208,7 +182,7 @@ class SumStatFile:
             return ".tsv"
 
 
-    def write_metadata_file(self, dest_file, input_metadata=None,):
+    def write_metadata_file(self,  dest_file, input_metadata=None,):
         data_file = pathlib.Path(dest_file).name
         metadata_converter = MetadataConverter(accession_id=self.staging_file_name,
                                   md5sum=self.md5exp,

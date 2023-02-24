@@ -37,13 +37,13 @@ class Study:
             status = 'INVALID'
         elif self.retrieved is None and self.data_valid is None:
             status = 'RETRIEVING'
-        elif self.retrieved is 1 and self.data_valid is None:
+        elif self.retrieved == 1 and self.data_valid is None:
             status = 'VALIDATING'
-        elif self.retrieved is 0 or self.data_valid is 0:
+        elif self.retrieved == 0 or self.data_valid == 0:
             status = 'INVALID'
-        elif self.retrieved is 1 and self.data_valid is 1:
+        elif self.retrieved == 1 and self.data_valid == 1:
             status = 'VALID'
-        elif self.retrieved is 99 and self.data_valid is 99:
+        elif self.retrieved == 99 and self.data_valid == 99:
             status = 'IGNORE'
         return status
 

@@ -1,4 +1,4 @@
-FROM python:3.7-slim-buster
+FROM python:3.9-slim-buster
 
 RUN groupadd -r sumstats-service && useradd -r --create-home -g sumstats-service sumstats-service
 
