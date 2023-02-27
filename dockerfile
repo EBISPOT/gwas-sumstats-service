@@ -17,7 +17,7 @@ RUN apt-get update \
 
 COPY . .
 
-RUN pip install .
+RUN pip install -e .
 
 # Expose port:
 EXPOSE 8000
