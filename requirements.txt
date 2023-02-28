@@ -32,7 +32,7 @@ gdown==3.8.3
 globus-sdk==1.8.0
 greenlet==2.0.2
 gunicorn==19.9.0
-gwas-sumstats-tools==0.1.0
+gwas-sumstats-tools==0.1.1a0
 humanize==4.6.0
 hypothesis==6.68.2
 idna==3.4
