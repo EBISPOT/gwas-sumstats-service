@@ -188,7 +188,7 @@ class Study:
         if self.mandatory_metadata_check() is True:
             ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id,
                                  md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID, minrows=minrows,
-                                 raw_ss=self.raw_ss)
+                                 raw_ss=self.raw_ss, genome_assembly=self.assembly)
             if not ssf.md5_ok():
                 self.set_data_valid_status(0)
                 self.set_error_code(2)

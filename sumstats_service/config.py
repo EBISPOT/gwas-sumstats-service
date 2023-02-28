@@ -159,6 +159,6 @@ SUBMISSION_TEMPLATE_HEADER_MAP = {
     'Sex': 'sex'
 }
 
-SUMSTATS_FILE_TYPE = _env_variable_else('SSF_VERSION', "GWAS-SFF v0.1")
+SUMSTATS_FILE_TYPE = _env_variable_else('SSF_VERSION', "GWAS-SFF v1.0")
 GWAS_CATALOG_REST_API_STUDY_URL = "https://www.ebi.ac.uk/gwas/rest/api/studies/"
 GWAS_DEPO_REST_API_URL = _env_variable_else('GWAS_DEPO_REST_API_URL',"https://www.ebi.ac.uk/gwas/deposition/api/v1/")

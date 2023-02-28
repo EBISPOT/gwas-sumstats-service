@@ -26,7 +26,7 @@ class SumStatFile:
     def __init__(self, file_path=None, callback_id=None, study_id=None, 
                 md5exp=None, readme=None, entryUUID=None,
                 staging_dir_name=None, staging_file_name=None, minrows=None,
-                raw_ss=None, uploaded_ss_filename=None):
+                raw_ss=None, uploaded_ss_filename=None, genome_assembly=None):
         self.file_path = file_path
         self.callback_id = callback_id
         self.study_id = study_id
@@ -41,6 +41,7 @@ class SumStatFile:
         self.uploaded_ss_filename = uploaded_ss_filename
         self.store_path = None
         self.parent_path = None
+        self.genome_assembly = None
 
 
     def set_logfile(self):
@@ -72,6 +73,7 @@ class SumStatFile:
         # copy from source_path to store_path
         try:
             shutil.copyfile(source_path, self.store_path)
+            self.rename_file_with_ext()
             return True
         except FileNotFoundError:
             logger.error(f"Could not find {source_path}")
@@ -109,6 +111,12 @@ class SumStatFile:
             self.set_store_path()
         return self.store_path
 
+    def glob_store_path(self):
+        self.get_store_path()
+        matches = glob(self.store_path + '*')
+        self.store_path = matches[0] if matches else self.store_path
+        return self.store_path
+
     def write_readme_file(self):
         if self.readme:
             readme_path = os.path.join(self.parent_path, str(self.study_id)) + ".README"
@@ -116,7 +124,7 @@ class SumStatFile:
                 readme.write(self.readme)
 
     def md5_ok(self):
-        f = self.get_store_path()
+        f = self.glob_store_path()
         logger.info("md5: " + md5_check(f))
         if self.md5exp == md5_check(f):
             return True
@@ -142,7 +150,7 @@ class SumStatFile:
         logger.info(self.store_path)
 
     def validate_file(self):
-        self.rename_file_with_ext()
+        self.glob_store_path()
         self.set_logfile()
         self.validation_error = 3
         if self.minrows:
@@ -188,7 +196,8 @@ class SumStatFile:
                                   md5sum=self.md5exp,
                                   in_file=input_metadata,
                                   out_file=dest_file + "-meta.yaml",
-                                  data_file=data_file
+                                  data_file=data_file,
+                                  genome_assembly=self.genome_assembly
                                   )
         return metadata_converter.convert_to_outfile()
 

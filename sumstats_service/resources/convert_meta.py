@@ -24,13 +24,15 @@ class MetadataConverter:
                  out_file,
                  data_file,
                  in_type='gwas_sub_xls',
-                 out_type='ssf_yaml'):
+                 out_type='ssf_yaml',
+                 genome_assembly=None):
         self._accession_id = accession_id
         self._md5sum = md5sum
         self._in_file = in_file
         self._out_file = out_file
         self._in_type = in_type
         self._out_type = out_type
+        self._genome_assembly = genome_assembly
         self._data_file_name = data_file
         self._metadata = None
         self._formatted_metadata = None
@@ -173,6 +175,8 @@ class MetadataConverter:
         self._add_md5_to_meta()
         self._add_defaults_to_meta()
         self._add_gwas_cat_link()
+        if not self._in_file:
+            self._add_genome_assembly()
 
     def _add_data_file_name_to_meta(self):
         self._formatted_metadata['dataFileName'] = self._data_file_name
@@ -184,11 +188,14 @@ class MetadataConverter:
         self._formatted_metadata['dataFileMd5sum'] = self._md5sum
 
     def _add_defaults_to_meta(self):
-        self._formatted_metadata['fileType'] = config.SUMSTATS_FILE_TYPE
+        self._formatted_metadata['fileType'] = config.SUMSTATS_FILE_TYPE if self._in_file else config.SUMSTATS_FILE_TYPE + "-incomplete-meta"
         self._formatted_metadata['dateLastModified'] = date.today()
 
     def _add_gwas_cat_link(self):
         self._formatted_metadata['GWASCatalogAPI'] = config.GWAS_CATALOG_REST_API_STUDY_URL + self._accession_id
+
+    def _add_genome_assembly(self):
+        self._formatted_metadata['genomeAssembly'] = self._genome_assembly 
 
 
 def main():

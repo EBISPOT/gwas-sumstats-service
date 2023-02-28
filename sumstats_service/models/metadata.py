@@ -15,8 +15,8 @@ class SampleMetadata(BaseModel):
     caseControlStudy: Optional[bool] = None
     caseCount: Optional[int] = None
     controlCount: Optional[int] = None
-    sampleSize: int = None
     sampleAncestry: List[str] = None
+    sampleSize: int = None
 
     @validator('ancestryMethod', 'sampleAncestry', pre=True)
     def split_str(cls, v):
@@ -35,31 +35,31 @@ class SampleMetadata(BaseModel):
 
 
 class SumStatsMetadata(BaseModel):
-    genotypingTechnology: List[str] = []
+    GWASCatalogAPI: Optional[str] = None
     GWASID: str = None
-    traitDescription: List[str] = None
-    effectAlleleFreqLowerLimit: Optional[float] = None
-    dataFileName: str = None
-    fileType: str = None
-    dataFileMd5sum: str = None
-    isHarmonised: Optional[bool] = False
-    isSorted: Optional[bool] = False
-    dateLastModified: date = None
-    genomeAssembly: str = None
-    effectStatistic: Optional[EffectStatisticEnum] = None
-    pvalueIsNegLog10: Optional[bool] = False
+    adjustedCovariates: Optional[List[str]] = None
     analysisSoftware: Optional[str] = None
+    authorNotes: Optional[str] = None
+    coordinateSystem: Optional[str] = None
+    dataFileMd5sum: str = None
+    dataFileName: str = None
+    dateLastModified: date = None
+    minorAlleleFreqLowerLimit: Optional[float] = None
+    effectStatistic: Optional[EffectStatisticEnum] = None
+    fileType: str = None
+    genomeAssembly: str = None
+    genotypingTechnology: List[str] = []
+    harmonisationReference: Optional[str] = None
+    hmCodeDefinition: Optional[dict] = None
     imputationPanel: Optional[str] = None
     imputationSoftware: Optional[str] = None
-    hmCodeDefinition: Optional[dict] = None
-    harmonisationReference: Optional[str] = None
-    adjustedCovariates: Optional[List[str]] = None
+    isHarmonised: Optional[bool] = False
+    isSorted: Optional[bool] = False
     ontologyMapping: Optional[List[str]] = None
-    authorNotes: Optional[str] = None
-    GWASCatalogAPI: Optional[str] = None
-    sex: Optional[str] = None
-    coordinateSystem: Optional[str] = None
+    pvalueIsNegLog10: Optional[bool] = False
     samples: List[SampleMetadata] = []
+    sex: Optional[str] = None
+    traitDescription: List[str] = None
 
     @validator('genotypingTechnology', 'traitDescription', 'adjustedCovariates', pre=True)
     def split_str(cls, v):
