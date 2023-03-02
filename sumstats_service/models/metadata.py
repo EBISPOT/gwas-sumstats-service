@@ -61,7 +61,7 @@ class SumStatsMetadata(BaseModel):
     sex: Optional[str] = None
     traitDescription: List[str] = None
 
-    @validator('genotypingTechnology', 'traitDescription', 'adjustedCovariates', pre=True)
+    @validator('genotypingTechnology', 'traitDescription', 'ontologyMapping', 'adjustedCovariates', pre=True)
     def split_str(cls, v):
         if isinstance(v, str):
             return v.split('|')
