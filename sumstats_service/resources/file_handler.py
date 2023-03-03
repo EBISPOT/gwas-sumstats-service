@@ -163,7 +163,8 @@ class SumStatFile:
             error_to_code_dict = {'file_ext': 6,
                                   'headers': 7,
                                   'minrows': 9,
-                                  'data': 3}
+                                  'data': 3,
+                                  'field order': 7}
             self.validation_error = error_to_code_dict.get(validator.primary_error_type)
             if validator.errors_table:
                 logger.info(validator.errors_table.head(10))
