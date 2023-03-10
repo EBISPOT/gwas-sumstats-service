@@ -63,6 +63,7 @@ deploy_staging_app:
     - dev
 
 deploy_staging_workers:
+  image: ubuntu:20.04
   stage: deploy
   before_script:
     - apt-get update && apt-get install -y openssh-client
@@ -72,7 +73,7 @@ deploy_staging_workers:
     - chmod 700 ~/.ssh
   script:
     - ssh -o StrictHostKeyChecking=no "$WORKER_USER"@"$WORKER_SERVER"
-      'cd $WORKER_DIR_DEV; bsub -M12000 -R "rusage[mem=12000]" "./START_CELERY_WORKERS.sh $CI_COMMIT_SHA"'
+      'cd $WORKER_DIR_DEV && bsub -M12000 -R "rusage[mem=12000]" "./START_CELERY_WORKERS.sh $CI_COMMIT_SHA"'
   tags:
     - gwas
   only:
