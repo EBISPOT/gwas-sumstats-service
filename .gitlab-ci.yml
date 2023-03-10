@@ -45,7 +45,7 @@ build_release:
    - tags
 
 
-deploy_staging:
+deploy_staging_app:
   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/dtzar/helm-kubectl:2.13.1
   stage: deploy
   script:
@@ -62,8 +62,26 @@ deploy_staging:
     - master
     - dev
 
+deploy_staging_workers:
+  stage: deploy
+  before_script:
+    - apt-get update && apt-get install -y openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+  script:
+    - ssh -o StrictHostKeyChecking=no "$WORKER_USER"@"$WORKER_SERVER"
+      'cd $WORKER_DIR_DEV; bsub -M12000 -R "rusage[mem=12000]" "./START_CELERY_WORKERS.sh $CI_COMMIT_SHA"'
+  tags:
+    - gwas
+  only:
+    - master
+    - dev
 
-deploy_fallback:
+
+
+deploy_fallback_app:
   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/dtzar/helm-kubectl:2.13.1
   stage: deploy
   script:
@@ -81,7 +99,7 @@ deploy_fallback:
     - tags
 
 
-deploy_prod:
+deploy_prod_app:
   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/dtzar/helm-kubectl:2.13.1
   stage: deploy
   script:
