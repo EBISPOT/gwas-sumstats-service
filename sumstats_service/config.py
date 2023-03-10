@@ -117,48 +117,40 @@ NEXTFLOW_CONFIG = ("executor.name = 'lsf'\n"
                    "singularity.cacheDir = '{sing_cache_dir}'\n").format(
         sing_cache_dir=_env_variable_else('SINGULARITY_CACHEDIR', './singularity_cache'))
 
-SUBMISSION_TEMPLATE_HEADER_MAP_pre1_8 = {
-    'Genotyping technology': 'genotypingTechnology',
-    'Number of individuals': 'sampleSize',
-    'Ancestry category': 'sampleAncestry',
-    'Reported trait': 'traitDescription',
-    'EAF lower limit': 'effectAlleleFreqLowerLimit',
-    'Ancestry method': 'ancestryMethod',
-    'Case control study': 'caseControlStudy',
-    'Number of cases': 'caseCount',
-    'Number of controls': 'controlCount',
-    'Summary statistics assembly': 'genomeAssembly',
-    'Neg Log10 p-values': 'pvalueIsNegLog10',
-    'Analysis Software': 'analysisSoftware',
-    'Imputation panel': 'imputationPanel',
-    'Imputation software': 'imputationSoftware',
-    'Adjusted covariates': 'adjustedCovariates',
-    'Mapped trait': 'ontologyMapping',
-    'Readme file': 'authorNotes'
-}
+
 
 SUBMISSION_TEMPLATE_HEADER_MAP = {
-    'Genotyping technology': 'genotypingTechnology',
-    'Number of individuals': 'sampleSize',
-    'Ancestry category': 'sampleAncestry',
-    'Reported trait': 'traitDescription',
-    'EAF lower limit': 'effectAlleleFreqLowerLimit',
-    'Ancestry method': 'ancestryMethod',
-    'Case control study': 'caseControlStudy',
-    'Number of cases': 'caseCount',
-    'Number of controls': 'controlCount',
-    'Summary statistics assembly': 'genomeAssembly',
-    'Neg Log10 p-values': 'pvalueIsNegLog10',
-    'Analysis Software': 'analysisSoftware',
-    'Imputation panel': 'imputationPanel',
-    'Imputation software': 'imputationSoftware',
-    'Adjusted covariates': 'adjustedCovariates',
-    'Mapped trait': 'ontologyMapping',
-    'Readme text': 'authorNotes',
-    'Coordinate system': 'coordinateSystem',
+    'Genotyping technology': 'genotyping_technology',
+    'Number of individuals': 'sample_size',
+    'Ancestry category': 'sample_ancestry',
+    'Reported trait': 'trait_description',
+    'MAF lower limit': 'minor_allele_freq_lower_limit',
+    'Ancestry method': 'ancestry_method',
+    'Case control study': 'case_control_study',
+    'Number of cases': 'case_count',
+    'Number of controls': 'control_count',
+    'Summary statistics assembly': 'genome_assembly',
+    'Analysis Software': 'analysis_software',
+    'Imputation panel': 'imputation_panel',
+    'Imputation software': 'imputation_software',
+    'Adjusted covariates': 'adjusted_covariates',
+    'Mapped trait': 'ontology_mapping',
+    'Readme text': 'author_notes',
+    'Coordinate system': 'coordinate_system',
     'Sex': 'sex'
 }
 
-SUMSTATS_FILE_TYPE = _env_variable_else('SSF_VERSION', "GWAS-SFF v1.0")
+SUBMISSION_TEMPLATE_HEADER_MAP_pre1_8 = {'Readme file' if k == 'Readme text' 
+                                         else k:v for k,v in 
+                                         SUBMISSION_TEMPLATE_HEADER_MAP.items()
+                                         }
+
+
+STUDY_FIELD_TO_SPLIT = ('genotyping_technology', 'trait_description', 'ontology_mapping', 'adjusted_covariates')
+STUDY_FIELD_BOOLS = ('is_harmonised', 'is_sorted')
+SAMPLE_FIELD_TO_SPLIT = ('ancestry_method', 'sample_ancestry')
+SAMPLE_FIELD_BOOLS = ('case_control_study')
+
+SUMSTATS_FILE_TYPE = _env_variable_else('SSF_VERSION', "GWAS-SSF v1.0")
 GWAS_CATALOG_REST_API_STUDY_URL = "https://www.ebi.ac.uk/gwas/rest/api/studies/"
 GWAS_DEPO_REST_API_URL = _env_variable_else('GWAS_DEPO_REST_API_URL',"https://www.ebi.ac.uk/gwas/deposition/api/v1/")

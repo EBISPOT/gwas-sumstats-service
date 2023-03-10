@@ -7,7 +7,7 @@ from packaging import version
 from sumstats_service import config
 import logging
 from sumstats_service.resources.utils import download_with_requests
-from sumstats_service.models.metadata import SumStatsMetadata
+from gwas_sumstats_tools.schema.metadata import SumStatsMetadata
 
 
 logging.basicConfig(level=logging.DEBUG, format='(%(levelname)s): %(message)s')
@@ -16,6 +16,10 @@ logger = logging.getLogger(__name__)
 
 class MetadataConverter:
     HEADER_MAPPINGS = config.SUBMISSION_TEMPLATE_HEADER_MAP
+    STUDY_FIELD_TO_SPLIT = config.STUDY_FIELD_TO_SPLIT
+    STUDY_FIELD_BOOLS = config.STUDY_FIELD_BOOLS
+    SAMPLE_FIELD_TO_SPLIT = config.SAMPLE_FIELD_TO_SPLIT
+    SAMPLE_FIELD_BOOLS = config.SAMPLE_FIELD_BOOLS
 
     def __init__(self,
                  accession_id,
@@ -47,7 +51,11 @@ class MetadataConverter:
     def convert_to_outfile(self):
         if self._in_file:
             self._read_metadata()
-            self._study_record = self._get_study_record()
+            try:
+                self._study_record = self._get_study_record()
+            except ValueError as e:
+                logger.error(e)
+                self._in_file = None
         self._get_sample_metadata()
         self.metadata = self._create_metadata_model(self._study_record,
                                                     self._sample_records)
@@ -66,10 +74,31 @@ class MetadataConverter:
         else:
             # remove fields without values
             records.dropna(axis='columns', inplace=True)
+            for field in self.STUDY_FIELD_TO_SPLIT:
+                if field in records:
+                    records[field] = self._split_field(records[field])
+            for field in self.STUDY_FIELD_BOOLS:
+                if field in records:
+                    records[field] = self._normalise_bool(records[field])
             return records
+    
+    @staticmethod    
+    def _split_field(field: pd.Series, delimiter: str = "|") -> pd.Series:
+        return field.str.split(pat=delimiter)
+    
+    @staticmethod
+    def _normalise_bools(field: pd.Series) -> pd.Series:
+        bool_map = {"yes": True,
+                    "y": True,
+                    "true": True,
+                    "no": False,
+                    "n": False,
+                    "false": False}
+        field_lower = field.str.lower()
+        return field_lower.map(bool_map, na_action='ignore')
 
     def _get_sample_metadata(self):
-        if self._sample_sheet is None:
+        if self._sample_sheet is None or self._in_file is None:
             self._sample_records = self._get_sample_metadata_from_gwas_api()
         else:
             self._sample_records = self._get_sample_records()
@@ -85,6 +114,12 @@ class MetadataConverter:
                                                         key='Stage',
                                                         value='discovery')
             filtered_samples.dropna(axis='columns', inplace=True)
+            for field in self.SAMPLE_FIELD_TO_SPLIT:
+                if field in filtered_samples:
+                    filtered_samples[field] = self._split_field(filtered_samples[field])
+            for field in self.SAMPLE_FIELD_BOOLS:
+                if field in filtered_samples:
+                    filtered_samples[field] = self._normalise_bool(filtered_samples[field])
             return {'samples': filtered_samples.to_dict(orient='records')}
         else:
             return {'samples': []}
@@ -135,15 +170,15 @@ class MetadataConverter:
         try:
             for sample in sample_metadata:
                 formatted['samples'].append({
-                   'sampleSize': sample['numberOfIndividuals'],
-                   'sampleAncestry': [s['ancestralGroup'] for s in sample['ancestralGroups']]})
+                   'sample_size': sample['numberOfIndividuals'],
+                   'sample_ancestry': [s['ancestralGroup'] for s in sample['ancestralGroups']]})
         except KeyError as e:
             logger.error(f"Missing key {e}")
         return formatted
 
     def _get_template_version(self, meta_df):
         try:
-            self._template_version = meta_df[meta_df['Key'] == 'schemaVersion']['Value'].values[0]
+            self._template_version = str(meta_df[meta_df['Key'] == 'schemaVersion']['Value'].values[0])
             logger.debug(self._template_version)
         except IndexError:
             logger.warning('Cannot determine template version, assuming latest')
@@ -179,23 +214,23 @@ class MetadataConverter:
             self._add_genome_assembly()
 
     def _add_data_file_name_to_meta(self):
-        self._formatted_metadata['dataFileName'] = self._data_file_name
+        self._formatted_metadata['data_file_name'] = self._data_file_name
 
     def _add_id_to_meta(self):
-        self._formatted_metadata['GWASID'] = self._accession_id
+        self._formatted_metadata['gwas_id'] = self._accession_id
 
     def _add_md5_to_meta(self):
-        self._formatted_metadata['dataFileMd5sum'] = self._md5sum
+        self._formatted_metadata['data_file_md5sum'] = self._md5sum
 
     def _add_defaults_to_meta(self):
-        self._formatted_metadata['fileType'] = config.SUMSTATS_FILE_TYPE if self._in_file else config.SUMSTATS_FILE_TYPE + "-incomplete-meta"
-        self._formatted_metadata['dateLastModified'] = date.today()
+        self._formatted_metadata['file_type'] = config.SUMSTATS_FILE_TYPE if self._in_file else config.SUMSTATS_FILE_TYPE + "-incomplete-meta"
+        self._formatted_metadata['date_last_modified'] = date.today()
 
     def _add_gwas_cat_link(self):
-        self._formatted_metadata['GWASCatalogAPI'] = config.GWAS_CATALOG_REST_API_STUDY_URL + self._accession_id
+        self._formatted_metadata['gwas_catalog_catalog_api'] = config.GWAS_CATALOG_REST_API_STUDY_URL + self._accession_id
 
     def _add_genome_assembly(self):
-        self._formatted_metadata['genomeAssembly'] = self._genome_assembly 
+        self._formatted_metadata['genome_assembly'] = self._genome_assembly 
 
 
 def main():
