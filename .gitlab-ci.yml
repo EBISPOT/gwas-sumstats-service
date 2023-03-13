@@ -73,7 +73,7 @@ deploy_staging_workers:
     - chmod 700 ~/.ssh
   script:
     - ssh -o StrictHostKeyChecking=no "$WORKER_USER"@"$WORKER_SERVER"
-      'cd $WORKER_DIR_DEV; bsub -K -oo $WORKER_DIR_DEV/deploy.out -eo $WORKER_DIR_DEV/deploy.err -M12000 -R "rusage[mem=12000]" "./START_CELERY_WORKERS.sh $CI_COMMIT_SHA"'
+      "bsub -K -cwd $WORKER_DIR_DEV -oo deploy.out -eo deploy.err -M12000 -R 'rusage[mem=12000]' ./START_CELERY_WORKERS.sh $CI_COMMIT_SHA"
   tags:
     - gwas
   only:
