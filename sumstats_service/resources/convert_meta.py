@@ -14,6 +14,16 @@ logging.basicConfig(level=logging.DEBUG, format='(%(levelname)s): %(message)s')
 logger = logging.getLogger(__name__)
 
 
+
+class MetaModel(SumStatsMetadata):
+    """Inherit from the Sumstats Metadata class.
+    We do this to change the config so that 
+    we can serialise without the Enums.
+    """
+    class Config(SumStatsMetadata.Config):
+        use_enum_values = True
+        
+
 class MetadataConverter:
     HEADER_MAPPINGS = config.SUBMISSION_TEMPLATE_HEADER_MAP
     STUDY_FIELD_TO_SPLIT = config.STUDY_FIELD_TO_SPLIT
@@ -80,6 +90,7 @@ class MetadataConverter:
             for field in self.STUDY_FIELD_BOOLS:
                 if field in records:
                     records[field] = self._normalise_bool(records[field])
+            records = self._normalise_missing_values(records)
             return records
     
     @staticmethod    
@@ -96,6 +107,10 @@ class MetadataConverter:
                     "false": False}
         field_lower = field.str.lower()
         return field_lower.map(bool_map, na_action='ignore')
+    
+    @staticmethod
+    def _normalise_missing_values(df: pd.DataFrame) -> pd.DataFrame:
+        return df.replace(["", "#NA", "NA", "N/A", "NaN", "NR"], None)
 
     def _get_sample_metadata(self):
         if self._sample_sheet is None or self._in_file is None:
@@ -120,6 +135,7 @@ class MetadataConverter:
             for field in self.SAMPLE_FIELD_BOOLS:
                 if field in filtered_samples:
                     filtered_samples[field] = self._normalise_bool(filtered_samples[field])
+            filtered_samples = self._normalise_missing_values(filtered_samples)
             return {'samples': filtered_samples.to_dict(orient='records')}
         else:
             return {'samples': []}
@@ -186,7 +202,7 @@ class MetadataConverter:
     def _write_metadata_to_file(self):
         if self._out_type == "ssf_yaml":
             with open(self._out_file, "w") as f:
-                yaml.dump(self.metadata.dict(exclude_none=True), f, encoding='utf-8')
+                yaml.dump(self.metadata.dict(exclude_unset=True), f, encoding='utf-8')
         else:
             logger.error("Output type not recognised")
 
@@ -194,7 +210,7 @@ class MetadataConverter:
         self._formatted_metadata = record_meta.to_dict(orient='records')[0] if len(record_meta) > 0 else {}
         self._extend_metadata()
         self._formatted_metadata.update(sample_records)
-        return SumStatsMetadata.parse_obj(self._formatted_metadata)
+        return MetaModel.parse_obj(self._formatted_metadata)
 
     @staticmethod
     def _get_record_from_df(df, key, value):
