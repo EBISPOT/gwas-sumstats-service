@@ -90,7 +90,7 @@ DB_SCHEMA = """
             BEGIN TRANSACTION;
             INSERT OR IGNORE INTO errors(id, errorText) VALUES(1, "The summary statistics file cannot be found"); -- 1
             INSERT OR IGNORE INTO errors(id, errorText) VALUES(2, "The md5sum of the summary statistics file does not match the one provided"); -- 2
-            INSERT OR IGNORE INTO errors(id, errorText) VALUES(3, "Summary statistics file validation failed, please run the validator on your file to see the errors (available here: https://pypi.org/project/ss-validate/)"); -- 3
+            INSERT OR IGNORE INTO errors(id, errorText) VALUES(3, "Summary statistics file validation failed, please run the validator on your file to see the errors (available here: https://pypi.org/project/gwas-sumstats-tools/)"); -- 3
             INSERT OR IGNORE INTO errors(id, errorText) VALUES(4, "Missing mandatory field, you must provide (i) file path/URL, (ii) md5 sum and (iii) genome assembly for each file"); -- 4
             INSERT OR IGNORE INTO errors(id, errorText) VALUES(5, "Genome assembly invalid - please see documentation for valid assemblies"); -- 5 
             COMMIT;
@@ -99,12 +99,12 @@ DB_SCHEMA = """
 VALIDATION_ERRORS = [
                         {'id': 1, 'errorText': 'The summary statistics file cannot be found'},
                         {'id': 2, 'errorText': 'The md5sum of the summary statistics file does not match the one provided'},
-                        {'id': 3, 'errorText': 'Summary statistics file validation failed, please run the validator on your file to see the errors (available here: https://pypi.org/project/ss-validate/)'},
+                        {'id': 3, 'errorText': 'Summary statistics file validation failed, please run the validator on your file to see the errors (available here: https://pypi.org/project/gwas-sumstats-tools/)'},
                         {'id': 4, 'errorText': 'Missing mandatory field, you must provide (i) file path/URL, (ii) md5 sum and (iii) genome assembly for each file'},
                         {'id': 5, 'errorText': 'Genome assembly invalid - please see documentation for valid assemblies'},
-                        {'id': 6, 'errorText': 'Summary statistics file validation failed: File extension error, please run the validator on your file to see the errors (available here: https://pypi.org/project/ss-validate/)'},
-                        {'id': 7, 'errorText': 'Summary statistics file validation failed: File header error, please run the validator on your file to see the errors (available here: https://pypi.org/project/ss-validate/)'},
-                        {'id': 8, 'errorText': 'Summary statistics file validation failed: File squareness error, please run the validator on your file to see the errors (available here: https://pypi.org/project/ss-validate/)'},
+                        {'id': 6, 'errorText': 'Summary statistics file validation failed: File extension error, please run the validator on your file to see the errors (available here: https://pypi.org/project/gwas-sumstats-tools/)'},
+                        {'id': 7, 'errorText': 'Summary statistics file validation failed: File header error, please run the validator on your file to see the errors (available here: https://pypi.org/project/gwas-sumstats-tools/)'},
+                        {'id': 8, 'errorText': 'Summary statistics file validation failed: File squareness error, please run the validator on your file to see the errors (available here: https://pypi.org/project/gwas-sumstats-tools/)'},
                         {'id': 9, 'errorText': 'Summary statistics file validation failed: File contains fewer than 100,000 rows. If you have fewer than 100,000 variants in your dataset, please contact gwas-subs@ebi.ac.uk for further advice.'},
                         {'id': 10, 'errorText': 'There is a problem on our side, please contact gwas-subs@ebi.ac.uk for further advice.'},
                         {'id': 11, 'errorText': 'The raw sumstats file can not be found'}
