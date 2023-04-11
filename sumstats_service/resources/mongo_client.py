@@ -1,6 +1,6 @@
 from pymongo import MongoClient
 from bson.objectid import ObjectId
-import config
+from sumstats_service import config
 
 
 class mongoClient():
@@ -23,7 +23,7 @@ class mongoClient():
         return collection.replace_one({'_id': objectid}, data)
 
     def insert(self, collection, data):
-        return collection.insert(data, check_keys=False)
+        return collection.insert_one(data)
 
     """ specific methods """
  

@@ -1,5 +1,5 @@
 import re
-import config
+from sumstats_service import config
 from sumstats_service.resources.error_classes import *
 import sumstats_service.resources.file_handler as fh
 from sumstats_service.resources.mongo_client import mongoClient
@@ -37,13 +37,13 @@ class Study:
             status = 'INVALID'
         elif self.retrieved is None and self.data_valid is None:
             status = 'RETRIEVING'
-        elif self.retrieved is 1 and self.data_valid is None:
+        elif self.retrieved == 1 and self.data_valid is None:
             status = 'VALIDATING'
-        elif self.retrieved is 0 or self.data_valid is 0:
+        elif self.retrieved == 0 or self.data_valid == 0:
             status = 'INVALID'
-        elif self.retrieved is 1 and self.data_valid is 1:
+        elif self.retrieved == 1 and self.data_valid == 1:
             status = 'VALID'
-        elif self.retrieved is 99 and self.data_valid is 99:
+        elif self.retrieved == 99 and self.data_valid == 99:
             status = 'IGNORE'
         return status
 
@@ -171,59 +171,53 @@ class Study:
                 self.set_error_code(5)
             return True
 
+    def retrieve_study_file(self):
+        ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id,
+                             entryUUID=self.entryUUID)
+        retrieved = ssf.retrieve()
+        if retrieved:
+            self.set_retrieved_status(1)
+            return True
+        else:
+            self.set_retrieved_status(0)
+            self.set_error_code(1)
+            return False
 
     def validate_study(self, minrows=None, forcevalid=False):
         # Step through the validation
         if self.mandatory_metadata_check() is True:
-            ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id, 
-                    md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID, minrows=minrows, raw_ss=self.raw_ss)
-            if ssf.retrieve() is True:
+            ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id,
+                                 md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID, minrows=minrows,
+                                 raw_ss=self.raw_ss, genome_assembly=self.assembly)
+            if not ssf.md5_ok():
+                self.set_data_valid_status(0)
+                self.set_error_code(2)
+                # retrieved must be true
                 self.set_retrieved_status(1)
-                if not ssf.md5_ok():
-                    self.set_data_valid_status(0)
-                    self.set_error_code(2)
-                else:
-                    if ssf.check_raw_ss():
-                        validation_status = ssf.validate_file() if forcevalid is False else True
-                        if validation_status is True:
-                            self.set_data_valid_status(1)
-                            ssf.write_readme_file()
-                            ssf.tidy_files()
-                        else:
-                            self.set_data_valid_status(0)
-                            self.set_error_code(ssf.validation_error)
+            else:
+                # retrieved must be true
+                self.set_retrieved_status(1)
+                if ssf.check_raw_ss():
+                    validation_status = ssf.validate_file() if forcevalid is False else True
+                    if validation_status is True:
+                        self.set_data_valid_status(1)
+                        #ssf.write_readme_file()
+                        #ssf.tidy_files()
                     else:
                         self.set_data_valid_status(0)
-                        self.set_error_code(11)
-            else:
-                self.set_retrieved_status(0)
-                self.set_error_code(1)
+                        self.set_error_code(ssf.validation_error)
+                else:
+                    self.set_data_valid_status(0)
+                    self.set_error_code(11)
+
     
-
-    #def force_valid(self):
-    #    if self.mandatory_metadata_check() is True:
-    #        ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, study_id=self.study_id,
-    #                md5exp=self.md5, readme=self.readme, entryUUID=self.entryUUID)
-    #        if ssf.retrieve() is True:
-    #            self.set_retrieved_status(1)
-    #            if not ssf.md5_ok():
-    #                self.set_data_valid_status(0)
-    #                self.set_error_code(2)
-    #            else:
-    #                self.set_data_valid_status(1)
-    #                ssf.write_readme_file()
-    #                ssf.tidy_files()
-    #        else:
-    #            self.set_retrieved_status(0)
-    #            self.set_error_code(1)
-
-
     def move_file_to_staging(self):
         dir_name = self.gcst
-        sumstats_file_name = self.gcst + '_build' + str(self.assembly)
+        sumstats_file_name = self.gcst 
         ssf = fh.SumStatFile(file_path=self.file_path, callback_id=self.callback_id, 
                 study_id=self.study_id, readme=self.readme, entryUUID=self.entryUUID, 
-                staging_dir_name=dir_name, staging_file_name=sumstats_file_name, raw_ss=self.raw_ss)
+                staging_dir_name=dir_name, staging_file_name=sumstats_file_name,
+                md5exp=self.md5, raw_ss=self.raw_ss)
         return ssf.move_file_to_staging()
     
     

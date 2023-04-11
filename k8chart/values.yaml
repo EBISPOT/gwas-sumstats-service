@@ -10,8 +10,9 @@ image:
   tag: latest
   pullPolicy: Always
   containerPort: 8000
-  logMountPath: "/sumstats_service/logs"
-  sshMountPath: "/root/.ssh"
+  logMountPath: "/var/log/gunicorn"
+  sshMountPath: "/sumstats_service/.ssh"
+  dataMountPath: "/sumstats_service/data"
   env:
     celeryUser: "username"
     celeryPwd: "password"
@@ -40,13 +41,23 @@ image:
     httpsProxy: ""
     stagingPath: "./staging"
     validatedPath: "./validated"
+    depoPath: "./depo_data"
     swPath: "./bin"
     singularityCache: ""
+    depoAPIToken: ""
+    outputDataPath: "./output_data"
+    uid: 1000
+    gid: 1000
+    user: virtual_user
     
 
 volume:
   log:
     ClaimName: gwas-depo-logs
+  data:
+    ClaimName: gwas-sumstats-data
+    nfsServer: "<host name or IP>"
+    path: "/path/to/files/"
 
 secrets:
   sshName: ssh-keys
@@ -59,12 +70,12 @@ service:
   name: gwas-ss-service
   type: ClusterIP
   port: 8000
-  gunicornCmd: '["gunicorn", "-b", "0.0.0.0:8000", "sumstats_service.app:app", "-k=eventlet", "-t=1200", "-w=2", "--log-level=info","--access-logfile=logs/ss_access.log","--error-logfile=logs/ss_error.log"]'
+  gunicornCmd: '["gunicorn", "-b", "0.0.0.0:8000", "sumstats_service.app:app", "-k=eventlet", "-t=3600", "-w=2", "--log-config=log.conf"]'
 
 worker:
   name: gwas-ss-worker
-  celeryCmd: '["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=info", "--queues=preval,postval"]'
-  celeryCmdPostOnly:  '["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=info", "--queues=postval"]'
+  celeryCmd: '["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=INFO", "--queues=preval,postval"]'
+  celeryCmdPostOnly:  '["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=INFO", "--queues=postval"]'
   replicaCount: 1
 
 ingress:

@@ -5,7 +5,7 @@ from datetime import date
 import webbrowser
 from urllib.parse import unquote
 import pathlib
-import config
+from sumstats_service import config
 import globus_sdk
 from globus_sdk import (NativeAppAuthClient, TransferClient,
                         RefreshTokenAuthorizer, ConfidentialAppAuthClient, DeleteData)

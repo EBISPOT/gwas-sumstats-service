@@ -2,7 +2,7 @@ import json
 import sumstats_service.resources.payload as pl
 import argparse
 import sys
-import config
+from sumstats_service import config
 import os
 
 

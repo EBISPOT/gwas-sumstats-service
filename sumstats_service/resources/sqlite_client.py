@@ -1,5 +1,5 @@
 import sqlite3
-import config
+from sumstats_service import config
 
 
 class sqlClient():

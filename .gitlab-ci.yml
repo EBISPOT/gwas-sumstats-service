@@ -45,7 +45,7 @@ build_release:
    - tags
 
 
-deploy_staging:
+deploy_staging_app:
   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/dtzar/helm-kubectl:2.13.1
   stage: deploy
   script:
@@ -55,15 +55,49 @@ deploy_staging:
     - RABBITPWD=$(kubectl --namespace rabbitmq get secret rabbitmq -o jsonpath="{.data.rabbitmq-password}" | base64 -d)
     - helm init --stable-repo-url https://charts.helm.sh/stable
     - helm delete --purge gwas-sumstats-service-dev || true
-    - helm install --name gwas-sumstats-service-dev --set k8Namespace=gwas-dev,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_SHA,service.name=gwas-ss-service-dev,worker.name=gwas-ss-worker-dev,image.env.celeryUser=$RABBITUSER,image.env.celeryPwd=$RABBITPWD,image.env.celeryQueue1='prevalDev',image.env.celeryQueue2='postvalDev',image.env.gwasEndpointID=$GWAS_ENDPOINT_ID,image.env.globusSecret=$GLOBUS_SECRET,image.env.transferClientID=$TRANSFER_CLIENT_ID,image.env.clientID=$CLIENT_ID,image.env.ftpServer=$FTP_SERVER,image.env.ftpUser=$FTP_USERNAME,image.env.ftpPassword=$FTP_PASSWORD,image.env.mongoURI=$SANDBOX_MONGO_URI,image.env.mongoUser=$SANDBOX_MONGO_USER,image.env.mongoPassword=$SANDBOX_MONGO_PASSWORD,image.env.mongoDB=$SANDBOX_MONGO_DB,image.env.validatedPath=$VALIDATED_PATH_SANDBOX,image.env.gwasGlobusGroup=$GWAS_GLOBUS_GROUP,volume.log.ClaimName=gwas-dev-depo-logs,image.env.singularityCache=$SINGULARITY_CACHEDIR,image.env.storagePath=$STORAGE_PATH_SANDBOX,image.env.computeFarmLogin=$HH_LOGIN_NODE,image.env.computeFarmUser=$CLUSTER_USERNAME,image.env.computeFarmQueueLong=$COMPUTE_FARM_QUEUE_LONG,image.env.httpProxy=$HH_HTTP_PROXY,image.env.httpsProxy=$HH_HTTPS_PROXY,image.env.remoteHttpProxy=$PG_HTTP_PROXY,image.env.remoteHttpsProxy=$PG_HTTPS_PROXY,image.env.stagingPath=$STAGING_PATH_SANDBOX,image.env.swPath=$SW_PATH ./k8chart/ --wait
+    - helm install --name gwas-sumstats-service-dev --set k8Namespace=gwas-dev,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_SHA,service.name=gwas-ss-service-dev,worker.name=gwas-ss-worker-dev,image.env.celeryUser=$RABBITUSER,image.env.celeryPwd=$RABBITPWD,image.env.celeryQueue1='prevalDev',image.env.celeryQueue2='postvalDev',image.env.gwasEndpointID=$GWAS_ENDPOINT_ID,image.env.globusSecret=$GLOBUS_SECRET,image.env.transferClientID=$TRANSFER_CLIENT_ID,image.env.clientID=$CLIENT_ID,image.env.ftpServer=$FTP_SERVER,image.env.ftpUser=$FTP_USERNAME,image.env.ftpPassword=$FTP_PASSWORD,image.env.mongoURI=$SANDBOX_MONGO_URI,image.env.mongoUser=$SANDBOX_MONGO_USER,image.env.mongoPassword=$SANDBOX_MONGO_PASSWORD,image.env.mongoDB=$SANDBOX_MONGO_DB,image.env.validatedPath=$VALIDATED_PATH_SANDBOX,image.env.gwasGlobusGroup=$GWAS_GLOBUS_GROUP,volume.log.ClaimName=gwas-dev-depo-logs,image.env.singularityCache=$SINGULARITY_CACHEDIR,image.env.storagePath=$STORAGE_PATH_SANDBOX,image.env.computeFarmLogin=$HH_LOGIN_NODE,image.env.computeFarmUser=$CLUSTER_USERNAME,image.env.computeFarmQueueLong=$COMPUTE_FARM_QUEUE_LONG,image.env.httpProxy=$HH_HTTP_PROXY,image.env.httpsProxy=$HH_HTTPS_PROXY,image.env.remoteHttpProxy=$PG_HTTP_PROXY,image.env.remoteHttpsProxy=$PG_HTTPS_PROXY,image.env.stagingPath=$STAGING_PATH_SANDBOX,image.env.swPath=$SW_PATH,worker.replicaCount=3,volume.data.nfsServer=$NFS_SERVER_PROD,volume.data.path=$NFS_PATH_PROD,image.env.uid=$UID,image.env.gid=$GID,image.env.depoAPIToken=$DEPO_API_AUTH_TOKEN,image.env.outputDataPath=$OUTPUT_PATH,image.env.depoPath=$DEPO_PATH ./k8chart/ --wait
   environment:
     name: sandbox
   only:
     - master
     - dev
 
+deploy_staging_workers:
+  image: alpine
+  stage: deploy
+  before_script:
+    - apk add openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+  script:
+    - ssh -o StrictHostKeyChecking=no "$WORKER_USER"@"$WORKER_SERVER"
+      "bsub -K -cwd $WORKER_DIR_DEV -oo deploy.out -eo deploy.err -M12000 -R 'rusage[mem=12000]' ./START_CELERY_WORKERS.sh $CI_COMMIT_SHA"
+  tags:
+    - gwas
+  only:
+    - master
+    - dev
 
-deploy_fallback:
+deploy_prod_workers:
+  image: alpine
+  stage: deploy
+  before_script:
+    - apk add openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+  script:
+    - ssh -o StrictHostKeyChecking=no "$WORKER_USER"@"$WORKER_SERVER"
+      "bsub -K -cwd $WORKER_DIR -oo deploy.out -eo deploy.err -M12000 -R 'rusage[mem=12000]' ./START_CELERY_WORKERS.sh $CI_COMMIT_SHA"
+  tags:
+    - gwas
+  only:
+    - tags
+
+deploy_fallback_app:
   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/dtzar/helm-kubectl:2.13.1
   stage: deploy
   script:
@@ -81,7 +115,7 @@ deploy_fallback:
     - tags
 
 
-deploy_prod:
+deploy_prod_app:
   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/dtzar/helm-kubectl:2.13.1
   stage: deploy
   script:
@@ -91,7 +125,7 @@ deploy_prod:
     - RABBITPWD=$(kubectl --namespace rabbitmq get secret rabbitmq -o jsonpath="{.data.rabbitmq-password}" | base64 -d)
     - helm init --stable-repo-url https://charts.helm.sh/stable
     - helm delete --purge gwas-sumstats-service || true
-    - helm install --name gwas-sumstats-service --set k8Namespace=gwas,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_SHA,image.env.celeryUser=$RABBITUSER,image.env.celeryPwd=$RABBITPWD,image.env.storagePath=$STORAGE_PATH,image.env.computeFarmLogin=$HH_LOGIN_NODE,image.env.computeFarmUser=$CLUSTER_USERNAME,image.env.computeFarmQueueLong=$COMPUTE_FARM_QUEUE_LONG,image.env.httpProxy=$HH_HTTP_PROXY,image.env.httpsProxy=$HH_HTTPS_PROXY,image.env.gwasEndpointID=$GWAS_ENDPOINT_ID,image.env.globusSecret=$GLOBUS_SECRET,image.env.transferClientID=$TRANSFER_CLIENT_ID,image.env.clientID=$CLIENT_ID,image.env.ftpServer=$FTP_SERVER,image.env.ftpUser=$FTP_USERNAME,image.env.ftpPassword=$FTP_PASSWORD,image.env.mongoURI=$PROD_MONGO_URI,image.env.mongoUser=$PROD_MONGO_USER,image.env.mongoPassword=$PROD_MONGO_PASSWORD,image.env.mongoDB=$PROD_MONGO_DB,image.env.remoteHttpProxy=$PG_HTTP_PROXY,image.env.remoteHttpsProxy=$PG_HTTPS_PROXY,image.env.stagingPath=$STAGING_PATH,image.env.validatedPath=$VALIDATED_PATH,image.env.swPath=$SW_PATH,image.env.singularityCache=$SINGULARITY_CACHEDIR,image.env.gwasGlobusGroup=$GWAS_GLOBUS_GROUP,worker.replicaCount=3 ./k8chart/ --wait
+    - helm install --name gwas-sumstats-service --set k8Namespace=gwas,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_SHA,image.env.celeryUser=$RABBITUSER,image.env.celeryPwd=$RABBITPWD,image.env.storagePath=$STORAGE_PATH,image.env.computeFarmLogin=$HH_LOGIN_NODE,image.env.computeFarmUser=$CLUSTER_USERNAME,image.env.computeFarmQueueLong=$COMPUTE_FARM_QUEUE_LONG,image.env.httpProxy=$HH_HTTP_PROX$STORAGE_PATH,image.env.computeFarmLogin=$HH_LOGIN_NODE,image.env.computeFarmUser=$CLUSTER_USERNAME,image.env.computeFarmQueueLong=$COMPUTE_FARM_QUEUE_LONG,image.env.httpProxy=$HH_Y,image.env.httpsProxy=$HH_HTTPS_PROXY,image.env.gwasEndpointID=$GWAS_ENDPOINT_ID,image.env.globusSecret=$GLOBUS_SECRET,image.env.transferClientID=$TRANSFER_CLIENT_ID,image.env.clientID=$CLIENT_ID,image.env.ftpServer=$FTP_SERVER,image.env.ftpUser=$FTP_USERNAME,image.env.ftpPassword=$FTP_PASSWORD,image.env.mongoURI=$PROD_MONGO_URI,image.env.mongoUser=$PROD_MONGO_USER,image.env.mongoPassword=$PROD_MONGO_PASSWORD,image.env.mongoDB=$PROD_MONGO_DB,image.env.remoteHttpProxy=$PG_HTTP_PROXY,image.env.remoteHttpsProxy=$PG_HTTPS_PROXY,image.env.stagingPath=$STAGING_PATH,image.env.validatedPath=$VALIDATED_PATH,image.env.swPath=$SW_PATH,image.env.singularityCache=$SINGULARITY_CACHEDIR,image.env.gwasGlobusGroup=$GWAS_GLOBUS_GROUP,worker.replicaCount=3 ./k8chart/ --wait
   environment:
     name: production
   when: manual

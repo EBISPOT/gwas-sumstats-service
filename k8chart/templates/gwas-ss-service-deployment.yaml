@@ -30,6 +30,9 @@ spec:
         volumeMounts:
         - mountPath: {{.Values.image.logMountPath}}
           name: log
+        securityContext:
+          runAsUser: {{.Values.image.env.uid}}
+          runAsGroup: {{.Values.image.env.gid}}
         env:
         - name: CELERY_USER
           value: {{.Values.image.env.celeryUser}}
