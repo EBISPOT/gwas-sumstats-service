@@ -80,7 +80,22 @@ deploy_staging_workers:
     - master
     - dev
 
-
+deploy_prod_workers:
+  image: alpine
+  stage: deploy
+  before_script:
+    - apk add openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+  script:
+    - ssh -o StrictHostKeyChecking=no "$WORKER_USER"@"$WORKER_SERVER"
+      "bsub -K -cwd $WORKER_DIR -oo deploy.out -eo deploy.err -M12000 -R 'rusage[mem=12000]' ./START_CELERY_WORKERS.sh $CI_COMMIT_SHA"
+  tags:
+    - gwas
+  only:
+    - tags
 
 deploy_fallback_app:
   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/dtzar/helm-kubectl:2.13.1
