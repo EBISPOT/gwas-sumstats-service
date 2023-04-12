@@ -166,7 +166,7 @@ def validate_files(callback_id, content, minrows=None, forcevalid=False):
     logger.info(nextflow_cmd)
     write_data_to_path(data=json.dumps(content), path=payload_path)
     write_data_to_path(data=config.NEXTFLOW_CONFIG, path=nextflow_config_path)
-    with open("workflows/process_submission.nf", 'r') as f:
+    with open("/sumstats_service/workflows/process_submission.nf", 'r') as f:
         write_data_to_path(data=f.read(), path=nf_script_path)
     subprocess.run(nextflow_cmd.split(),capture_output=True)
     json_out_files = glob.glob(os.path.join(wd, '[!payload]*.json'))
