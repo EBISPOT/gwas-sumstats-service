@@ -65,6 +65,7 @@ DEPO_API_AUTH_TOKEN = _env_variable_else('DEPO_API_AUTH_TOKEN', None)
 OUTPUT_PATH = _env_variable_else('OUTPUT_PATH', 'metadata/output')
 MAPPED_COLLECTION_ID = _env_variable_else('MAPPED_COLLECTION_ID', None)
 STORAGE_GATEWAY_ID = _env_variable_else('STORAGE_GATEWAY_ID', None)
+GWAS_IDENTITY = _env_variable_else('GWAS_IDENTITY', '66dab3b3-b880-4017-b496-9643da909b89')
 
 # --- SQLite schema --- # 
 
