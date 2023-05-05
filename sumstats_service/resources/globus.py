@@ -69,26 +69,12 @@ def prepare_call(transfer):
         #if transfer.get_endpoint is not active
         resp = transfer.get_endpoint(config.GWAS_ENDPOINT_ID)
         # activate
-        if not resp['activated']:
-            requirements_data = None
+        if resp['activated'] is False:
             try:
-                requirements_data = load_requirements_data_from_db()
-                response = transfer.endpoint_activate(config.GWAS_ENDPOINT_ID, requirements_data=requirements_data)
-                print(response['code'])
+                transfer.endpoint_autoactivate(config.GWAS_ENDPOINT_ID, if_expires_in='3600')
             except TransferAPIError as ex:
-                if ex.http_status == 502:
-                    if "MYPROXY_SERVER_DN=" in ex.message:
-                        # update proxy server value
-                        print("attempting to update proxy server dn value")
-                        requirements_data['DATA'][5]['value'] = re.search(r"MYPROXY_SERVER_DN=\"(.*)\"",
-                                                                          ex.message).group(1)
-                        save_requirements_to_db(requirements_data)
-                        response = transfer.endpoint_activate(config.GWAS_ENDPOINT_ID,
-                                                              requirements_data=requirements_data)
-                        print(response['code'])
-                else:
-                    raise ex
-        elif resp['activated']:
+                raise ex
+        elif resp['activated'] is True:
             print('activated')
     except GlobusAPIError as ex:
         print(ex)
@@ -126,7 +112,7 @@ def get_upload_status(transfer, unique_id, files):
 
 
 def check_user(email):
-    auth_client = ConfidentialAppAuthClient(config.CLIENT_ID, config.GLOBUS_SECRET)
+    auth_client = ConfidentialAppAuthClient(config.CLIENT_ID, config.CLIENT_SECRET)
     user_info = auth_client.get_identities(usernames=email)
     user_identity = user_info.data['identities']
     identity_id = user_identity[0]['id'] if user_identity else None
@@ -163,7 +149,7 @@ def create_dir(transfer, uid, email=None):
                                         principal=identity_id, 
                                         path='/', 
                                         permissions="rw", 
-                                        role_type=None )
+                                        role_type=None)
 
             # add role - could add another role for users to become access managers
             add_role(transfer=transfer, 
@@ -256,7 +242,7 @@ def save_requirements_to_db(requirements):
         globus_db_collection.insert(requirements, check_keys=False)
 
 
-def do_native_app_authentication(client_id, redirect_uri,
+def do_native_app_authentication(client_id, redirect_uri=None,
                                  requested_scopes=None):
     """
     Does a Native App authentication flow and returns a
@@ -265,7 +251,7 @@ def do_native_app_authentication(client_id, redirect_uri,
     client = NativeAppAuthClient(client_id=client_id)
 
     # pass refresh_tokens=True to request refresh tokens
-    client.oauth2_start_flow(refresh_tokens=True)
+    client.oauth2_start_flow(refresh_tokens=True, requested_scopes=requested_scopes)
     url = client.oauth2_get_authorize_url()
     print('Native App Authorization URL: \n{}'.format(url))
 

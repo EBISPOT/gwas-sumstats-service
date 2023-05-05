@@ -56,12 +56,15 @@ REDIRECT_URI = 'https://auth.globus.org/v2/web/auth-code'
 SCOPES = ('openid email profile '
           'urn:globus:auth:scope:transfer.api.globus.org:all')
 GWAS_ENDPOINT_ID = _env_variable_else('GWAS_ENDPOINT_ID', None)
-GLOBUS_SECRET = _env_variable_else('GLOBUS_SECRET', None)
+CLIENT_SECRET = _env_variable_else('CLIENT_SECRET', None)
 CLIENT_ID = _env_variable_else('CLIENT_ID', None)
 TRANSFER_CLIENT_ID = _env_variable_else('TRANSFER_CLIENT_ID', None)
 GWAS_GLOBUS_GROUP = _env_variable_else('GWAS_GLOBUS_GROUP', None)
+GLOBUS_HOSTNAME = _env_variable_else('GLOBUS_HOSTNAME', None)
 DEPO_API_AUTH_TOKEN = _env_variable_else('DEPO_API_AUTH_TOKEN', None)
 OUTPUT_PATH = _env_variable_else('OUTPUT_PATH', 'metadata/output')
+MAPPED_COLLECTION_ID = _env_variable_else('MAPPED_COLLECTION_ID', None)
+STORAGE_GATEWAY_ID = _env_variable_else('STORAGE_GATEWAY_ID', None)
 
 # --- SQLite schema --- # 
 
