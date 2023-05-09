@@ -10,7 +10,6 @@ import magic
 import csv
 import io
 import logging
-import ss_validate.validator as val
 from gwas_sumstats_tools.validate import Validator
 import pathlib
 import sumstats_service.resources.globus as globus
