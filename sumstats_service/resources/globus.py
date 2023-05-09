@@ -33,7 +33,7 @@ def mkdir(unique_id: str, email_address: str = None) -> str:
     """
     transfer_client = init_transfer_client()
     create_dir(transfer_client, dirname=unique_id)
-    endpoint_id = create_guest_collection(transfer_client, unique_id, email_address)
+    endpoint_id = create_guest_collection(unique_id, email_address)
     return endpoint_id
 
 
@@ -143,11 +143,11 @@ def role_data(collection_id: str) -> dict:
             "principal": f"urn:globus:auth:identity:{config.GWAS_IDENTITY}",
             "role": "administrator"
             }
-    
+
 
 def create_guest_collection(uid: str, email: str = None) -> str:
     """Create guest collection/shared endpoint
-    
+
     Returns:
         guest collection/endpoint id
     """
