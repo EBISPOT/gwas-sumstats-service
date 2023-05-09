@@ -1,6 +1,5 @@
 import os
 from typing import Any, Union
-import sys
 from datetime import date
 import webbrowser
 from urllib.parse import unquote
@@ -9,9 +8,8 @@ from sumstats_service import config
 import globus_sdk
 from globus_sdk import (NativeAppAuthClient, TransferClient, AccessTokenAuthorizer,
                         ClientCredentialsAuthorizer, ConfidentialAppAuthClient, DeleteData,
-                        GCSClient, scopes, GuestCollectionDocument)
-from globus_sdk.exc import GlobusAPIError, TransferAPIError
-from sumstats_service.resources.globus_utils import is_remote_session, enable_requests_logging
+                        GCSClient, scopes, GuestCollectionDocument, TransferAPIError, GlobusAPIError)
+from sumstats_service.resources.globus_utils import is_remote_session
 from pymongo import MongoClient
 
 
@@ -80,11 +78,8 @@ def init_gcs_client() -> GCSClient:
 def dir_contents(transfer, unique_id):
     # print out a directory listing from an endpoint
     contents = []
-    try:
-        for entry in transfer.operation_ls(config.GWAS_ENDPOINT_ID, path='/~/' + unique_id):
-            contents.append(entry['name'] + ('/' if entry['type'] == 'dir' else ''))
-    except globus_sdk.exc.TransferAPIError:
-        return None       
+    for entry in transfer.operation_ls(config.GWAS_ENDPOINT_ID, path='/~/' + unique_id):
+        contents.append(entry['name'] + ('/' if entry['type'] == 'dir' else ''))
     return contents
 
 
