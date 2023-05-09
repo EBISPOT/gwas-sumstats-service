@@ -17,8 +17,10 @@ get_input = getattr(__builtins__, 'raw_input', input)
 # uncomment the next line to enable debug logging for network requests
 #enable_requests_logging()
 
+
 def mkdir(unique_id: str, email_address: str = None) -> str:
-    """Create a globus guest collection on a specific directory and return collection id 
+    """Create a globus guest collection on a specific
+    directory and return collection id 
 
     Arguments:
         unique_id -- name for directory
@@ -91,7 +93,6 @@ def get_upload_status(transfer, unique_id, files):
         for event in transfer.task_successful_transfers(task_id=task['task_id']):
             print(event)
             path = event['destination_path']
-            decoded = unquote(path)
             for file in files:
                 if '/' + unique_id +'/' in path and file in unquote(path):
                     return_files[file] = True
@@ -264,7 +265,7 @@ def rename_file(dest_dir, source, dest):
         dir_ls = transfer.operation_ls(config.MAPPED_COLLECTION_ID,D, path=dest_dir)
         files = [os.path.join(dest_dir, f["name"]) for f in dir_ls]
         if dest not in files:
-            transfer.operation_rename(config.MAPPED_COLLECTION_ID,, source, dest)
+            transfer.operation_rename(config.MAPPED_COLLECTION_ID, source, dest)
     except TransferAPIError as e:
         print(e)
         return False
