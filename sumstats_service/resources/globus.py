@@ -77,11 +77,14 @@ def init_gcs_client() -> GCSClient:
     return client
 
 
-def dir_contents(transfer, unique_id):
+def dir_contents(transfer, unique_id) -> Union[list, None]:
     # print out a directory listing from an endpoint
     contents = []
-    for entry in transfer.operation_ls(config.MAPPED_COLLECTION_ID, path='/~/' + unique_id):
-        contents.append(entry['name'] + ('/' if entry['type'] == 'dir' else ''))
+    try:
+        for entry in transfer.operation_ls(config.MAPPED_COLLECTION_ID, path='/~/' + unique_id):
+            contents.append(entry['name'] + ('/' if entry['type'] == 'dir' else ''))
+    except TransferAPIError:
+        return None  
     return contents
 
 
@@ -94,7 +97,7 @@ def get_upload_status(transfer, unique_id, files):
             print(event)
             path = event['destination_path']
             for file in files:
-                if '/' + unique_id +'/' in path and file in unquote(path):
+                if '/' + unique_id + '/' in path and file in unquote(path):
                     return_files[file] = True
     return return_files
 
