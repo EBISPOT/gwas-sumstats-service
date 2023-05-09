@@ -44,7 +44,7 @@ spec:
           value: {{.Values.image.env.celeryQueue2}}
         - name: GWAS_ENDPOINT_ID
           value: {{.Values.image.env.gwasEndpointID}}
-        - name: GLOBUS_SECRET
+        - name: CLIENT_SECRET
           value: {{.Values.image.env.globusSecret}}
         - name: GWAS_GLOBUS_GROUP
           value: {{.Values.image.env.gwasGlobusGroup}}
@@ -52,6 +52,12 @@ spec:
           value: {{.Values.image.env.transferClientID}}
         - name: CLIENT_ID
           value: {{.Values.image.env.clientID}}
+        - name: GLOBUS_HOSTNAME
+          value: {{.Values.image.env.globusHostname}}
+        - name: MAPPED_COLLECTION_ID
+          value: {{.Values.image.env.mappedCollectionId}}
+        - name: STORAGE_GATEWAY_ID
+          value: {{.Values.image.env.storageGatewayId}}
         - name: MONGO_URI
           value: {{.Values.image.env.mongoURI}}
         - name: MONGO_USER
