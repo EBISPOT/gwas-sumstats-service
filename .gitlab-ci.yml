@@ -16,8 +16,8 @@ variables:
 build:
   stage: build
   script:
-   - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-   - docker -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
+   - echo "$CI_REGISTRY_PASSWORD" | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+   - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
   only:
    - master
