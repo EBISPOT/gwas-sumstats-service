@@ -78,7 +78,7 @@ def init_gcs_client() -> GCSClient:
 def dir_contents(transfer, unique_id):
     # print out a directory listing from an endpoint
     contents = []
-    for entry in transfer.operation_ls(config.GWAS_ENDPOINT_ID, path='/~/' + unique_id):
+    for entry in transfer.operation_ls(config.MAPPED_COLLECTION_ID, path='/~/' + unique_id):
         contents.append(entry['name'] + ('/' if entry['type'] == 'dir' else ''))
     return contents
 
@@ -261,10 +261,10 @@ def do_native_app_authentication(client_id, redirect_uri=None,
 def rename_file(dest_dir, source, dest):
     transfer = init_transfer_client()
     try:
-        dir_ls = transfer.operation_ls(config.GWAS_ENDPOINT_ID, path=dest_dir)
+        dir_ls = transfer.operation_ls(config.MAPPED_COLLECTION_ID,D, path=dest_dir)
         files = [os.path.join(dest_dir, f["name"]) for f in dir_ls]
         if dest not in files:
-            transfer.operation_rename(config.GWAS_ENDPOINT_ID, source, dest)
+            transfer.operation_rename(config.MAPPED_COLLECTION_ID,, source, dest)
     except TransferAPIError as e:
         print(e)
         return False
@@ -274,7 +274,7 @@ def list_files(directory):
     transfer = init_transfer_client()
     files = []
     try:
-        dir_ls = transfer.operation_ls(config.GWAS_ENDPOINT_ID, path=directory)
+        dir_ls = transfer.operation_ls(config.MAPPED_COLLECTION_ID, path=directory)
         files = [os.path.join(directory, f["name"]) for f in dir_ls]
     except TransferAPIError as e:
         print(e)
@@ -290,7 +290,7 @@ def filepath_exists(path):
 
 def remove_path(path_to_remove, transfer_client=None):
     transfer = transfer_client if transfer_client else init_transfer_client()
-    ddata = DeleteData(transfer, config.GWAS_ENDPOINT_ID, recursive=True)
+    ddata = DeleteData(transfer, config.MAPPED_COLLECTION_ID, recursive=True)
     ddata.add_item(path_to_remove)
     delete_result = transfer.submit_delete(ddata)
     return delete_result
