@@ -137,11 +137,11 @@ def guest_collection_document(dirname: str, display_name: str) -> GuestCollectio
         )
 
 
-def role_data(collection_id: str) -> dict:
+def role_data(collection_id: str, identity: str, role: str = 'administrator') -> dict:
     return {"DATA_TYPE": "role#1.0.0",
             "collection": collection_id,
-            "principal": f"urn:globus:auth:identity:{config.GWAS_IDENTITY}",
-            "role": "administrator"
+            "principal": identity,
+            "role": role
             }
 
 
@@ -160,8 +160,14 @@ def create_guest_collection(uid: str, email: str = None) -> str:
         gcs_client = init_gcs_client()
         response = gcs_client.create_collection(collection_document)
         endpoint_id = response['id']
-        """ add role"""
-        gcs_client.create_role(role_data(collection_id=endpoint_id))
+        """ add role for administrator"""
+        gcs_client.create_role(role_data(collection_id=endpoint_id,
+                                         identity=f"urn:globus:auth:identity:{config.GWAS_IDENTITY}"
+                                         ))
+        """ add role for gwas group"""
+        gcs_client.create_role(role_data(collection_id=endpoint_id,
+                                         identity=f"urn:globus:groups:id:{config.GWAS_GLOBUS_GROUP}"
+                                         ))
         """ add user to endpoint"""
         add_permissions_to_endpoint(collection_id=endpoint_id, user_id=user_id)
         return endpoint_id
@@ -178,7 +184,7 @@ def add_permissions_to_endpoint(collection_id: str, user_id: str) -> None:
         collection_id -- collection id
         user_id -- user identity
     """
-    scopes="urn:globus:auth:scope:transfer.api.globus.org:all"
+    scopes = "urn:globus:auth:scope:transfer.api.globus.org:all"
     authorizer = ClientCredentialsAuthorizer(
         ConfidentialAppAuthClient(config.CLIENT_ID, config.CLIENT_SECRET),
         scopes
@@ -196,26 +202,26 @@ def add_permissions_to_endpoint(collection_id: str, user_id: str) -> None:
 
 def load_tokens_from_db() -> Union[Any, None]:
     """Load a set of saved tokens."""
-    mongo_client = MongoClient(config.MONGO_URI, username=config.MONGO_USER, password=config.MONGO_PASSWORD) 
-    globus_db = mongo_client[config.MONGO_DB] # 'globus-tokens'
+    mongo_client = MongoClient(config.MONGO_URI, username=config.MONGO_USER, password=config.MONGO_PASSWORD)
+    globus_db = mongo_client[config.MONGO_DB]
     globus_db_collection = globus_db['globus-tokens']
-    tokens = globus_db_collection.find_one({}, { '_id': 0 })
+    tokens = globus_db_collection.find_one({}, {'_id': 0})
     return tokens
 
 
 def load_requirements_data_from_db():
     """Load requirements data."""
-    mongo_client = MongoClient(config.MONGO_URI, username=config.MONGO_USER, password=config.MONGO_PASSWORD) 
-    globus_db = mongo_client[config.MONGO_DB] # 'globus-tokens'
+    mongo_client = MongoClient(config.MONGO_URI, username=config.MONGO_USER, password=config.MONGO_PASSWORD)
+    globus_db = mongo_client[config.MONGO_DB]
     globus_db_collection = globus_db['globus-requirements']
-    requirements_data = globus_db_collection.find_one({}, { '_id': 0 })
+    requirements_data = globus_db_collection.find_one({}, {'_id': 0})
     return requirements_data
 
 
 def save_tokens_to_db(tokens) -> None:
     """Save a set of tokens for later use."""
     mongo_client = MongoClient(config.MONGO_URI, username=config.MONGO_USER, password=config.MONGO_PASSWORD)
-    globus_db = mongo_client[config.MONGO_DB] # 'globus-tokens'
+    globus_db = mongo_client[config.MONGO_DB]
     globus_db_collection = globus_db['globus-tokens']
     resp = globus_db_collection.find_one({})
     if resp:
@@ -299,9 +305,8 @@ def remove_path(path_to_remove, transfer_client=None):
     delete_result = transfer.submit_delete(ddata)
     return delete_result
 
+
 def remove_endpoint_and_all_contents(uid):
-    # uid == path
-    # endpoint_id == globus endpoint id
     transfer = init_transfer_client()
     deactivate_status = False
     endpoint_id = get_endpoint_id_from_uid(uid, transfer_client=transfer)
@@ -310,10 +315,12 @@ def remove_endpoint_and_all_contents(uid):
             deactivate_status = deactivate_endpoint(endpoint_id, transfer_client=transfer)
     return deactivate_status
 
+
 def deactivate_endpoint(endpoint_id, transfer_client=None):
     transfer = transfer_client if transfer_client else init_transfer_client()
     status = transfer.delete_endpoint(endpoint_id)
     return status.http_status
+
 
 def get_endpoint_id_from_uid(uid, transfer_client=None):
     transfer = transfer_client if transfer_client else init_transfer_client()
