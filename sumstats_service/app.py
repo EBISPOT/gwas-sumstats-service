@@ -71,6 +71,7 @@ def root():
 
 @app.route('/v1/sum-stats', methods=['POST'])
 def sumstats():
+    """Register sumstats and validate them"""
     content = request.get_json(force=True)
     logger.info("POST content: " + str(content))
     resp = endpoints.generate_callback_id()
@@ -86,6 +87,29 @@ def sumstats():
     process_studies.apply_async(args=[callback_id, content, minrows, force_valid, bypass], retry=True)
     return Response(response=resp,
                     status=201,
+                    mimetype="application/json")
+
+
+@app.route('/v1/sum-stats/validate/<string:callback_id>', methods=['POST'])
+def validate_sumstats(callback_id: str):
+    """Validate existing sumstats
+
+    Arguments:
+        callback_id -- callback id
+    """
+    body = request.get_json(force=True)
+    # minrows is the minimum number of rows for the validation to pass
+    minrows = au.val_from_dict(key='minrows', dict=body)
+    # option to force submission to be valid and continue the pipeline
+    force_valid = au.val_from_dict(key='forceValid', dict=body, default=False)
+    # option to allow zero p values
+    zero_p_values = au.val_from_dict(key='zeroPvalue', dict=body, default=False)
+    minrows = None if force_valid is True else minrows
+    content = endpoints.get_content(callback_id)
+    validate_files_in_background.apply_async(args=[callback_id, content, minrows, force_valid, zero_p_values],
+                                             link=store_validation_results.s(),
+                                             retry=True)
+    return Response(status=200,
                     mimetype="application/json")
 
 
