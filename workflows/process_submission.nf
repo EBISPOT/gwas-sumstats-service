@@ -11,6 +11,7 @@ params.ftpPWD = ''
 params.ftpUser = ''
 params.minrows = '10'
 params.forcevalid = 'False'
+params.zerop = 'False'
 
 // path to do the work
 params.validatedPath = 'test_depo_validated'
@@ -68,7 +69,7 @@ process validate_study {
   stdout
 
   """
-  validate-study -cid $params.cid -id $id -payload $params.payload -storepath $params.storePath -minrows $params.minrows -forcevalid $params.forcevalid -out "${id}".json -validated_path $params.validatedPath
+  validate-study -cid $params.cid -id $id -payload $params.payload -storepath $params.storePath -minrows $params.minrows -zero_p $params.zerop -forcevalid $params.forcevalid -out "${id}".json -validated_path $params.validatedPath
   """
 
 }
