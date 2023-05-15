@@ -1,7 +1,7 @@
 import json
 from collections import OrderedDict
 from sumstats_service.resources.error_classes import *
-import sumstats_service.resources.api_utils as au§
+import sumstats_service.resources.api_utils as au
 import sumstats_service.config as config
 from sumstats_service.resources.mongo_client import mongoClient
 
