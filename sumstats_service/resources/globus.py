@@ -1,21 +1,12 @@
 import os
 from typing import Any, Union
 from datetime import date
-import webbrowser
 from urllib.parse import unquote
 import pathlib
 from sumstats_service import config
-import globus_sdk
-from globus_sdk import (NativeAppAuthClient, TransferClient, AccessTokenAuthorizer, RefreshTokenAuthorizer,
-                        ClientCredentialsAuthorizer, ConfidentialAppAuthClient, DeleteData,
-                        GCSClient, scopes, GuestCollectionDocument, TransferAPIError, GlobusAPIError)
-from sumstats_service.resources.globus_utils import is_remote_session
-from pymongo import MongoClient
-
-
-get_input = getattr(__builtins__, 'raw_input', input)
-# uncomment the next line to enable debug logging for network requests
-#enable_requests_logging()
+from globus_sdk import (TransferClient, TransferAPIError, GlobusAPIError,
+                        ClientCredentialsAuthorizer, ConfidentialAppAuthClient,
+                        DeleteData, GCSClient, scopes, GuestCollectionDocument)
 
 
 def mkdir(unique_id: str, email_address: str = None) -> str:
@@ -42,26 +33,32 @@ def list_dir(unique_id):
     return dir_contents(transfer, unique_id)
 
 
+def get_authorizer(scope: Any) -> ClientCredentialsAuthorizer:
+    """Get a Globus client authorizer
+    which can be used to authenticate the GCS and transfer clients
+
+    Arguments:
+        scope -- Globus scope
+
+    Returns:
+        ClientCredentialsAuthorizer
+    """
+    confidential_client = ConfidentialAppAuthClient(client_id=config.CLIENT_ID,
+                                                    client_secret=config.CLIENT_SECRET)
+    authorizer = ClientCredentialsAuthorizer(confidential_client,
+                                             scopes=scope)
+    return authorizer
+
+
 def init_transfer_client() -> TransferClient:
     """Initialise transfer client
 
     Returns:
         Globus transfer client
     """
-    # if we already have tokens, load and use them
-    tokens = load_tokens_from_db()
-    if not tokens:
-        # if we need to get tokens, start the Native App authentication process
-        tokens = do_native_app_authentication(config.TRANSFER_CLIENT_ID, config.REDIRECT_URI, config.SCOPES)
-        save_tokens_to_db(tokens)
-    transfer_tokens = tokens.get('transfer.api.globus.org')
-    native_app_client = NativeAppAuthClient(client_id=config.TRANSFER_CLIENT_ID)
-    authorizer = RefreshTokenAuthorizer(transfer_tokens['refresh_token'],
-                                        native_app_client,
-                                        access_token=transfer_tokens['access_token'],
-                                        expires_at=transfer_tokens['expires_at_seconds'],
-                                        on_refresh=save_tokens_to_db(tokens))
-    transfer_client = TransferClient(authorizer=authorizer)
+    scope = ("urn:globus:auth:scope:transfer.api.globus.org:all"
+             f"[*https://auth.globus.org/scopes/{config.MAPPED_COLLECTION_ID}/data_access]")
+    transfer_client = TransferClient(authorizer=get_authorizer(scope=scope))
     transfer_client.endpoint_autoactivate(config.MAPPED_COLLECTION_ID)
     return transfer_client
 
@@ -74,11 +71,7 @@ def init_gcs_client() -> GCSClient:
     """
     scope = scopes.GCSEndpointScopeBuilder(config.GWAS_ENDPOINT_ID).make_mutable("manage_collections")
     scope.add_dependency(scopes.GCSCollectionScopeBuilder(config.MAPPED_COLLECTION_ID).data_access)
-    confidential_client = globus_sdk.ConfidentialAppAuthClient(
-        client_id=config.CLIENT_ID, client_secret=config.CLIENT_SECRET
-    )
-    authorizer = globus_sdk.ClientCredentialsAuthorizer(confidential_client, scopes=scope)
-    client = GCSClient(config.GLOBUS_HOSTNAME, authorizer=authorizer)
+    client = GCSClient(config.GLOBUS_HOSTNAME, authorizer=get_authorizer(scope=scope))
     return client
 
 
@@ -189,12 +182,7 @@ def add_permissions_to_endpoint(collection_id: str, user_id: str) -> None:
         collection_id -- collection id
         user_id -- user identity
     """
-    scopes = "urn:globus:auth:scope:transfer.api.globus.org:all"
-    authorizer = ClientCredentialsAuthorizer(
-        ConfidentialAppAuthClient(config.CLIENT_ID, config.CLIENT_SECRET),
-        scopes
-        )
-    transfer_client = TransferClient(authorizer=authorizer)
+    transfer_client = init_transfer_client()
     rule_data = {
         "DATA_TYPE": "access",
         "principal_type": "identity",
@@ -205,70 +193,10 @@ def add_permissions_to_endpoint(collection_id: str, user_id: str) -> None:
     transfer_client.add_endpoint_acl_rule(collection_id, rule_data)
 
 
-def load_tokens_from_db() -> Union[Any, None]:
-    """Load a set of saved tokens."""
-    mongo_client = MongoClient(config.MONGO_URI, username=config.MONGO_USER, password=config.MONGO_PASSWORD)
-    globus_db = mongo_client[config.MONGO_DB]
-    globus_db_collection = globus_db['globus-tokens']
-    tokens = globus_db_collection.find_one({}, {'_id': 0})
-    return tokens
-
-
-def load_requirements_data_from_db():
-    """Load requirements data."""
-    mongo_client = MongoClient(config.MONGO_URI, username=config.MONGO_USER, password=config.MONGO_PASSWORD)
-    globus_db = mongo_client[config.MONGO_DB]
-    globus_db_collection = globus_db['globus-requirements']
-    requirements_data = globus_db_collection.find_one({}, {'_id': 0})
-    return requirements_data
-
-
-def save_tokens_to_db(tokens) -> None:
-    """Save a set of tokens for later use."""
-    mongo_client = MongoClient(config.MONGO_URI, username=config.MONGO_USER, password=config.MONGO_PASSWORD)
-    globus_db = mongo_client[config.MONGO_DB]
-    globus_db_collection = globus_db['globus-tokens']
-    resp = globus_db_collection.find_one({})
-    if resp:
-        globus_db_collection.replace_one({'_id': resp["_id"]}, tokens)
-    else:
-        globus_db_collection.insert(tokens, check_keys=False)
-
-
-def save_requirements_to_db(requirements):
-    mongo_client = MongoClient(config.MONGO_URI, username=config.MONGO_USER, password=config.MONGO_PASSWORD)
-    globus_db = mongo_client[config.MONGO_DB] # 'globus-tokens'
-    globus_db_collection = globus_db['globus-requirements']
-    resp = globus_db_collection.find_one({})
-    if resp:
-        globus_db_collection.replace_one({'_id': resp["_id"]}, requirements)
-    else:
-        globus_db_collection.insert(requirements, check_keys=False)
-
-
-def do_native_app_authentication(client_id, redirect_uri=None,
-                                 requested_scopes=None) -> dict:
-    """
-    Does a Native App authentication flow and returns a
-    dict of tokens keyed by service name.
-    """
-    client = NativeAppAuthClient(client_id=client_id)
-    # pass refresh_tokens=True to request refresh tokens
-    client.oauth2_start_flow(refresh_tokens=True, requested_scopes=requested_scopes)
-    url = client.oauth2_get_authorize_url()
-    print('Native App Authorization URL: \n{}'.format(url))
-    if not is_remote_session():
-        webbrowser.open(url, new=1)
-    auth_code = get_input('Enter the auth code: ').strip()
-    token_response = client.oauth2_exchange_code_for_tokens(auth_code)
-    # return a set of tokens, organized by resource server name
-    return token_response.by_resource_server
-
-
 def rename_file(dest_dir, source, dest):
     transfer = init_transfer_client()
     try:
-        dir_ls = transfer.operation_ls(config.MAPPED_COLLECTION_ID,D, path=dest_dir)
+        dir_ls = transfer.operation_ls(config.MAPPED_COLLECTION_ID, path=dest_dir)
         files = [os.path.join(dest_dir, f["name"]) for f in dir_ls]
         if dest not in files:
             transfer.operation_rename(config.MAPPED_COLLECTION_ID, source, dest)
@@ -276,6 +204,7 @@ def rename_file(dest_dir, source, dest):
         print(e)
         return False
     return True
+
 
 def list_files(directory):
     transfer = init_transfer_client()
@@ -286,6 +215,7 @@ def list_files(directory):
     except TransferAPIError as e:
         print(e)
     return files
+
 
 def filepath_exists(path):
     pardir = pathlib.Path(path).parent
