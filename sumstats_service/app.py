@@ -106,6 +106,9 @@ def validate_sumstats(callback_id: str):
     zero_p_values = au.val_from_dict(key='zeroPvalue', dict=body, default=False)
     minrows = None if force_valid is True else minrows
     content = endpoints.get_content(callback_id)
+    # reset validation status
+    au.reset_validation_status(callback_id=callback_id)
+    # run validation
     validate_files_in_background.apply_async(args=[callback_id, content, minrows, force_valid, zero_p_values],
                                              link=store_validation_results.s(),
                                              retry=True)

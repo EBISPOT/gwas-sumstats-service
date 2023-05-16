@@ -154,6 +154,15 @@ class Payload:
         for study in self.study_obj_list:
             study.create_entry_for_study()
 
+    def reset_validation_status(self) -> None:
+        mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
+        data = mdb.get_data_from_callback_id(self.callback_id)
+        for i in data:
+            i['retrieved'] = None
+            i['dataValid'] = None
+            i['errorCode'] = None
+            mdb.study_collection.replace_one({'_id':i['_id']}, i)
+
     @staticmethod
     def parse_new_study_json(study_dict):
         """

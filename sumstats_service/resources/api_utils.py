@@ -160,8 +160,18 @@ def add_errors_if_study_missing(callback_id, content, results):
             if study not in studies_with_results:
                 results['validationList'].append({"id": study, "retrieved": None, "dataValid": None, "errorCode": 10})
         return results
-            
-    
+
+
+def reset_validation_status(callback_id: str) -> None:
+    """Reset the validation status for a submission
+
+    Arguments:
+        callback_id -- callback id
+    """
+    payload = pl.Payload(callback_id=callback_id)
+    payload.reset_validation_status()
+
+
 def validate_files(callback_id, content, minrows=None, forcevalid=False):
     validate_metadata = vp.validate_metadata_for_payload(callback_id, content)
     if any([i['errorCode'] for i in json.loads(validate_metadata)['validationList']]):
