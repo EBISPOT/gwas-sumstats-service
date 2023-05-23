@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='gwas-sumstats-service',
-    version='0.1',
+    version='v1.3.2',
     packages=find_packages(include=['sumstats_service']),
     entry_points={
         "console_scripts": 

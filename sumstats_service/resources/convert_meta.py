@@ -14,7 +14,6 @@ logging.basicConfig(level=logging.DEBUG, format='(%(levelname)s): %(message)s')
 logger = logging.getLogger(__name__)
 
 
-
 class MetaModel(SumStatsMetadata):
     """Inherit from the Sumstats Metadata class.
     We do this to change the config so that 
@@ -72,7 +71,7 @@ class MetadataConverter:
         if self.metadata:
             logger.debug("writing to file")
             self._write_metadata_to_file()
-            
+
     def _get_study_record(self):
         key = 'md5 sum'
         records = self._get_record_from_df(df=self._study_sheet,
@@ -127,16 +126,20 @@ class MetadataConverter:
                                                       value=study_tag)
             filtered_samples = self._get_record_from_df(df=sample_records,
                                                         key='Stage',
-                                                        value='discovery')
-            filtered_samples.dropna(axis='columns', inplace=True)
-            for field in self.SAMPLE_FIELD_TO_SPLIT:
-                if field in filtered_samples:
-                    filtered_samples[field] = self._split_field(filtered_samples[field])
-            for field in self.SAMPLE_FIELD_BOOLS:
-                if field in filtered_samples:
-                    filtered_samples[field] = self._normalise_bool(filtered_samples[field])
-            filtered_samples = self._normalise_missing_values(filtered_samples)
-            return {'samples': filtered_samples.to_dict(orient='records')}
+                                                        value='discovery',
+                                                        casematch=False)
+            if len(filtered_samples) > 0:
+                filtered_samples.dropna(axis='columns', inplace=True)
+                for field in self.SAMPLE_FIELD_TO_SPLIT:
+                    if field in filtered_samples:
+                        filtered_samples[field] = self._split_field(filtered_samples[field])
+                for field in self.SAMPLE_FIELD_BOOLS:
+                    if field in filtered_samples:
+                        filtered_samples[field] = self._normalise_bool(filtered_samples[field])
+                filtered_samples = self._normalise_missing_values(filtered_samples)
+                return {'samples': filtered_samples.to_dict(orient='records')}
+            else:
+                return {'samples': []}
         else:
             return {'samples': []}
 
@@ -213,10 +216,14 @@ class MetadataConverter:
         return MetaModel.parse_obj(self._formatted_metadata)
 
     @staticmethod
-    def _get_record_from_df(df, key, value):
-        records = df[df[key] == value]
+    def _get_record_from_df(df, key, value, casematch: bool = True):
+        if casematch is False:
+            records = df[df[key].str.lower() == value.lower()]
+        else:
+            records = df[df[key] == value]
         if len(records) == 0:
-            raise ValueError(f"{key}: {value} not found in metadata")
+            print(f"{key}: {value} not found in metadata")
+            pass
         else:
             return records
 
