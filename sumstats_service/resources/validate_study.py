@@ -22,15 +22,17 @@ def parse_payload(content, studyid, callback_id):
         return False
     return (study_meta[0].file_path, study_meta[0].md5, study_meta[0].assembly, study_meta[0].readme,  study_meta[0].entryUUID )
 
-def validate_study(callback_id, study_id, filepath, md5, assembly, readme, entryUUID, out=None, minrows=None, forcevalid=False):
+
+def validate_study(callback_id, study_id, filepath, md5, assembly, readme, entryUUID, out=None, minrows=None, forcevalid=False, zero_p_values=False):
     logger.info("validating study data")
     study = st.Study(callback_id=callback_id, study_id=study_id, file_path=filepath, md5=md5, assembly=assembly, readme=readme, entryUUID=entryUUID)
-    study.validate_study(minrows=minrows, forcevalid=forcevalid)
+    study.validate_study(minrows=minrows, forcevalid=forcevalid, zero_p_values=zero_p_values)
     write_result(study, out)
     if study.data_valid != 1:
         sys.exit(1)
     else:
         sys.exit(0)
+
 
 def copy_file_for_validation(callback_id, study_id, filepath, entryUUID, md5, assembly, out=None):
     study = st.Study(callback_id=callback_id, study_id=study_id, file_path=filepath, entryUUID=entryUUID, md5=md5, assembly=assembly)
@@ -40,6 +42,7 @@ def copy_file_for_validation(callback_id, study_id, filepath, entryUUID, md5, as
         sys.exit(1)
     else:
         sys.exit(0)
+
 
 def write_result(study, out):
     result = {
@@ -84,6 +87,7 @@ def main():
     argparser.add_argument("-ftpuser", help='The FTP username', required=False, default=config.FTP_USERNAME)
     argparser.add_argument("-ftppass", help='The FTP password', required=False, default=config.FTP_PASSWORD)
     argparser.add_argument("-minrows", help='The minimum required rows in a sumsats file for validation to pass', required=False, default=None)
+    argparser.add_argument("-zero_p", help='Setting True will allow p_values to be zero', type=str2bool, nargs='?', const=True, required=False, default=False)
     argparser.add_argument("-forcevalid", help='Setting to True will force the validation to be true', type=str2bool, nargs='?', const=True, required=False, default=False)
     argparser.add_argument("--copy_only", help='Setting to True will only copy the file to the validation path', type=str2bool, nargs='?', const=True, required=False, default=False)
     
@@ -115,7 +119,7 @@ def main():
         copy_file_for_validation(callback_id=args.cid, study_id=args.id, filepath=filepath, entryUUID=entryUUID, md5=md5, assembly=assembly, out=out)
     else:
         minrows = None if len(args.minrows) == 0 or args.minrows == "None" else args.minrows
-        validate_study(args.cid, args.id, filepath, md5, assembly, readme, entryUUID, out, minrows, args.forcevalid)
+        validate_study(args.cid, args.id, filepath, md5, assembly, readme, entryUUID, out, minrows, args.forcevalid, args.zero_p)
 
 
 if __name__ == '__main__':

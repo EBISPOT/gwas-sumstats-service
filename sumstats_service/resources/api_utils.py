@@ -3,6 +3,7 @@ from urllib.parse import unquote
 from flask import url_for
 from sumstats_service import config
 import subprocess
+from typing import Union
 from sumstats_service.resources.error_classes import *
 import sumstats_service.resources.payload as pl
 import sumstats_service.resources.study_service as st
@@ -65,7 +66,13 @@ def delete_globus_endpoint(globus_uuid):
     status = globus.remove_endpoint_and_all_contents(globus_uuid)
     return status
 
-def validate_files_from_payload(callback_id, content, minrows=None, forcevalid=False):
+
+def validate_files_from_payload(
+    callback_id: str,
+    content: dict,
+    minrows: Union[int, None] = None,
+    forcevalid: bool = False,
+    zero_p_pvalues: bool = False):
     validate_metadata = vp.validate_metadata_for_payload(callback_id, content)
     if any([i['errorCode'] for i in json.loads(validate_metadata)['validationList']]):
         #metadata invalid stop here
@@ -77,7 +84,7 @@ def validate_files_from_payload(callback_id, content, minrows=None, forcevalid=F
     log_dir = os.path.join(config.STORAGE_PATH, 'logs', callback_id)
     if config.VALIDATE_WITH_SSH == 'true':
         nf_script_path = os.path.join(par_dir, "validate_submission.nf")
-        nextflow_cmd = nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, forcevalid, nextflow_config_path, nf_script_path)
+        nextflow_cmd = nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, forcevalid, nextflow_config_path, nf_script_path, zero_p_pvalues)
         logger.debug('Validate with ssh')
         ssh = sshc.SSHClient(host=config.COMPUTE_FARM_LOGIN_NODE, username=config.COMPUTE_FARM_USERNAME)
         ssh.mkdir(par_dir)
@@ -124,7 +131,7 @@ def validate_files_from_payload(callback_id, content, minrows=None, forcevalid=F
         return json.dumps(results)
     else:
         logger.debug('Validate without ssh')
-        nextflow_cmd = nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, forcevalid, nextflow_config_path)
+        nextflow_cmd = nextflow_command_string(callback_id, payload_path, log_dir, par_dir, minrows, forcevalid, nextflow_config_path, zero_p_pvalues)
         return validate_files_NOT_SSH(callback_id, content, par_dir, payload_path, nextflow_config_path, log_dir, nextflow_cmd)
 
 def skip_validation_completely(callback_id, content):
@@ -153,8 +160,18 @@ def add_errors_if_study_missing(callback_id, content, results):
             if study not in studies_with_results:
                 results['validationList'].append({"id": study, "retrieved": None, "dataValid": None, "errorCode": 10})
         return results
-            
-    
+
+
+def reset_validation_status(callback_id: str) -> None:
+    """Reset the validation status for a submission
+
+    Arguments:
+        callback_id -- callback id
+    """
+    payload = pl.Payload(callback_id=callback_id)
+    payload.reset_validation_status()
+
+
 def validate_files(callback_id, content, minrows=None, forcevalid=False):
     validate_metadata = vp.validate_metadata_for_payload(callback_id, content)
     if any([i['errorCode'] for i in json.loads(validate_metadata)['validationList']]):
@@ -212,7 +229,7 @@ def results_if_failure(callback_id, content):
 
 def nextflow_command_string(callback_id, payload_path, log_dir, minrows, forcevalid,
                             nextflow_config_path, wd, 
-                            nf_script_path='workflows/process_submission.nf',
+                            nf_script_path='workflows/process_submission.nf', zero_p_values=False,
                             containerise=config.CONTAINERISE):
     nextflow_cmd = ("nextflow -log {logs}/nextflow.log "
                     "run {script} "
@@ -222,6 +239,7 @@ def nextflow_command_string(callback_id, payload_path, log_dir, minrows, forceva
                     "--depo_data {dd} "
                     "--minrows {mr} "
                     "--forcevalid {fv} "
+                    "--zerop {zp} "
                     "--validatedPath {vp} "
                     "-w {wd} "
                     "-c {conf} "
@@ -237,6 +255,7 @@ def nextflow_command_string(callback_id, payload_path, log_dir, minrows, forceva
                                                                        wd=wd,
                                                                        mr=minrows,
                                                                        fv=forcevalid,
+                                                                       zp=zero_p_values,
                                                                        conf=nextflow_config_path)
     if containerise is False:
         nextflow_cmd = nextflow_cmd.split("-with-singularity")[0]

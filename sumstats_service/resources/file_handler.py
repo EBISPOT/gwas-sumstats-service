@@ -25,7 +25,8 @@ class SumStatFile:
     def __init__(self, file_path=None, callback_id=None, study_id=None, 
                 md5exp=None, readme=None, entryUUID=None,
                 staging_dir_name=None, staging_file_name=None, minrows=None,
-                raw_ss=None, uploaded_ss_filename=None, genome_assembly=None):
+                raw_ss=None, uploaded_ss_filename=None, genome_assembly=None,
+                zero_p_values=False):
         self.file_path = file_path
         self.callback_id = callback_id
         self.study_id = study_id
@@ -36,6 +37,7 @@ class SumStatFile:
         self.staging_dir_name = staging_dir_name
         self.staging_file_name = staging_file_name
         self.minrows = minrows
+        self.zero_p_values = zero_p_values
         self.raw_ss = raw_ss
         self.uploaded_ss_filename = uploaded_ss_filename
         self.store_path = None
@@ -153,9 +155,12 @@ class SumStatFile:
         self.set_logfile()
         self.validation_error = 3
         if self.minrows:
-            validator = Validator(sumstats_file=self.store_path, minimum_rows=self.minrows)
+            validator = Validator(sumstats_file=self.store_path,
+                                  minimum_rows=self.minrows,
+                                  pval_zero=self.zero_p_values)
         else:
-            validator = Validator(sumstats_file=self.store_path)
+            validator = Validator(sumstats_file=self.store_path,
+                                  pval_zero=self.zero_p_values)
         status, message = validator.validate()
         logger.info(message)
         if status is False:
