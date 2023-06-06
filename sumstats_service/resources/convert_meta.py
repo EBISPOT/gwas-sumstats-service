@@ -1,13 +1,13 @@
 import argparse
-import pandas as pd
+import logging
 import yaml
 import json
 from datetime import date
 from packaging import version
-from sumstats_service import config
-import logging
-from sumstats_service.resources.utils import download_with_requests
+import pandas as pd
 from gwas_sumstats_tools.schema.metadata import SumStatsMetadata
+from sumstats_service import config
+from sumstats_service.resources.utils import download_with_requests
 
 
 logging.basicConfig(level=logging.DEBUG, format='(%(levelname)s): %(message)s')
@@ -21,7 +21,7 @@ class MetaModel(SumStatsMetadata):
     """
     class Config(SumStatsMetadata.Config):
         use_enum_values = True
-        
+
 
 class MetadataConverter:
     HEADER_MAPPINGS = config.SUBMISSION_TEMPLATE_HEADER_MAP
@@ -58,12 +58,13 @@ class MetadataConverter:
         self.metadata = None
 
     def convert_to_outfile(self):
+        """Convert the spreadsheet template to YAML"""
         if self._in_file:
             self._read_metadata()
             try:
                 self._study_record = self._get_study_record()
-            except ValueError as e:
-                logger.error(e)
+            except ValueError as error:
+                logger.error(error)
                 self._in_file = None
         self._get_sample_metadata()
         self.metadata = self._create_metadata_model(self._study_record,
@@ -80,22 +81,24 @@ class MetadataConverter:
         if len(records) > 1:
             raise ValueError(f"more than 1 record found \
                 in metadata for key {key}")
-        else:
+        elif len(records) == 1:
             # remove fields without values
             records.dropna(axis='columns', inplace=True)
+            records = self._normalise_values(records)
             for field in self.STUDY_FIELD_TO_SPLIT:
                 if field in records:
                     records[field] = self._split_field(records[field])
             for field in self.STUDY_FIELD_BOOLS:
                 if field in records:
-                    records[field] = self._normalise_bool(records[field])
-            records = self._normalise_missing_values(records)
+                    records[field] = self._normalise_bools(records[field])
             return records
-    
+        else:
+            raise ValueError
+
     @staticmethod    
     def _split_field(field: pd.Series, delimiter: str = "|") -> pd.Series:
         return field.str.split(pat=delimiter)
-    
+
     @staticmethod
     def _normalise_bools(field: pd.Series) -> pd.Series:
         bool_map = {"yes": True,
@@ -106,9 +109,12 @@ class MetadataConverter:
                     "false": False}
         field_lower = field.str.lower()
         return field_lower.map(bool_map, na_action='ignore')
-    
+
     @staticmethod
-    def _normalise_missing_values(df: pd.DataFrame) -> pd.DataFrame:
+    def _normalise_values(df: pd.DataFrame) -> pd.DataFrame:
+        for col in df.columns:
+            if pd.api.types.is_string_dtype(df[col]):
+                df[col] = df[col].str.strip()
         return df.replace(["", "#NA", "NA", "N/A", "NaN", "NR"], None)
 
     def _get_sample_metadata(self):
@@ -119,7 +125,7 @@ class MetadataConverter:
 
     def _get_sample_records(self):
         study_tag_key = 'Study tag'
-        if self._sample_sheet is not None:
+        if len(self._sample_sheet) > 0:
             study_tag = self._study_record[study_tag_key].values[0]
             sample_records = self._get_record_from_df(df=self._sample_sheet,
                                                       key=study_tag_key,
@@ -130,13 +136,13 @@ class MetadataConverter:
                                                         casematch=False)
             if len(filtered_samples) > 0:
                 filtered_samples.dropna(axis='columns', inplace=True)
+                filtered_samples = self._normalise_values(filtered_samples)
                 for field in self.SAMPLE_FIELD_TO_SPLIT:
                     if field in filtered_samples:
                         filtered_samples[field] = self._split_field(filtered_samples[field])
                 for field in self.SAMPLE_FIELD_BOOLS:
                     if field in filtered_samples:
-                        filtered_samples[field] = self._normalise_bool(filtered_samples[field])
-                filtered_samples = self._normalise_missing_values(filtered_samples)
+                        filtered_samples[field] = self._normalise_bools(filtered_samples[field])
                 return {'samples': filtered_samples.to_dict(orient='records')}
             else:
                 return {'samples': []}
@@ -191,8 +197,8 @@ class MetadataConverter:
                 formatted['samples'].append({
                    'sample_size': sample['numberOfIndividuals'],
                    'sample_ancestry': [s['ancestralGroup'] for s in sample['ancestralGroups']]})
-        except KeyError as e:
-            logger.error(f"Missing key {e}")
+        except KeyError as error:
+            logger.error(f"Missing key {error}")
         return formatted
 
     def _get_template_version(self, meta_df):
@@ -213,19 +219,23 @@ class MetadataConverter:
         self._formatted_metadata = record_meta.to_dict(orient='records')[0] if len(record_meta) > 0 else {}
         self._extend_metadata()
         self._formatted_metadata.update(sample_records)
+        print(self._formatted_metadata)
         return MetaModel.parse_obj(self._formatted_metadata)
 
     @staticmethod
-    def _get_record_from_df(df, key, value, casematch: bool = True):
+    def _get_record_from_df(df: pd.DataFrame,
+                            key: str,
+                            value: str,
+                            casematch: bool = True
+                            ) -> list:
+        records = []
         if casematch is False:
             records = df[df[key].str.lower() == value.lower()]
         else:
             records = df[df[key] == value]
         if len(records) == 0:
             print(f"{key}: {value} not found in metadata")
-            pass
-        else:
-            return records
+        return records
 
     def _extend_metadata(self):
         self._add_id_to_meta()
@@ -267,9 +277,7 @@ def main():
     argparser.add_argument("-data_file", help='Data file name', required=True)
     args = argparser.parse_args()
 
-    """
-    md5sum is used as a key to pull out the relevant information from the metadata file. 
-    """
+    # md5sum is used as a key to pull out the relevant information from the metadata file.
     md5sum = args.md5sum
     accession_id = args.id
     in_file = args.in_file
