@@ -1,10 +1,18 @@
+"""Metadata converter. Converts from GWAS Catalog submitted templates to YAML.
+This is intended for internal GWAS Catalog use.
+Example usage (for development/debugging):
+convert_meta -md5sum 482453ff99320988a76f6a5a7537b5f5 -id GCST345678 -in_file ~/Desktop/6Tsf65zE.xlsx -out_file GCST345678.yaml -data_file GCST345678.tsv 
+"""
+
 import argparse
 import logging
 import yaml
 import json
+from typing import Union
 from datetime import date
 from packaging import version
 import pandas as pd
+from pydantic import validator
 from gwas_sumstats_tools.schema.metadata import SumStatsMetadata
 from sumstats_service import config
 from sumstats_service.resources.utils import download_with_requests
@@ -16,9 +24,44 @@ logger = logging.getLogger(__name__)
 
 class MetaModel(SumStatsMetadata):
     """Inherit from the Sumstats Metadata class.
-    We do this to change the config so that 
+    We do this to change the config so that
     we can serialise without the Enums.
     """
+    @validator('sex', pre=True)
+    def _convert_for_sex_enum(cls, v) -> Union[str, None]:
+        """Set the sex string to
+        the correct case-style for
+        the model enum
+
+        Arguments:
+            v -- value
+
+        Returns:
+            Sex string or None
+        """
+        if v.lower() == 'm':
+            return 'M'
+        elif v.lower() == 'f':
+            return 'F'
+        elif v.lower() == 'combined':
+            return 'combined'
+        else:
+            return None
+
+    @validator('coordinate_system', pre=True)
+    def _convert_for_coordinate_enum(cls, v) -> Union[str, None]:
+        """Set the coordinate string to
+        the correct case-style for the
+        model enum
+
+        Arguments:
+            v -- value
+
+        Returns:
+            Coordinate string or None
+        """
+        return v.lower() if v else None
+
     class Config(SumStatsMetadata.Config):
         use_enum_values = True
 
@@ -219,7 +262,6 @@ class MetadataConverter:
         self._formatted_metadata = record_meta.to_dict(orient='records')[0] if len(record_meta) > 0 else {}
         self._extend_metadata()
         self._formatted_metadata.update(sample_records)
-        print(self._formatted_metadata)
         return MetaModel.parse_obj(self._formatted_metadata)
 
     @staticmethod
