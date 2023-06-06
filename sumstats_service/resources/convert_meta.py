@@ -58,6 +58,7 @@ class MetadataConverter:
         self.metadata = None
 
     def convert_to_outfile(self):
+        """Convert the spreadsheet template to YAML"""
         if self._in_file:
             self._read_metadata()
             try:
@@ -77,10 +78,10 @@ class MetadataConverter:
         records = self._get_record_from_df(df=self._study_sheet,
                                            key=key,
                                            value=self._md5sum)
-        if records is not None and len(records) > 1:
+        if len(records) > 1:
             raise ValueError(f"more than 1 record found \
                 in metadata for key {key}")
-        elif records is not None and len(records) == 1:
+        elif len(records) == 1:
             # remove fields without values
             records.dropna(axis='columns', inplace=True)
             records = self._normalise_values(records)
@@ -89,7 +90,7 @@ class MetadataConverter:
                     records[field] = self._split_field(records[field])
             for field in self.STUDY_FIELD_BOOLS:
                 if field in records:
-                    records[field] = self._normalise_bool(records[field])
+                    records[field] = self._normalise_bools(records[field])
             return records
         else:
             raise ValueError
@@ -108,7 +109,7 @@ class MetadataConverter:
                     "false": False}
         field_lower = field.str.lower()
         return field_lower.map(bool_map, na_action='ignore')
-    
+
     @staticmethod
     def _normalise_values(df: pd.DataFrame) -> pd.DataFrame:
         for col in df.columns:
@@ -141,7 +142,7 @@ class MetadataConverter:
                         filtered_samples[field] = self._split_field(filtered_samples[field])
                 for field in self.SAMPLE_FIELD_BOOLS:
                     if field in filtered_samples:
-                        filtered_samples[field] = self._normalise_bool(filtered_samples[field])
+                        filtered_samples[field] = self._normalise_bools(filtered_samples[field])
                 return {'samples': filtered_samples.to_dict(orient='records')}
             else:
                 return {'samples': []}
@@ -222,15 +223,19 @@ class MetadataConverter:
         return MetaModel.parse_obj(self._formatted_metadata)
 
     @staticmethod
-    def _get_record_from_df(df, key, value, casematch: bool = True):
+    def _get_record_from_df(df: pd.DataFrame,
+                            key: str,
+                            value: str,
+                            casematch: bool = True
+                            ) -> list:
+        records = []
         if casematch is False:
             records = df[df[key].str.lower() == value.lower()]
         else:
             records = df[df[key] == value]
         if len(records) == 0:
             print(f"{key}: {value} not found in metadata")
-        else:
-            return records
+        return records
 
     def _extend_metadata(self):
         self._add_id_to_meta()
@@ -272,9 +277,7 @@ def main():
     argparser.add_argument("-data_file", help='Data file name', required=True)
     args = argparser.parse_args()
 
-    """
-    md5sum is used as a key to pull out the relevant information from the metadata file. 
-    """
+    # md5sum is used as a key to pull out the relevant information from the metadata file.
     md5sum = args.md5sum
     accession_id = args.id
     in_file = args.in_file
