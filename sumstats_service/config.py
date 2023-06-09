@@ -34,7 +34,7 @@ COMPUTE_FARM_QUEUE = 'production'
 COMPUTE_FARM_QUEUE_LONG = _env_variable_else('COMPUTE_FARM_QUEUE_LONG', 'production')
 REMOTE_HTTP_PROXY = _env_variable_else('REMOTE_HTTP_PROXY', None)
 REMOTE_HTTPS_PROXY = _env_variable_else('REMOTE_HTTPS_PROXY', None)
-SINGULARITY_IMAGE = _env_variable_else('SINGULARITY_IMAGE', 'ebispot/gwas-sumstats-service')
+SINGULARITY_IMAGE = _env_variable_else('SINGULARITY_IMAGE', 'gwas-sumstats-service')
 SINGULARITY_TAG = _env_variable_else('SINGULARITY_TAG', 'latest')
 
 # --- MONGO DB --- #
