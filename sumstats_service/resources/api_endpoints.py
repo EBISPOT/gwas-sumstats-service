@@ -1,17 +1,14 @@
 import json
 from collections import OrderedDict
-from sumstats_service.resources.error_classes import *
-import sumstats_service.resources.api_utils as au
+
 import sumstats_service.config as config
-from sumstats_service.resources.mongo_client import mongoClient
+import sumstats_service.resources.api_utils as au
+from sumstats_service.resources.error_classes import *
+from sumstats_service.resources.mongo_client import MongoClient
 
 
 def root():
-    response = {
-                '_links': OrderedDict([
-                    ('sumstats', au.create_href('sumstats'))
-                 ])
-               }
+    response = {"_links": OrderedDict([("sumstats", au.create_href("sumstats"))])}
     return json.dumps(response)
 
 
@@ -51,17 +48,20 @@ def get_content(callback_id: str) -> dict:
     Returns:
         dict of submission contents
     """
-    mdb = mongoClient(config.MONGO_URI,
-                      config.MONGO_USER,
-                      config.MONGO_PASSWORD,
-                      config.MONGO_DB)
+    mdb = MongoClient(
+        config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB
+    )
     data = [i for i in mdb.study_collection.find({"callbackID": callback_id})]
     content = {"requestEntries": []}
     for i in data:
-        content["requestEntries"].append({"id": i['studyID'],
-                                          "filePath": i["filePath"],
-                                          "md5": i["md5"],
-                                          "assembly": i["assembly"],
-                                          "readme": i["readme"],
-                                          "entryUUID": i["entryUUID"]})
+        content["requestEntries"].append(
+            {
+                "id": i["studyID"],
+                "filePath": i["filePath"],
+                "md5": i["md5"],
+                "assembly": i["assembly"],
+                "readme": i["readme"],
+                "entryUUID": i["entryUUID"],
+            }
+        )
     return content

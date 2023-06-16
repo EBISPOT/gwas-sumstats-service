@@ -1,11 +1,13 @@
-import unittest
 import os
-from sumstats_service import config
-from tests.test_constants import *
+import unittest
+
+from pymongo import MongoClient
+
 import sumstats_service.resources.payload as pl
+from sumstats_service import config
 from sumstats_service.resources.error_classes import *
 from sumstats_service.resources.sqlite_client import sqlClient
-from pymongo import MongoClient
+from tests.test_constants import *
 
 
 class TestPayload(unittest.TestCase):
@@ -20,7 +22,6 @@ class TestPayload(unittest.TestCase):
         sq.create_conn()
         sq.cur.executescript(config.DB_SCHEMA)
 
-
     def tearDown(self):
         os.remove(self.testDB)
         client = MongoClient(config.MONGO_URI)
@@ -33,11 +34,11 @@ class TestPayload(unittest.TestCase):
 
     def test_parse_new_study_json(self):
         data = {
-                 "id": "xyz321",
-                 "filePath": "file/path.tsv",
-                 "md5":"b1d7e0a58d36502d59d036a17336ddf5",
-                 "assembly":"GRCh38"
-                }
+            "id": "xyz321",
+            "filePath": "file/path.tsv",
+            "md5": "b1d7e0a58d36502d59d036a17336ddf5",
+            "assembly": "GRCh38",
+        }
         payload = pl.Payload(payload=data)
         result = payload.parse_new_study_json(data)
         self.assertEqual("xyz321", result[0])
@@ -47,19 +48,27 @@ class TestPayload(unittest.TestCase):
 
     def test_parse_new_study_bad_json(self):
         data_missing_field = {
-                 "id": "xyz321",
-                 "md5":"b1d7e0a58d36502d59d036a17336ddf5",
-                 "assembly":"GRCh38"
-                }
+            "id": "xyz321",
+            "md5": "b1d7e0a58d36502d59d036a17336ddf5",
+            "assembly": "GRCh38",
+        }
         payload = pl.Payload(payload=data_missing_field)
-        study_id, file_path, md5, assembly, readme, entryUUID, rawSS = payload.parse_new_study_json(data_missing_field)
+        (
+            study_id,
+            file_path,
+            md5,
+            assembly,
+            readme,
+            entryUUID,
+            rawSS,
+        ) = payload.parse_new_study_json(data_missing_field)
         self.assertIsNone(file_path)
 
     def test_check_basic_content_present(self):
-        data = {'requestEntries': [{}]}
+        data = {"requestEntries": [{}]}
         payload = pl.Payload(payload=data)
         self.assertTrue(payload.check_basic_content_present())
-        missing_data = {'requestEntries': []}
+        missing_data = {"requestEntries": []}
         payload = pl.Payload(payload=missing_data)
         self.assertFalse(payload.check_basic_content_present())
         missing_all = {}
@@ -70,21 +79,21 @@ class TestPayload(unittest.TestCase):
         payload = pl.Payload(payload=VALID_POST)
         self.assertTrue(payload.create_study_obj_list())
         dupe_study = {
-                        "requestEntries": [
-                            {
-                             "id": "abc123",
-                             "filePath": "file/path.tsv",
-                             "md5":"b1d7e0a58d36502d59d036a17336ddf5",
-                             "assembly":"GRCh38"
-                            },
-                            {
-                             "id": "abc123",
-                             "filePath": "file/path.tsv",
-                             "md5":"b1d7e0a58d36502d59d036a17336ddf5",
-                             "assembly":"GRCh38"
-                            },
-                          ]
-                        }
+            "requestEntries": [
+                {
+                    "id": "abc123",
+                    "filePath": "file/path.tsv",
+                    "md5": "b1d7e0a58d36502d59d036a17336ddf5",
+                    "assembly": "GRCh38",
+                },
+                {
+                    "id": "abc123",
+                    "filePath": "file/path.tsv",
+                    "md5": "b1d7e0a58d36502d59d036a17336ddf5",
+                    "assembly": "GRCh38",
+                },
+            ]
+        }
         payload = pl.Payload(payload=dupe_study)
         payload.create_study_obj_list()
         self.assertFalse(payload.check_study_ids_valid())
@@ -107,19 +116,18 @@ class TestPayload(unittest.TestCase):
             study.set_data_valid_status(None)
             study.store_data_valid_status()
         status = payload.get_payload_status()
-        self.assertEqual(status, 'PROCESSING')
+        self.assertEqual(status, "PROCESSING")
         for study in payload.study_obj_list:
             study.set_retrieved_status(0)
             study.store_retrieved_status()
             study.set_data_valid_status(0)
             study.store_data_valid_status()
         status = payload.get_payload_status()
-        self.assertEqual(status, 'INVALID')
+        self.assertEqual(status, "INVALID")
         for study in payload.study_obj_list:
             study.set_retrieved_status(1)
             study.store_retrieved_status()
             study.set_data_valid_status(1)
             study.store_data_valid_status()
         status = payload.get_payload_status()
-        self.assertEqual(status, 'VALID')
-
+        self.assertEqual(status, "VALID")
