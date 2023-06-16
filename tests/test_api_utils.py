@@ -1,11 +1,13 @@
-import unittest
-import os
 import json
-from sumstats_service import config
-from tests.test_constants import *
-import sumstats_service.resources.api_utils as au
-from sumstats_service.resources.sqlite_client import sqlClient
+import os
+import unittest
+
 from pymongo import MongoClient
+
+import sumstats_service.resources.api_utils as au
+from sumstats_service import config
+from sumstats_service.resources.sqlite_client import sqlClient
+from tests.test_constants import *
 
 
 class TestAPIUtils(unittest.TestCase):
@@ -14,7 +16,7 @@ class TestAPIUtils(unittest.TestCase):
         self.test_storepath = os.path.abspath("./tests/data")
         config.STORAGE_PATH = os.path.abspath(self.test_storepath)
         config.DB_PATH = self.testDB
-        config.DEPO_PATH = os.path.abspath('./tests')
+        config.DEPO_PATH = os.path.abspath("./tests")
         config.BROKER_PORT = 5682
         config.BROKER_HOST = "localhost"
         config.NEXTFLOW_CONFIG = "executor.name = 'local'\nexecutor.queueSize = 3"
@@ -27,17 +29,16 @@ class TestAPIUtils(unittest.TestCase):
         self.entryUUID = "ABC1234"
         self.valid_file = "test_sumstats_file.tsv"
         self.valid_content = {
-                        "requestEntries": [
-                          {
-                            "id": self.sid,
-                            "filePath": self.valid_file,
-                            "md5":"a1195761f082f8cbc2f5a560743077cc",
-                            "assembly":"GRCh38",
-                            "entryUUID":self.entryUUID
-                           },
-                         ]
-                       }
-            
+            "requestEntries": [
+                {
+                    "id": self.sid,
+                    "filePath": self.valid_file,
+                    "md5": "a1195761f082f8cbc2f5a560743077cc",
+                    "assembly": "GRCh38",
+                    "entryUUID": self.entryUUID,
+                },
+            ]
+        }
 
     def tearDown(self):
         os.remove(self.testDB)
@@ -49,15 +50,19 @@ class TestAPIUtils(unittest.TestCase):
         self.assertIsNotNone(result)
 
     def test_validate_files_from_payload(self):
-        result_json = au.validate_files(callback_id=self.cid,
-                                    content=self.valid_content,
-                                    minrows=2)
+        result_json = au.validate_files(
+            callback_id=self.cid, content=self.valid_content, minrows=2
+        )
         results = json.loads(result_json)
-        self.assertEqual(results['validationList'][0]["id"], self.sid)
+        self.assertEqual(results["validationList"][0]["id"], self.sid)
+
+    def test_bypass_validation(self):
+        result_json = au.skip_validation_completely(
+            callback_id=self.cid, content=self.valid_content
+        )
+        results = json.loads(result_json)
+        self.assertEqual(results["validationList"][0]["id"], self.sid)
 
 
-
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -1,10 +1,10 @@
 import shortuuid
-import json
-from sumstats_service.resources.mongo_client import mongoClient
-from sumstats_service.resources.error_classes import *
-import sumstats_service.resources.study_service as st
+
 import sumstats_service.resources.file_handler as fh
+import sumstats_service.resources.study_service as st
 from sumstats_service import config
+from sumstats_service.resources.error_classes import *
+from sumstats_service.resources.mongo_client import MongoClient
 
 
 class Payload:
@@ -14,6 +14,17 @@ class Payload:
         self.study_obj_list = []
         self.study_ids = []
         self.metadata_errors = []
+        self.bypass_validation_status = False
+
+    def _mongo_client(self) -> MongoClient:
+        """Return a mongo db client
+
+        Returns:
+            MongoClient
+        """
+        return MongoClient(
+            config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB
+        )
 
     def payload_to_db(self):
         if self.check_basic_content_present() is True:
@@ -27,26 +38,46 @@ class Payload:
         for study in self.study_obj_list:
             study.validate_study(minrows)
 
-
     def validate_payload_metadata(self):
         for study in self.study_obj_list:
             study.mandatory_metadata_check()
-            
 
     def get_payload_status(self):
         study_statuses = [study.get_status() for study in self.study_obj_list]
-        if 'INVALID' in study_statuses:
-            return 'INVALID'
-        elif 'RETRIEVING' in study_statuses:
-            return 'PROCESSING'
-        elif 'IGNORE' in study_statuses:
-            return 'IGNORE'
+        if "INVALID" in study_statuses:
+            return "INVALID"
+        elif "RETRIEVING" in study_statuses:
+            return "PROCESSING"
+        elif "IGNORE" in study_statuses:
+            return "IGNORE"
         else:
-            return 'VALID'
+            return "VALID"
 
+    def store_bypass_validation_status(self, bypass_validation: bool = False) -> None:
+        """Persist the bypass validation status
+
+        Keyword Arguments:
+            bypass_validation -- bypass status (default: {False})
+        """
+        self._mongo_client().update_bypass_validation_status(
+            self.callback_id, bypass_validation
+        )
+
+    def get_bypass_validation_status(self) -> bool:
+        """Get the bypass validation status.
+        If True, the sumstats can be considered invalid,
+        if False, they are valid.
+
+        Returns:
+            bool
+        """
+        self.bypass_validation_status = (
+            self._mongo_client().get_bypass_validation_status(self.callback_id)
+        )
+        return self.bypass_validation_status
 
     def get_data_for_callback_id(self):
-        mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
+        mdb = self._mongo_client()
         data = mdb.get_data_from_callback_id(self.callback_id)
         self.get_metadata_errors()
         if data is None:
@@ -54,84 +85,120 @@ class Payload:
                 # callback registered but studies not yet added (due to async)
                 return True
             else:
-                raise RequestedNotFound("Couldn't find resource with callback id: {}".format(self.callback_id))
+                raise RequestedNotFound(
+                    "Couldn't find resource with callback id: {}".format(
+                        self.callback_id
+                    )
+                )
 
         for study_metadata in data:
-            study_id = st.set_var_from_dict(study_metadata, 'studyID', None)
-            callback_id = st.set_var_from_dict(study_metadata, 'callbackID', None)
-            file_path = st.set_var_from_dict(study_metadata, 'filePath', None)
-            md5 = st.set_var_from_dict(study_metadata, 'md5', None)
-            assembly = st.set_var_from_dict(study_metadata, 'assembly', None)
-            retrieved = st.set_var_from_dict(study_metadata, 'retrieved', None) 
-            data_valid = st.set_var_from_dict(study_metadata, 'dataValid', None)
-            error_code = st.set_var_from_dict(study_metadata, 'errorCode', None)
-            readme = st.set_var_from_dict(study_metadata, 'readme', None)
-            entryUUID = st.set_var_from_dict(study_metadata, 'entryUUID', None)
-            author_name = st.set_var_from_dict(study_metadata, 'authorName', None)
-            pmid = st.set_var_from_dict(study_metadata, 'pmid', None)
-            gcst = st.set_var_from_dict(study_metadata, 'gcst', None)
-            raw_ss= st.set_var_from_dict(study_metadata, 'rawSS', None)
+            study_id = st.set_var_from_dict(study_metadata, "studyID", None)
+            callback_id = st.set_var_from_dict(study_metadata, "callbackID", None)
+            file_path = st.set_var_from_dict(study_metadata, "filePath", None)
+            md5 = st.set_var_from_dict(study_metadata, "md5", None)
+            assembly = st.set_var_from_dict(study_metadata, "assembly", None)
+            retrieved = st.set_var_from_dict(study_metadata, "retrieved", None)
+            data_valid = st.set_var_from_dict(study_metadata, "dataValid", None)
+            error_code = st.set_var_from_dict(study_metadata, "errorCode", None)
+            readme = st.set_var_from_dict(study_metadata, "readme", None)
+            entryUUID = st.set_var_from_dict(study_metadata, "entryUUID", None)
+            author_name = st.set_var_from_dict(study_metadata, "authorName", None)
+            pmid = st.set_var_from_dict(study_metadata, "pmid", None)
+            gcst = st.set_var_from_dict(study_metadata, "gcst", None)
+            raw_ss = st.set_var_from_dict(study_metadata, "rawSS", None)
 
-            study = st.Study(study_id=study_id, callback_id=callback_id, file_path=file_path, 
-                            md5=md5, assembly=assembly, retrieved=retrieved,
-                            data_valid=data_valid, error_code=error_code, readme=readme, 
-                            entryUUID=entryUUID, author_name=author_name, pmid=pmid, gcst=gcst, raw_ss=raw_ss)
+            study = st.Study(
+                study_id=study_id,
+                callback_id=callback_id,
+                file_path=file_path,
+                md5=md5,
+                assembly=assembly,
+                retrieved=retrieved,
+                data_valid=data_valid,
+                error_code=error_code,
+                readme=readme,
+                entryUUID=entryUUID,
+                author_name=author_name,
+                pmid=pmid,
+                gcst=gcst,
+                raw_ss=raw_ss,
+            )
             self.study_obj_list.append(study)
         return self.study_obj_list
 
     def remove_callback_id(self):
-        mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
+        mdb = self._mongo_client()
         mdb.remove_callback_id(self.callback_id)
-        
+
     def store_metadata_errors(self):
-        mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
+        mdb = self._mongo_client()
         mdb.update_metadata_errors(self.callback_id, self.metadata_errors)
 
     def get_metadata_errors(self):
-        mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
+        mdb = self._mongo_client()
         self.metadata_errors = mdb.get_metadata_errors(self.callback_id)
 
-
     def check_basic_content_present(self):
-        if not 'requestEntries' in self.payload:
+        if not "requestEntries" in self.payload:
             self.metadata_errors.append("Missing 'requestEntries' in json")
             return False
-            #raise BadUserRequest("Missing 'requestEntries' in json")
-        elif len(self.payload['requestEntries']) == 0:
+            # raise BadUserRequest("Missing 'requestEntries' in json")
+        elif len(self.payload["requestEntries"]) == 0:
             self.metadata_errors.append("Missing data")
             return False
-            #raise BadUserRequest("Missing data")
+            # raise BadUserRequest("Missing data")
         return True
 
     def create_study_obj_list(self):
-        for item in self.payload['requestEntries']:
-            study_id, file_path, md5, assembly, readme, entryUUID, raw_file_path = self.parse_new_study_json(item)
-            study = st.Study(study_id=study_id, file_path=file_path, md5=md5,
-                             assembly=assembly, readme=readme, entryUUID=entryUUID, raw_ss=raw_file_path)
+        for item in self.payload["requestEntries"]:
+            (
+                study_id,
+                file_path,
+                md5,
+                assembly,
+                readme,
+                entryUUID,
+                raw_file_path,
+            ) = self.parse_new_study_json(item)
+            study = st.Study(
+                study_id=study_id,
+                file_path=file_path,
+                md5=md5,
+                assembly=assembly,
+                readme=readme,
+                entryUUID=entryUUID,
+                raw_ss=raw_file_path,
+            )
             self.study_obj_list.append(study)
         return True
 
     def check_study_ids_valid(self):
         for study in self.study_obj_list:
             if not study.valid_study_id():
-                self.metadata_errors.append("Study ID: {} is invalid".format(study.study_id))
-                #raise BadUserRequest("Study ID: {} is invalid".format(study.study_id))
+                self.metadata_errors.append(
+                    "Study ID: {} is invalid".format(study.study_id)
+                )
+                # raise BadUserRequest("Study ID: {} is invalid".format(study.study_id))
                 return False
             if study.study_id_exists_in_db():
-                self.metadata_errors.append("Study ID: {} exists already".format(study.study_id))
-                #raise BadUserRequest("Study ID: {} exists already".format(study.study_id))
+                self.metadata_errors.append(
+                    "Study ID: {} exists already".format(study.study_id)
+                )
+                # raise BadUserRequest("Study ID: {} exists already".format(study.study_id))
                 return False
             if study.study_id not in self.study_ids:
                 self.study_ids.append(study.study_id)
             else:
-                self.metadata_errors.append("Study ID: {} duplicated in payload".format(study.study_id))
-                #raise BadUserRequest("Study ID: {} duplicated in payload".format(study.study_id))
+                self.metadata_errors.append(
+                    "Study ID: {} duplicated in payload".format(study.study_id)
+                )
+                # raise BadUserRequest("Study ID: {} duplicated in payload".format(study.study_id))
                 return False
         return True
 
     def generate_callback_id(self):
         randid = shortuuid.uuid()[:8]
-        mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
+        mdb = self._mongo_client()
         while mdb.check_callback_id_in_db(randid) is True:
             randid = shortuuid.uuid()[:8]
         self.callback_id = randid
@@ -155,13 +222,13 @@ class Payload:
             study.create_entry_for_study()
 
     def reset_validation_status(self) -> None:
-        mdb = mongoClient(config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB)
+        mdb = self._mongo_client()
         data = mdb.get_data_from_callback_id(self.callback_id)
         for i in data:
-            i['retrieved'] = None
-            i['dataValid'] = None
-            i['errorCode'] = None
-            mdb.study_collection.replace_one({'_id':i['_id']}, i)
+            i["retrieved"] = None
+            i["dataValid"] = None
+            i["errorCode"] = None
+            mdb.study_collection.replace_one({"_id": i["_id"]}, i)
 
     @staticmethod
     def parse_new_study_json(study_dict):
@@ -177,16 +244,16 @@ class Payload:
            "rawFilePath": "optional/file/path.tsv"
         }
         """
-        study_id = study_dict['id'] if 'id' in study_dict else None
-        file_path = study_dict['filePath'] if 'filePath' in study_dict else None
-        md5 = study_dict['md5'] if 'md5' in study_dict else None
-        assembly = study_dict['assembly'] if 'assembly' in study_dict else None
-        readme = study_dict['readme'] if 'readme' in study_dict else None     
-        entryUUID = study_dict['entryUUID'] if 'entryUUID' in study_dict else None
-        raw_file_path = study_dict['rawFilePath'] if 'rawFilePath' in study_dict else None
+        study_id = study_dict["id"] if "id" in study_dict else None
+        file_path = study_dict["filePath"] if "filePath" in study_dict else None
+        md5 = study_dict["md5"] if "md5" in study_dict else None
+        assembly = study_dict["assembly"] if "assembly" in study_dict else None
+        readme = study_dict["readme"] if "readme" in study_dict else None
+        entryUUID = study_dict["entryUUID"] if "entryUUID" in study_dict else None
+        raw_file_path = (
+            study_dict["rawFilePath"] if "rawFilePath" in study_dict else None
+        )
         return (study_id, file_path, md5, assembly, readme, entryUUID, raw_file_path)
-
-    
 
     def remove_payload_directory(self):
         fh.remove_payload(self.callback_id)
@@ -194,14 +261,15 @@ class Payload:
     def clear_validated_files(self):
         fh.remove_payload_validated_files(self.callback_id)
 
-    
     def update_publication_details(self, publication_content):
-        author_name, pmid, gcst_list = self.parse_publication_content(publication_content)
+        author_name, pmid, gcst_list = self.parse_publication_content(
+            publication_content
+        )
         # removing constaint below as unpublished works won't have these.
         # may move to gcst only.
-        #if not author_name:
+        # if not author_name:
         #    raise BadUserRequest("authorName not provided")
-        #if not pmid:
+        # if not pmid:
         #    raise BadUserRequest("pmid not provided")
         if not gcst_list:
             raise BadUserRequest("studyList not provided")
@@ -236,9 +304,15 @@ class Payload:
             ]
         }
         """
-        author_name = publication_content['authorName'] if 'authorName' in publication_content else None
-        pmid = publication_content['pmid'] if 'pmid' in publication_content else None
-        gcst_list = publication_content['studyList'] if 'studyList' in publication_content else None
+        author_name = (
+            publication_content["authorName"]
+            if "authorName" in publication_content
+            else None
+        )
+        pmid = publication_content["pmid"] if "pmid" in publication_content else None
+        gcst_list = (
+            publication_content["studyList"]
+            if "studyList" in publication_content
+            else None
+        )
         return (author_name, pmid, gcst_list)
-
-

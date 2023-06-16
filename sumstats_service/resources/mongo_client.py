@@ -1,72 +1,73 @@
-from pymongo import MongoClient
-from bson.objectid import ObjectId
+from pymongo import MongoClient as pymc
 from sumstats_service import config
 
 
-class mongoClient():
+class MongoClient:
     def __init__(self, uri, username, password, database):
         self.uri = uri
         self.username = username
         self.password = password
-        self.client = MongoClient(self.uri, username=self.username, password=self.password)
+        self.client = pymc(self.uri, username=self.username, password=self.password)
         self.database = self.client[database]
-        self.study_collection = self.database['sumstats-study-meta']
-        self.error_collection = self.database['sumstats-errors']
-        self.callback_collection = self.database['sumstats-callback-tracking']
+        self.study_collection = self.database["sumstats-study-meta"]
+        self.error_collection = self.database["sumstats-errors"]
+        self.callback_collection = self.database["sumstats-callback-tracking"]
 
     """ generic methods"""
 
     def find_one(self, collection):
-        return collection.find_one({}, { '_id': 0 })
+        return collection.find_one({}, {"_id": 0})
 
     def replace_one(self, collection, objectid, data):
-        return collection.replace_one({'_id': objectid}, data)
+        return collection.replace_one({"_id": objectid}, data)
 
     def insert(self, collection, data):
         return collection.insert_one(data)
 
     """ specific methods """
- 
+
     def insert_new_study(self, data):
-        fields = ["studyID", 
-                  "callbackID", 
-                  "filePath", 
-                  "md5", 
-                  "assembly", 
-                  "readme", 
-                  "entryUUID",
-                  "rawSS"]
+        fields = [
+            "studyID",
+            "callbackID",
+            "filePath",
+            "md5",
+            "assembly",
+            "readme",
+            "entryUUID",
+            "rawSS",
+        ]
         study_data_dict = dict(zip(fields, data))
         self.insert(self.study_collection, study_data_dict)
 
     def get_study_metadata(self, study):
         meta_dict = self.study_collection.find_one({"studyID": study})
         return meta_dict
-        
+
     def update_retrieved_status(self, study, status):
         data = self.get_study_metadata(study)
-        objectid = data['_id']
-        data['retrieved'] = status
+        objectid = data["_id"]
+        data["retrieved"] = status
         self.replace_one(self.study_collection, objectid, data)
 
     def update_data_valid_status(self, study, status):
         data = self.get_study_metadata(study)
-        objectid = data['_id']
-        data['dataValid'] = status
+        objectid = data["_id"]
+        data["dataValid"] = status
         self.replace_one(self.study_collection, objectid, data)
 
     def update_error_code(self, study, error_code):
         data = self.get_study_metadata(study)
-        objectid = data['_id']
-        data['errorCode'] = error_code
+        objectid = data["_id"]
+        data["errorCode"] = error_code
         self.replace_one(self.study_collection, objectid, data)
 
     def update_publication_details(self, study, author_name, pmid, gcst):
         data = self.get_study_metadata(study)
-        objectid = data['_id']
-        data['authorName'] = author_name
-        data['pmid'] = pmid
-        data['gcst'] = gcst
+        objectid = data["_id"]
+        data["authorName"] = author_name
+        data["pmid"] = pmid
+        data["gcst"] = gcst
         self.replace_one(self.study_collection, objectid, data)
 
     def get_study_count(self):
@@ -76,7 +77,9 @@ class mongoClient():
         studies = [i for i in self.study_collection.find({"callbackID": callback_id})]
         if not len(studies):
             # check it hasn't been registered but not yet added to the studies db
-            callback_registered = [i for i in self.callback_collection.find({"callbackID": callback_id})]
+            callback_registered = [
+                i for i in self.callback_collection.find({"callbackID": callback_id})
+            ]
             if not len(callback_registered):
                 return False
         return True
@@ -89,9 +92,23 @@ class mongoClient():
 
     def update_metadata_errors(self, callback_id, error_list):
         data = self.callback_collection.find_one({"callbackID": callback_id})
-        objectid = data['_id']
-        data['metadataErrors'] = error_list
+        objectid = data["_id"]
+        data["metadataErrors"] = error_list
         self.replace_one(self.callback_collection, objectid, data)
+
+    def update_bypass_validation_status(
+        self, callback_id: str, bypass_validation: bool
+    ) -> None:
+        data = self.callback_collection.find_one({"callbackID": callback_id})
+        objectid = data["_id"]
+        data["bypassValidation"] = bypass_validation
+        self.replace_one(self.callback_collection, objectid, data)
+
+    def get_bypass_validation_status(self, callback_id: str) -> bool:
+        data = self.callback_collection.find_one({"callbackID": callback_id})
+        if data and "bypassValidation" in data:
+            return data["bypassValidation"]
+        return False
 
     def get_metadata_errors(self, callback_id):
         data = self.callback_collection.find_one({"callbackID": callback_id})
@@ -107,7 +124,7 @@ class mongoClient():
     def get_error_message_from_code(self, code):
         if self.error_collection.count_documents({}) == 0:
             self.create_error_table()
-        error_text = self.error_collection.find_one({"id": code})['errorText']
+        error_text = self.error_collection.find_one({"id": code})["errorText"]
         return error_text
 
     def create_error_table(self):
@@ -115,11 +132,4 @@ class mongoClient():
             self.insert(self.error_collection, error)
 
     def delete_study_entry(self, study):
-        self.study_collection.delete_many({'studyID': study})
-        
-
-
-
-
-
-
+        self.study_collection.delete_many({"studyID": study})
