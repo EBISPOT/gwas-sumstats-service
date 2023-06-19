@@ -134,15 +134,15 @@ def validate_files(
         nf_script_path,
     ) = setup_dir_for_validation(callback_id)
     nextflow_cmd = nextflow_command_string(
-        callback_id,
-        payload_path,
-        log_dir,
-        minrows,
-        forcevalid,
-        zero_p_values,
-        nextflow_config_path,
-        wd,
-        nf_script_path,
+        callback_id=callback_id,
+        payload_path=payload_path,
+        log_dir=log_dir,
+        minrows=minrows,
+        forcevalid=forcevalid,
+        zero_p_values=zero_p_values,
+        nextflow_config_path=nextflow_config_path,
+        wd=wd,
+        nf_script_path=nf_script_path,
     )
     logger.info(nextflow_cmd)
     write_data_to_path(data=json.dumps(content), path=payload_path)
