@@ -229,7 +229,7 @@ def validate_files_in_background(
     bypass: bool = False,
     zero_p_values: bool = False,
 ):
-    au.store_validation_method(bypass_validation=bypass)
+    au.store_validation_method(callback_id=callback_id, bypass_validation=bypass)
     if bypass is True:
         results = au.skip_validation_completely(
             callback_id=callback_id, content=content
