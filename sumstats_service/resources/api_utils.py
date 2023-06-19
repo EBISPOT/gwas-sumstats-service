@@ -47,7 +47,7 @@ def store_validation_method(callback_id: str, bypass_validation: bool = False) -
         bypass_validation -- bypass status (default: {False})
     """
     payload = pl.Payload(callback_id=callback_id)
-    payload.store_validation_method(bypass_validation=bypass_validation)
+    payload.store_bypass_validation_status(bypass_validation=bypass_validation)
 
 
 def store_validation_results_in_db(validation_response):
