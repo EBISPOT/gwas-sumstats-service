@@ -221,7 +221,7 @@ def nextflow_command_string(
         f"--validatedPath {config.VALIDATED_PATH} "
         f"-w {wd} "
         f"-c {nextflow_config_path} "
-        f"-with-singularity $SINGULARITY_CACHEDIR/{config.SINGULARITY_IMAGE}_{config.SINGULARITY_TAG}.sif"
+        f"-with-singularity {config.SINGULARITY_IMAGE}_{config.SINGULARITY_TAG}.sif"
     )
     if containerise is False:
         nextflow_cmd = nextflow_cmd.split("-with-singularity")[0]
