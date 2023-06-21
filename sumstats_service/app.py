@@ -5,12 +5,14 @@ from typing import Union
 
 import simplejson
 from celery import Celery
+from celery.signals import task_failure
 from flask import Flask, Response, abort, jsonify, make_response, request
 
 import sumstats_service.resources.api_endpoints as endpoints
 import sumstats_service.resources.api_utils as au
 import sumstats_service.resources.globus as globus
 from sumstats_service import config
+from sumstats_service.resources.utils import send_mail
 from sumstats_service.resources.error_classes import *
 
 logging.basicConfig(level=logging.DEBUG, format="(%(levelname)s): %(message)s")
@@ -259,6 +261,19 @@ def remove_payload_files(callback_id):
 @celery.task(queue=config.CELERY_QUEUE1, options={"queue": config.CELERY_QUEUE1})
 def publish_and_clean_sumstats(resp):
     au.publish_and_clean_sumstats(resp)
+
+
+@task_failure.connect
+def task_failure_handler(sender=None, **kwargs) -> None:
+    subject = f"Celery error in {sender.name}"
+    message = """{einfo} Task was called with args: 
+                 {args} kwargs: {kwargs}.\n
+                 Exception was raised:\n{exception}\n
+                 Traceback:\n{traceback}
+              """.format(
+        **kwargs
+    )
+    send_mail(subject=subject, message=message)
 
 
 if __name__ == "__main__":
