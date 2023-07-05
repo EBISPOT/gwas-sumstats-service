@@ -266,9 +266,7 @@ def remove_endpoint_and_all_contents(uid):
     endpoint_id = get_endpoint_id_from_uid(uid, transfer_client=transfer)
     if endpoint_id:
         if remove_path(path_to_remove=uid, transfer_client=transfer):
-            deactivate_status = deactivate_endpoint(
-                endpoint_id, transfer_client=transfer
-            )
+            deactivate_status = deactivate_endpoint(endpoint_id)
     return deactivate_status
 
 
@@ -283,8 +281,8 @@ def get_endpoint_id_from_uid(uid: str, transfer_client: TransferClient = None) -
     search_pattern = f"-{uid[0:8]}"
     endpoint_id = None
     results = transfer.endpoint_search(search_pattern, filter_scope="shared-by-me")
-    if results:
-        endpoint_id = results[0].get("id")
+    if results.get("DATA"):
+        endpoint_id = results.get("DATA")[0].get("id")
     return endpoint_id
 
 
