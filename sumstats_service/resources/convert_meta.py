@@ -12,16 +12,22 @@ from typing import Union
 
 import pandas as pd
 import yaml
-from gwas_sumstats_tools.schema.metadata import SumStatsMetadata
+from gwas_sumstats_tools.schema.metadata import SumStatsMetadata, SampleMetadata
 from packaging import version
 from pydantic import validator
 
 from sumstats_service import config
-from sumstats_service.resources import payload as pl
+from sumstats_service.resources.mongo_client import MongoClient
 from sumstats_service.resources.utils import download_with_requests
 
 logging.basicConfig(level=logging.DEBUG, format="(%(levelname)s): %(message)s")
 logger = logging.getLogger(__name__)
+
+
+class Samples(SampleMetadata):
+    @validator("case_count", "control_count", "sample_size", pre=True)
+    def _clean_sample_ints(cls, v) -> Union[str, None]:
+        return int(str(v).replace(",", "")) if v else None
 
 
 class MetaModel(SumStatsMetadata):
@@ -29,6 +35,8 @@ class MetaModel(SumStatsMetadata):
     We do this to change the config so that
     we can serialise without the Enums.
     """
+
+    samples: list[Samples] = None
 
     @validator("sex", pre=True)
     def _convert_for_sex_enum(cls, v) -> Union[str, None]:
@@ -298,9 +306,9 @@ class MetadataConverter:
     ) -> list:
         records = []
         if casematch is False:
-            records = df[df[key].str.lower() == value.lower()]
+            records = df[df[key].str.lower().str.strip() == value.lower()]
         else:
-            records = df[df[key] == value]
+            records = df[df[key].str.strip() == value]
         if len(records) == 0:
             print(f"{key}: {value} not found in metadata")
         return records
@@ -334,8 +342,13 @@ class MetadataConverter:
         if not self._in_file:
             file_type += "-incomplete-meta"
         if self._callback_id:
-            payload = pl.Payload(callback_id=self._callback_id)
-            if payload.get_bypass_validation_status():
+            mdb = MongoClient(
+                config.MONGO_URI,
+                config.MONGO_USER,
+                config.MONGO_PASSWORD,
+                config.MONGO_DB,
+            )
+            if mdb.get_bypass_validation_status(callback_id=self._callback_id):
                 file_type = "Non-GWAS-SSF"
         return file_type
 
