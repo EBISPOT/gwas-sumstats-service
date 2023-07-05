@@ -6,24 +6,17 @@ from pymongo import MongoClient
 import sumstats_service.resources.payload as pl
 from sumstats_service import config
 from sumstats_service.resources.error_classes import *
-from sumstats_service.resources.sqlite_client import sqlClient
 from tests.test_constants import *
 
 
 class TestPayload(unittest.TestCase):
     def setUp(self):
-        self.testDB = "./tests/study_meta.db"
         self.test_storepath = "./tests/data"
         config.STORAGE_PATH = self.test_storepath
-        config.DB_PATH = self.testDB
         config.BROKER_PORT = 5682
         config.BROKER_HOST = "localhost"
-        sq = sqlClient(self.testDB)
-        sq.create_conn()
-        sq.cur.executescript(config.DB_SCHEMA)
 
     def tearDown(self):
-        os.remove(self.testDB)
         client = MongoClient(config.MONGO_URI)
         client.drop_database(config.MONGO_DB)
 

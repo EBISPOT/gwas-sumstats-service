@@ -6,24 +6,18 @@ from pymongo import MongoClient
 
 import sumstats_service.resources.api_utils as au
 from sumstats_service import config
-from sumstats_service.resources.sqlite_client import sqlClient
 from tests.test_constants import *
 
 
 class TestAPIUtils(unittest.TestCase):
     def setUp(self):
-        self.testDB = "./tests/study_meta.db"
         self.test_storepath = os.path.abspath("./tests/data")
         config.STORAGE_PATH = os.path.abspath(self.test_storepath)
-        config.DB_PATH = self.testDB
         config.DEPO_PATH = os.path.abspath("./tests")
         config.BROKER_PORT = 5682
         config.BROKER_HOST = "localhost"
         config.NEXTFLOW_CONFIG = "executor.name = 'local'\nexecutor.queueSize = 3"
         config.CONTAINERISE = False
-        sq = sqlClient(self.testDB)
-        sq.create_conn()
-        sq.cur.executescript(config.DB_SCHEMA)
         self.cid = "TiQS2yxV"
         self.sid = "mKoYvoLH8L"
         self.entryUUID = "ABC1234"
@@ -41,7 +35,6 @@ class TestAPIUtils(unittest.TestCase):
         }
 
     def tearDown(self):
-        os.remove(self.testDB)
         client = MongoClient(config.MONGO_URI)
         client.drop_database(config.MONGO_DB)
 

@@ -6,20 +6,14 @@ from pymongo import MongoClient
 
 import sumstats_service.resources.study_service as st
 from sumstats_service import config
-from sumstats_service.resources.sqlite_client import sqlClient
 
 
 class TestStudyService(unittest.TestCase):
     def setUp(self):
-        self.testDB = "./tests/study_meta.db"
         self.test_storepath = "./tests/data"
         config.STORAGE_PATH = self.test_storepath
-        config.DB_PATH = self.testDB
         config.BROKER_PORT = 5682
         config.BROKER_HOST = "localhost"
-        sq = sqlClient(self.testDB)
-        sq.create_conn()
-        sq.cur.executescript(config.DB_SCHEMA)
         config.DEPO_PATH = "./tests"
         self.study_id = "123abc123"
         self.callback_id = "abc123xyz"
@@ -34,7 +28,6 @@ class TestStudyService(unittest.TestCase):
         os.makedirs(self.test_validate_path, exist_ok=True)
 
     def tearDown(self):
-        os.remove(self.testDB)
         shutil.rmtree(self.test_storepath)
         shutil.rmtree(self.test_validate_path)
         client = MongoClient(config.MONGO_URI)
