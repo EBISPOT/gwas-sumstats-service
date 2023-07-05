@@ -13,7 +13,14 @@ This handles the uploaded summary statistics files, validates them, reports erro
 
 ## Local installation
 
-- Requires: [RabbitMQ](https://www.rabbitmq.com/) and Python 3.6
+### Requirements
+- Python3.9
+- [RabbitMQ](https://www.rabbitmq.com/)
+- libmagic (e.g. `brew install libmagic`)
+- [mongodb](https://www.mongodb.com/docs/manual/administration/install-community/) and start the mongodb service
+- [nextflow](https://www.nextflow.io/docs/latest/getstarted.html#installation)
+
+### Installation
 - Clone the repository
   - `git clone https://github.com/EBISPOT/gwas-sumstats-service.git`
   - `cd gwas-sumstats-service`
