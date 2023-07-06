@@ -27,7 +27,11 @@ logger = logging.getLogger(__name__)
 class Samples(SampleMetadata):
     @validator("case_count", "control_count", "sample_size", pre=True)
     def _clean_sample_ints(cls, v) -> Union[str, None]:
-        return int(str(v).replace(",", "")) if v else None
+        if v:
+            clean_str = str(v).replace(",", "")
+            if clean_str.isnumeric():
+                return int(clean_str)
+        return None
 
 
 class MetaModel(SumStatsMetadata):
@@ -236,12 +240,12 @@ class MetadataConverter:
                 self.HEADER_MAPPINGS = config.SUBMISSION_TEMPLATE_HEADER_MAP_pre1_8
             if "study" in xlsx_meta.sheet_names:
                 self._study_sheet = pd.read_excel(
-                    xlsx_meta, sheet_name="study", skiprows=[0, 2, 3]
+                    xlsx_meta, sheet_name="study", skiprows=[0, 2, 3], thousands=","
                 )
                 self._study_sheet.rename(columns=self.HEADER_MAPPINGS, inplace=True)
             if "sample" in xlsx_meta.sheet_names:
                 self._sample_sheet = pd.read_excel(
-                    xlsx_meta, sheet_name="sample", skiprows=[0, 2, 3]
+                    xlsx_meta, sheet_name="sample", skiprows=[0, 2, 3], thousands=","
                 )
                 self._sample_sheet.rename(columns=self.HEADER_MAPPINGS, inplace=True)
 
