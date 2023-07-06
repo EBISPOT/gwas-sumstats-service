@@ -4,33 +4,25 @@ from pymongo import MongoClient
 
 from sumstats_service import config
 from sumstats_service.app import app, celery
-from sumstats_service.resources.sqlite_client import sqlClient
 from tests.test_constants import *
 
 
 class TestAPP:
     def setup_method(self, method):
-        self.testDB = "./tests/study_meta.db"
         self.test_storepath = "./tests/data"
         config.STORAGE_PATH = self.test_storepath
-        config.DB_PATH = self.testDB
         celery.conf["CELERY_ALWAYS_EAGER"] = True
-        sq = sqlClient(self.testDB)
-        sq.create_conn()
-        sq.cur.executescript(config.DB_SCHEMA)
         self.valid_url = "file://{}".format(
             os.path.abspath("./tests/test_sumstats_file.tsv")
         )
 
     def teardown_method(self, method):
-        os.remove(self.testDB)
         client = MongoClient(config.MONGO_URI)
         client.drop_database(config.MONGO_DB)
 
     def test_index(self):
         tester = app.test_client(self)
         response = tester.get("/", content_type="html/json")
-        study_link = response.get_json()["_links"]["sumstats"]["href"]
         assert response.status_code == 200
 
     def test_post_new_study_no_json(self):

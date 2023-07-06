@@ -63,5 +63,4 @@ def send_mail(
     msg["Subject"] = subject
     msg.attach(MIMEText(message, "plain"))
     with smtplib.SMTP(server, port) as server:
-        server.starttls()
         server.send_message(msg)

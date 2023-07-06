@@ -266,26 +266,23 @@ def remove_endpoint_and_all_contents(uid):
     endpoint_id = get_endpoint_id_from_uid(uid, transfer_client=transfer)
     if endpoint_id:
         if remove_path(path_to_remove=uid, transfer_client=transfer):
-            deactivate_status = deactivate_endpoint(
-                endpoint_id, transfer_client=transfer
-            )
+            deactivate_status = deactivate_endpoint(endpoint_id)
     return deactivate_status
 
 
-def deactivate_endpoint(endpoint_id, transfer_client=None):
-    transfer = transfer_client if transfer_client else init_transfer_client()
-    status = transfer.delete_endpoint(endpoint_id)
+def deactivate_endpoint(endpoint_id, gcs_client=None):
+    gcs = gcs_client if gcs_client else init_gcs_client()
+    status = gcs.delete_collection(endpoint_id)
     return status.http_status
 
 
-def get_endpoint_id_from_uid(uid, transfer_client=None):
+def get_endpoint_id_from_uid(uid: str, transfer_client: TransferClient = None) -> Union[str, None]:
     transfer = transfer_client if transfer_client else init_transfer_client()
-    search_pattern = uid[0:8]
-    host_path = "/~/{}/".format(uid)
+    search_pattern = f"-{uid[0:8]}"
     endpoint_id = None
-    for ep in transfer.endpoint_search(search_pattern, filter_scope="shared-by-me"):
-        if ep["host_path"] == host_path:
-            endpoint_id = ep["id"]
+    results = transfer.endpoint_search(search_pattern, filter_scope="shared-by-me")
+    if results.get("DATA"):
+        endpoint_id = results.get("DATA")[0].get("id")
     return endpoint_id
 
 
