@@ -8,7 +8,7 @@ WORKDIR $INSTALL_PATH
 
 COPY requirements.txt requirements.txt
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc openssh-client python-dev libmagic-dev \
+    && apt-get install -y --no-install-recommends gcc openssh-client python-dev libmagic-dev make \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --upgrade pip \
     && pip install -r requirements.txt \
@@ -16,6 +16,7 @@ RUN apt-get update \
 # the --no-install-recommends helps limit some of the install so that you can be more explicit about what gets installed
 
 COPY . .
+COPY ./sumstats_service /sumstats_service
 
 RUN pip install -e .
 
@@ -28,7 +29,7 @@ RUN chown -R sumstats-service:sumstats-service $INSTALL_PATH
 ENV CELERY_PROTOCOL "amqp"
 ENV CELERY_USER "guest"
 ENV CELERY_PASSWORD "guest"
-ENV QUEUE_HOST "rabbitmq.rabbitmq"
+ENV QUEUE_HOST "rabbitmq"
 ENV QUEUE_PORT 5672
 ENV CELERY_QUEUE1 "preval"
 ENV CELERY_QUEUE2 "postval"
@@ -70,3 +71,5 @@ ENV SUMSTATS_FILE_TYPE ""
 ENV GWAS_DEPO_REST_API_URL ""
 
 USER sumstats-service
+
+CMD ["flask", "run", "--host=0.0.0.0", "--port=8000"]
