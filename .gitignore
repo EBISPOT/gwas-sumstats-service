@@ -21,9 +21,13 @@ htmlcov
 *.db
 ./data
 ./logs
+data/mongo/*
 
 # secrets
 ./secrets
 refresh-tokens.json
 
 tox.ini
+
+# build
+build/*
