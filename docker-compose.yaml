@@ -5,15 +5,20 @@ services:
         image: gwas-ss-service:latest
         depends_on:
             - rabbitmq
+            - mongodb
         links:
             - rabbitmq
+            - mongodb
         environment:
           - FLASK_APP=sumstats_service.app
+          - MONGO_URI=mongodb://mongodb:27017/
+          - MONGO_DB=sumstats-service
         ports:
             - 8000:8000
         volumes:
           - ./logs:/sumstats_service/logs
           - ./data/sumstats_meta.db:/sumstats_service/data/sumstats_meta.db
+          
     rabbitmq:
         image: rabbitmq:3.6-management
         hostname: rabbitmq
@@ -27,8 +32,17 @@ services:
         command: "celery -A sumstats_service.app.celery worker --queues=postval --loglevel=debug"
         depends_on:
             - rabbitmq
+            - mongodb
         links:
             - rabbitmq
+            - mongodb
         volumes:
           - ./logs:/sumstats_service/logs
           - ./data/sumstats_meta.db:/sumstats_service/data/sumstats_meta.db
+
+    mongodb:
+        image: mongo:latest
+        volumes:
+          - ./data/mongo:/data/db
+        ports:
+          - 27017:27017
