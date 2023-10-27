@@ -5,6 +5,14 @@ import sumstats_service.resources.study_service as st
 from sumstats_service import config
 from sumstats_service.resources.error_classes import *
 from sumstats_service.resources.mongo_client import MongoClient
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+# Create a logger
+logger = logging.getLogger(__name__)
 
 
 class Payload:
@@ -22,16 +30,30 @@ class Payload:
         Returns:
             MongoClient
         """
+        logger.debug("=============[LOGS]====================")
+        logger.debug(f'{config.MONGO_URI=}')
+        logger.debug(f'{config.MONGO_USER=}')
+        logger.debug(f'{config.MONGO_PASSWORD=}')
+        logger.debug(f'{config.MONGO_DB=}')
+
         return MongoClient(
             config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB
         )
 
     def payload_to_db(self):
-        if self.check_basic_content_present() is True:
+        is_check_basic_content_present = self.check_basic_content_present()
+        print(f'{is_check_basic_content_present=}')
+
+        if is_check_basic_content_present:
             self.create_study_obj_list()
-            if self.check_study_ids_valid() is True:
+
+            is_check_study_ids_valid = self.check_study_ids_valid()
+            print(f'{is_check_study_ids_valid=}')
+
+            if is_check_study_ids_valid:
                 self.set_callback_id_for_studies()
                 self.create_entry_for_studies()
+
         self.store_metadata_errors()
 
     def validate_payload(self, minrows=None):

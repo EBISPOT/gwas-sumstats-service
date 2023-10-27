@@ -27,10 +27,19 @@ def create_href(method_name, params=None):
 
 
 def json_payload_to_db(content, callback_id=None):
+    print('<<<<<<<<<<<<<<<<<<<<<<<json_payload_to_db')
+    print(f'{callback_id=}')
+
     payload = pl.Payload(payload=content, callback_id=callback_id)
+    print(f'{payload=}')
+
     payload.payload_to_db()
+    print(f'{len(payload.metadata_errors)=}')
+
+    print('json_payload_to_db>>>>>>>>>>>>>>>>>>>>>>')
     if len(payload.metadata_errors) != 0:
         return False
+
     return payload.callback_id
 
 
@@ -122,10 +131,14 @@ def validate_files(
     forcevalid: bool = False,
     zero_p_values: bool = False,
 ):
+    print('=================[validate_files]=======================')
     validate_metadata = vp.validate_metadata_for_payload(callback_id, content)
+    print(f'{validate_metadata=}')
+
     if any([i["errorCode"] for i in json.loads(validate_metadata)["validationList"]]):
         # metadata invalid stop here
         return validate_metadata
+
     (
         wd,
         payload_path,
@@ -144,7 +157,10 @@ def validate_files(
         wd=wd,
         nf_script_path=nf_script_path,
     )
+    logger.info('+++++++++++++++++++++++++++++++++++++++++++++++++++++++')
     logger.info(nextflow_cmd)
+    logger.info('+++++++++++++++++++++++++++++++++++++++++++++++++++++++')
+
     write_data_to_path(data=json.dumps(content), path=payload_path)
     write_data_to_path(data=config.NEXTFLOW_CONFIG, path=nextflow_config_path)
     with open(
@@ -154,18 +170,38 @@ def validate_files(
         "r",
     ) as f:
         write_data_to_path(data=f.read(), path=nf_script_path)
-    subprocess.run(nextflow_cmd.split(), capture_output=True)
-    json_out_files = glob.glob(os.path.join(wd, "[!payload]*.json"))
+
+    print('#+=#' * 20)
+    res = subprocess.run(nextflow_cmd.split(), capture_output=True)
+    print(res.stdout)
+
+    # Optionally, if there's an error, print the stderr
+    if res.returncode != 0:
+        print("Error:", res.stderr)
+
+
+    print(f'{wd=}')
+    print('#+=#' * 20)
+
+    json_out_files = [f for f in glob.glob(os.path.join(wd, "*.json")) if not f.endswith('payload.json')]
     results = {"callbackID": callback_id, "validationList": []}
+
     if len(json_out_files) > 0:
         for j in json_out_files:
             with open(j, "r") as f:
                 results["validationList"].append(json.load(f))
+
+        print('>>>>>>>>>>>>>>>>>>>>>calling add_errors_if_study_missing <<<<<<<<<<<<<<<<<<')
         add_errors_if_study_missing(callback_id, content, results)
     else:
+        print('>>>>>>>>>>>>>>>>>>>>>calling results_if_failure <<<<<<<<<<<<<<<<<<')
         results = results_if_failure(callback_id, content)
+        print(f'{results=}')
+
     logger.info("results: " + json.dumps(results))
     # remove_payload_files(callback_id)
+
+    print('=================[ENDOF validate_files]=======================')
     return json.dumps(results)
 
 
@@ -221,7 +257,7 @@ def nextflow_command_string(
         f"--validatedPath {config.VALIDATED_PATH} "
         f"-w {wd} "
         f"-c {nextflow_config_path} "
-        f"-with-singularity {config.SINGULARITY_IMAGE}_{config.SINGULARITY_TAG}.sif"
+        # f"-with-singularity {config.SINGULARITY_IMAGE}_{config.SINGULARITY_TAG}.sif"
     )
     if containerise is False:
         nextflow_cmd = nextflow_cmd.split("-with-singularity")[0]
@@ -301,6 +337,11 @@ def publish_and_clean_sumstats(study_list):
 def construct_get_payload_response(callback_id):
     response = None
     payload = pl.Payload(callback_id=callback_id)
+
+    print('=-=-' * 20)
+    print(f'{payload=}')
+    print('=-=-' * 20)
+
     if payload.get_data_for_callback_id():
         if not payload.study_obj_list:
             # callback registered but studies not yet added (due to async)

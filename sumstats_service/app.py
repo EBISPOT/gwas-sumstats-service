@@ -214,12 +214,21 @@ def process_studies(
     zero_p_values: bool = False,
     bypass: bool = False,
 ):
-    if endpoints.create_studies(callback_id=callback_id, content=content):
+    print('=================[process_studies]=======================')
+    print(f'{callback_id=}')
+    print('[[[[[[[[[[[[[[[[[[[[[[before check]]]]]]]]]]]]]]]]]]]]]]')
+    check = endpoints.create_studies(callback_id=callback_id, content=content)
+    print('[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]')
+    print(f'{check=}')
+    print('[[[[[[[[[[[[[[[[[[[[[[after check]]]]]]]]]]]]]]]]]]]]]]')
+    if check:
+        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> calling validate_files_in_background.apply_async <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
         validate_files_in_background.apply_async(
             args=[callback_id, content, minrows, forcevalid, bypass, zero_p_values],
             link=store_validation_results.s(),
             retry=True,
         )
+    print('=================[ENDOF process_studies]=================')
 
 
 @celery.task(queue=config.CELERY_QUEUE1, options={"queue": config.CELERY_QUEUE1})
@@ -231,6 +240,7 @@ def validate_files_in_background(
     bypass: bool = False,
     zero_p_values: bool = False,
 ):
+    print('=================[validate_files_in_background]=======================')
     au.store_validation_method(callback_id=callback_id, bypass_validation=forcevalid)
     if bypass is True:
         results = au.skip_validation_completely(
@@ -244,11 +254,17 @@ def validate_files_in_background(
             forcevalid=forcevalid,
             zero_p_values=zero_p_values,
         )
+    print('-|-|-|' * 20)
+    print(f'{results=}')
+    print('-|-|-|' * 20)
+    print('=================[ENDOF validate_files_in_background]=======================')
+    
     return results
 
 
 @celery.task(queue=config.CELERY_QUEUE2, options={"queue": config.CELERY_QUEUE2})
 def store_validation_results(results):
+    print('[[[[[[[[[[[[store_validation_results]]]]]]]]]]]]')
     if results:
         au.store_validation_results_in_db(results)
 

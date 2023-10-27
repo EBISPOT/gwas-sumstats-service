@@ -6,19 +6,24 @@ services:
         depends_on:
             - rabbitmq
             - mongodb
-        links:
-            - rabbitmq
-            - mongodb
         environment:
           - FLASK_APP=sumstats_service.app
           - MONGO_URI=mongodb://mongodb:27017/
+          - MONGO_USER=myuser
+          - MONGO_PASSWORD=mypassword
           - MONGO_DB=sumstats-service
+          - CELERY_PROTOCOL=amqp
+          - CELERY_USER=guest
+          - CELERY_PASSWORD=guest
+          - QUEUE_HOST=rabbitmq
+          - QUEUE_PORT=5672
+        command: "gunicorn -b 0.0.0.0:8000 sumstats_service.app:app --log-level=debug"
         ports:
             - 8000:8000
         volumes:
           - ./logs:/sumstats_service/logs
           - ./data/sumstats_meta.db:/sumstats_service/data/sumstats_meta.db
-          
+
     rabbitmq:
         image: rabbitmq:3.6-management
         hostname: rabbitmq
@@ -26,23 +31,88 @@ services:
             - 15672:15672
             - 5672:5672
 
-    celery:
+    # celery:
+    #     build: .
+    #     image: gwas-ss-service:latest
+    #     command: "celery -A sumstats_service.app.celery worker --queues=postval --loglevel=debug"
+    #     depends_on:
+    #         - rabbitmq
+    #         - mongodb
+    #     environment:
+    #       - CELERY_PROTOCOL=amqp
+    #       - CELERY_USER=guest
+    #       - CELERY_PASSWORD=guest
+    #       - QUEUE_HOST=rabbitmq
+    #       - QUEUE_PORT=5672
+    #       - MONGO_URI=mongodb://mongodb:27017/
+    #       - MONGO_USER=myuser
+    #       - MONGO_PASSWORD=mypassword
+    #       - MONGO_DB=sumstats-service
+    #     volumes:
+    #       - ./logs:/sumstats_service/logs
+    #       - ./data/sumstats_meta.db:/sumstats_service/data/sumstats_meta.db
+
+    celery-db:
         build: .
         image: gwas-ss-service:latest
         command: "celery -A sumstats_service.app.celery worker --queues=postval --loglevel=debug"
         depends_on:
             - rabbitmq
             - mongodb
-        links:
-            - rabbitmq
-            - mongodb
+        environment:
+          - CELERY_PROTOCOL=amqp
+          - CELERY_USER=guest
+          - CELERY_PASSWORD=guest
+          - QUEUE_HOST=rabbitmq
+          - QUEUE_PORT=5672
+          - MONGO_URI=mongodb://mongodb:27017/
+          - MONGO_USER=myuser
+          - MONGO_PASSWORD=mypassword
+          - MONGO_DB=sumstats-service
         volumes:
           - ./logs:/sumstats_service/logs
           - ./data/sumstats_meta.db:/sumstats_service/data/sumstats_meta.db
 
+    celery-val:
+        build: .
+        image: gwas-ss-service:latest
+        command: "celery -A sumstats_service.app.celery worker --queues=preval --loglevel=debug"
+        depends_on:
+            - rabbitmq
+            - mongodb
+        environment:
+          - CELERY_PROTOCOL=amqp
+          - CELERY_USER=guest
+          - CELERY_PASSWORD=guest
+          - QUEUE_HOST=rabbitmq
+          - QUEUE_PORT=5672
+          - MONGO_URI=mongodb://mongodb:27017/
+          - MONGO_USER=myuser
+          - MONGO_PASSWORD=mypassword
+          - MONGO_DB=sumstats-service
+        volumes:
+          - ./logs:/sumstats_service/logs
+          - ./data/sumstats_meta.db:/sumstats_service/data/sumstats_meta.db
+
+
     mongodb:
         image: mongo:latest
+        environment:
+        - MONGO_INITDB_ROOT_USERNAME=myuser
+        - MONGO_INITDB_ROOT_PASSWORD=mypassword
+        - MONGO_INITDB_DATABASE=sumstats-service
         volumes:
-          - ./data/mongo:/data/db
+        - ./data/mongo:/data/db
         ports:
-          - 27017:27017
+        - 27017:27017
+
+    # nextflow:
+    #     image: nextflow/nextflow:latest
+    #     # command: "/path/to/your/nextflow/script.nf" # You can specify your Nextflow script or any other command here
+    #     volumes:
+    #       - ./nextflow_work:/nextflow/work # Map Nextflow's work directory to persist it across restarts
+    #       - ./nextflow_logs:/nextflow/logs # Map a directory to store logs
+    #     #   - ./data:/data # If your Nextflow script uses data from the `data` directory, for example
+    #     environment:
+    #       - NXF_HOME=/path/to/your/nextflow/home # Optionally, if you have specific Nextflow configurations
+

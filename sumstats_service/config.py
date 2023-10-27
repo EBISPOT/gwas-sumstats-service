@@ -13,7 +13,7 @@ VALIDATED_PATH = _env_variable_else("VALIDATED_PATH", "depo_ss_validated")
 SW_PATH = _env_variable_else("SW_PATH", "./bin")
 DEPO_PATH = _env_variable_else("DEPO_PATH", "./depo_data")
 CONTAINERISE = _env_variable_else("CONTAINERISE", "./depo_data")
-
+TEST_PATH = _env_variable_else("TEST_PATH", "/tests")
 
 # --- Rabbit and Celery --- #
 
@@ -153,7 +153,7 @@ VALIDATION_ERRORS = [
 VALID_ASSEMBLIES = ["GRCh38", "GRCh37", "NCBI36", "NCBI35", "NCBI34", "NR"]
 
 NEXTFLOW_CONFIG = (
-    "executor.name = 'lsf'\n"
+    "executor.name = 'local'\n"
     "executor.queueSize = 100\n"
     "singularity.cacheDir = '{sing_cache_dir}'\n"
 ).format(

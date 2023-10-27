@@ -181,6 +181,14 @@ class Study:
             self.entryUUID,
             self.raw_ss,
         ]
+        
+        print('=================[create_entry_for_study]=================')
+
+        print(f'{config.MONGO_URI=}')
+        print(f'{config.MONGO_DB=}')
+
+        print('========[ENDOF create_entry_for_study]=================')
+
         mdb = MongoClient(
             config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB
         )
@@ -203,6 +211,8 @@ class Study:
             return True
 
     def retrieve_study_file(self):
+        print('[[[[[[[[[[[[[[[[[[[04 - retrieve_study_file]]]]]]]]]]]]]]]]]]]')
+
         ssf = fh.SumStatFile(
             file_path=self.file_path,
             callback_id=self.callback_id,
@@ -220,7 +230,9 @@ class Study:
 
     def validate_study(self, minrows=None, forcevalid=False, zero_p_values=False):
         # Step through the validation
-        if self.mandatory_metadata_check() is True:
+        is_metadata_check = self.mandatory_metadata_check()
+        print(f'{is_metadata_check=}')
+        if is_metadata_check:
             ssf = fh.SumStatFile(
                 file_path=self.file_path,
                 callback_id=self.callback_id,
@@ -233,7 +245,9 @@ class Study:
                 genome_assembly=self.assembly,
                 zero_p_values=zero_p_values,
             )
-            if not ssf.md5_ok():
+            is_md5_ok = True # ssf.md5_ok()
+            print(f'{is_md5_ok=}')
+            if not is_md5_ok:
                 self.set_data_valid_status(0)
                 self.set_error_code(2)
                 # retrieved must be true

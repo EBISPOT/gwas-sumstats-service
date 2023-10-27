@@ -7,16 +7,82 @@ RUN mkdir -p $INSTALL_PATH
 WORKDIR $INSTALL_PATH
 
 COPY requirements.txt requirements.txt
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc openssh-client python-dev libmagic-dev make \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        gcc \
+        openssh-client \
+        python-dev \
+        libmagic-dev make \
+        curl \
+        default-jre \
+        build-essential \
+        libssl-dev \
+        uuid-dev \
+        libgpgme11-dev \
+        squashfs-tools \
+        libseccomp-dev \
+        wget \
+        pkg-config \
+        git \
+        cryptsetup \
+        qemu-user-static \   
+        autoconf \
+        automake \
+        libfuse-dev \
+        libglib2.0-dev \
+        libtool \
+        runc \
+        uidmap \
+        zlib1g-dev \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --upgrade pip \
-    && pip install -r requirements.txt \
-    && apt-get purge -y --auto-remove gcc python-dev
+    && pip install -r requirements.txt
 # the --no-install-recommends helps limit some of the install so that you can be more explicit about what gets installed
+
+# # Install Nextflow
+# USER root
+RUN curl -s https://get.nextflow.io | bash && \
+    mv nextflow /usr/local/bin && \
+    chmod 777 /usr/local/bin/nextflow
+
+# RUN chmod 777 /usr/local/bin/nextflow
+
+# Installing Go
+ENV VERSION=1.21.0
+ENV OS=linux
+ENV ARCH=arm64
+RUN wget https://dl.google.com/go/go$VERSION.$OS-$ARCH.tar.gz && \
+    tar -C /usr/local -xzvf go$VERSION.$OS-$ARCH.tar.gz && \
+    rm go$VERSION.$OS-$ARCH.tar.gz
+
+# Setting GOPATH and PATH for Go
+# RUN echo 'export PATH=/usr/local/go/bin:$PATH' >> ~/.bashrc
+ENV PATH="/usr/local/go/bin:${PATH}"
+
+# Install as root
+# USER root
+
+# Install Singularity
+RUN VERSION_SING=4.0.0 && \
+    wget https://github.com/sylabs/singularity/releases/download/v4.0.0/singularity-ce-4.0.0.tar.gz && \
+    tar -xzf singularity-ce-4.0.0.tar.gz && \
+    cd singularity-ce-4.0.0 && \
+    ./mconfig && \
+    make -C builddir && \
+    make -C builddir install
+
+# Switch back to usual user
+# USER sumstats-service
+
+# RUN wget https://github.com/apptainer/singularity/releases/download/v3.8.5/singularity-3.8.5.tar.gz
+# RUN tar -xzf singularity-3.8.5.tar.gz
+# WORKDIR singularity-3.8.5
+# RUN ./mconfig > mconfig.log 2>&1
+# RUN cat mconfig.log
 
 COPY . .
 COPY ./sumstats_service /sumstats_service
+COPY ./tests /tests
 
 RUN pip install -e .
 
@@ -33,10 +99,11 @@ ENV QUEUE_HOST "rabbitmq"
 ENV QUEUE_PORT 5672
 ENV CELERY_QUEUE1 "preval"
 ENV CELERY_QUEUE2 "postval"
-ENV STORAGE_PATH "./data"
-ENV STAGING_PATH "./staging"
-ENV DEPO_PATH "./depo_data"
-ENV VALIDATED_PATH "./depo_ss_validated"
+ENV STORAGE_PATH "/sumstats_service/data"
+ENV STAGING_PATH "/sumstats_service/staging"
+ENV DEPO_PATH "/sumstats_service/depo_data"
+ENV TEST_PATH = "/sumstats_service/tests"
+ENV VALIDATED_PATH "/sumstats_service/depo_ss_validated"
 ENV SW_PATH "./bin"
 ENV VALIDATE_WITH_SSH ""
 ENV COMPUTE_FARM_LOGIN_NODE ""

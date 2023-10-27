@@ -43,6 +43,7 @@ def validate_study(
     zero_p_values=False,
 ):
     logger.info("validating study data")
+    print('[[[[[[[[[[[[[[validate_study]]]]]]]]]]]]]]')
     study = st.Study(
         callback_id=callback_id,
         study_id=study_id,
@@ -65,6 +66,14 @@ def validate_study(
 def copy_file_for_validation(
     callback_id, study_id, filepath, entryUUID, md5, assembly, out=None
 ):
+    print('[[[[[[[[[[[[[[[[[[[03]]]]]]]]]]]]]]]]]]]')
+    print(f'{callback_id=}')
+    print(f'{study_id=}')
+    print(f'{filepath=}')
+    print(f'{entryUUID=}')
+    print(f'{md5=}')
+    print(f'{assembly=}')
+    
     study = st.Study(
         callback_id=callback_id,
         study_id=study_id,
@@ -201,18 +210,31 @@ def main():
     if args.ftppass:
         config.FTP_PASSWORD = args.ftppass
 
-    if is_path(args.payload):
-        with open(args.payload, "r") as f:
-            content = json.load(f)
-    else:
-        # if content is given as json string
-        content = json.loads(args.payload)
+    print('==++' * 20)
+    print(f'{args.payload=}')
+    print(f'{is_path(args.payload)=}')
+    print('=++=' * 20)
+
+    with open(args.payload, "r") as f:
+        content = json.load(f)
+
+    # if is_path(args.payload):
+    #     with open(args.payload, "r") as f:
+    #         content = json.load(f)
+    # else:
+    #     # if content is given as json string
+    #     content = json.loads(args.payload)
 
     filepath, md5, assembly, readme, entryUUID = parse_payload(
         content, args.id, args.cid
     )
     out = os.path.join(args.validated_path, args.cid, args.out)
     logger.info(f"validation out json: {out}")
+
+    print('[[[[[[[[[[[[[[[[[[[01]]]]]]]]]]]]]]]]]]]')
+    print(f'{args.copy_only=}')
+    print('[[[[[[[[[[[[[[[[[[[02]]]]]]]]]]]]]]]]]]]')
+
     if args.copy_only:
         copy_file_for_validation(
             callback_id=args.cid,
@@ -227,6 +249,18 @@ def main():
         minrows = (
             None if len(args.minrows) == 0 or args.minrows == "None" else args.minrows
         )
+
+        print(f'{minrows=}')
+        print(f'{args.cid=}')
+        print(f'{args.id=}')
+        print(f'{filepath=}')
+        print(f'{md5=}')
+        print(f'{assembly=}')
+        print(f'{entryUUID=}')
+        print(f'{out=}')
+        print(f'{args.forcevalid=}')
+        print(f'{args.zero_p=}')
+
         validate_study(
             args.cid,
             args.id,

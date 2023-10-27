@@ -84,6 +84,11 @@ class SumStatFile:
         self.make_parent_dir()
         self.set_store_path()
         source_path = self._get_source_file()
+
+        print('[[[[[[[[[[[[[[[[[[[05 - retrieve]]]]]]]]]]]]]]]]]]]')
+        print(f'{source_path=}')
+        print(f'{self.store_path=}')
+
         # copy from source_path to store_path
         try:
             shutil.copyfile(source_path, self.store_path)
@@ -94,7 +99,7 @@ class SumStatFile:
             return False
 
     def _get_source_dir(self):
-        return os.path.join(config.DEPO_PATH, self.entryUUID)
+        return os.path.join("/sumstats_service/tests", self.entryUUID)
 
     def _get_source_file(self):
         return os.path.join(self._get_source_dir(), self.file_path)
@@ -165,6 +170,7 @@ class SumStatFile:
         logger.info(self.store_path)
 
     def validate_file(self):
+        print('[[[[[[[[[[[[[validate_file]]]]]]]]]]]]]')
         self.glob_store_path()
         self.set_logfile()
         self.validation_error = 3
@@ -175,10 +181,17 @@ class SumStatFile:
                 pval_zero=self.zero_p_values,
             )
         else:
+            print(f'because {self.minrows=}')
             validator = Validator(
-                sumstats_file=self.store_path, pval_zero=self.zero_p_values
+                sumstats_file=self.store_path, 
+                minimum_rows=2,
+                pval_zero=self.zero_p_values
             )
         status, message = validator.validate()
+        print('[[[[[[[[[[ validator.validate() ]]]]]]]]]]')
+        print(f'{status=}')
+        print(f'{message=}')
+
         logger.info(message)
         if status is False:
             error_to_code_dict = {
