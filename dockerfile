@@ -25,6 +25,7 @@ EXPOSE 8000
 RUN mkdir -p logs
 RUN chown -R sumstats-service:sumstats-service $INSTALL_PATH
 
+ENV CONTAINERISE False
 ENV CELERY_PROTOCOL "amqp"
 ENV CELERY_USER "guest"
 ENV CELERY_PASSWORD "guest"
