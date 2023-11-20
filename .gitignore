@@ -27,3 +27,7 @@ htmlcov
 refresh-tokens.json
 
 tox.ini
+
+# docker
+build
+data
