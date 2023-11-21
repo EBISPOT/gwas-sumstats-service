@@ -72,8 +72,7 @@ deploy_staging_workers:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
   script:
-    - ssh -o StrictHostKeyChecking=no "$WORKER_USER"@"$WORKER_SERVER"
-      "bsub -K -cwd $WORKER_DIR_DEV -oo deploy.out -eo deploy.err -M12000 -R 'rusage[mem=12000]' ./START_CELERY_WORKERS.sh $CI_COMMIT_SHA"
+    - ssh -o StrictHostKeyChecking=no "$WORKER_USER"@"$WORKER_SERVER_SLURM" "sbatch --mem=12000M --time=00:30:00 -D $WORKER_DIR_DEV -o deploy.out -e deploy.err --wrap='./START_CELERY_WORKERS_SLURM.sh'"
   tags:
     - gwas
   only:
@@ -90,8 +89,7 @@ deploy_prod_workers:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
   script:
-    - ssh -o StrictHostKeyChecking=no "$WORKER_USER"@"$WORKER_SERVER"
-      "bsub -K -cwd $WORKER_DIR -oo deploy.out -eo deploy.err -M12000 -R 'rusage[mem=12000]' ./START_CELERY_WORKERS.sh"
+    - ssh -o StrictHostKeyChecking=no "$WORKER_USER"@"$WORKER_SERVER_SLURM" "sbatch --mem=12000M --time=00:30:00 -D $WORKER_DIR_DEV -o deploy.out -e deploy.err --wrap='./START_CELERY_WORKERS_SLURM.sh'"
   tags:
     - gwas
   only:
