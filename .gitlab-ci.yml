@@ -73,7 +73,7 @@ deploy_staging_workers:
     - chmod 700 ~/.ssh
   script:
     # note the new  START_CELERY_WORKERS_SLURM script
-    - ssh -o StrictHostKeyChecking=no "$WORKER_USER"@"$WORKER_SERVER_SLURM" "sbatch --mem=12000M --time=00:30:00 -D $WORKER_DIR_DEV -o deploy.out -e deploy.err --wrap='./START_CELERY_WORKERS_SLURM.sh'"
+    - ssh -o StrictHostKeyChecking=no "$WORKER_USER"@"$WORKER_SERVER_SLURM" "sbatch --mem=12000M --time=00:30:00 -D $WORKER_DIR_DEV -o deploy.out -e deploy.err --wrap='./START_CELERY_WORKERS_SLURM.sh $CI_COMMIT_SHA'"
   tags:
     - gwas
   only:
