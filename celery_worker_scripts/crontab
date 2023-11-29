@@ -1,0 +1,20 @@
+# Start the harmonisation pipeline for GWAS-SSF:
+0 10 * * * . $HOME/.bash_profile; /hps/software/users/parkinso/spot/gwas/prod/scripts/cron/start_harmonisation.sh
+# Start the harmonisation pipeline for pre-GWAS-SSF:
+0 10 * * * . $HOME/.bash_profile; /hps/software/users/parkinso/spot/gwas/prod/scripts/cron/start_harmonisation_pre_standard.sh
+
+#Celery worker start for sumstats service (SANDBOX):
+0 10 */3 * * . $HOME/.bash_profile; /hps/software/users/parkinso/spot/gwas/dev/scripts/cron/sumstats_service/start_celery_worker.sh
+#Celery worker start for sumstats service (PROD):
+0 10 */3 * * . $HOME/.bash_profile; /hps/software/users/parkinso/spot/gwas/prod/scripts/cron/sumstats_service/start_celery_worker.sh
+# Set permissions on deposited files
+0 22 * * * . $HOME/.bash_profile; chmod -R g+w /hps/nobackup/parkinso/spot/gwas/data/sumstats/depo/staging/
+
+# refresh harmonisation queue
+0 17 * * * . $HOME/.bash_profile; /hps/software/users/parkinso/spot/gwas/prod/sw/harmonisation/refresh_hq.sh
+
+# queue GWAS-SSF files for harmonisation
+0 19 * * * . $HOME/.bash_profile; /hps/software/users/parkinso/spot/gwas/prod/sw/harmonisation/release_gwas_ssf.sh
+
+# queue pre-GWAS-SSF files for harmonisation 
+0 20 * * * . $HOME/.bash_profile; /hps/software/users/parkinso/spot/gwas/prod/sw/harmonisation/release_pre_gwas_ssf.sh
