@@ -21,18 +21,25 @@ celery_cmd="celery -A sumstats_service.app.celery worker --loglevel=${LOG_LEVEL}
 # are not sent to the batch step (the shell script). With this 
 # option scancel also signals the batch script and its children processes."
 # See https://slurm.schedmd.com/scancel.html#OPT_full
+echo "sending SIGTERM signal to prod celery workers"
 scancel --name=sumstats_service_celery_worker_prod --signal=TERM --full
 
 # Submit new SLURM jobs for HX celery workers
+echo "START spinning up HX celery workers:"
 for WORKER_ID in {1..3}; do
+    echo $WORKER_ID
     sbatch --parsable --output="cel_${WORKER_ID}.o" --error="cel_${WORKER_ID}.e" --mem=${MEM} --time=7-00:00:00 --job-name=sumstats_service_celery_worker_prod --wrap="${lmod_cmd}; ${singularity_cmd} ${celery_cmd}"
 done
+echo "DONE spinning up HX celery workers"
 
 # spin up the workers for hl rabbitmq
 ENV_FILE="/hps/software/users/parkinso/spot/gwas/prod/scripts/cron/sumstats_service/cel_envs_hh"
 singularity_cmd="singularity exec --env-file $ENV_FILE $SINGULARITY_CACHEDIR/gwas-sumstats-service_latest.sif"
 
 # Submit new SLURM jobs for HH celery workers
+echo "START spinning up HH celery workers:"
 for WORKER_ID in {4..6}; do
+    echo $WORKER_ID
     sbatch --parsable --output="cel_${WORKER_ID}.o" --error="cel_${WORKER_ID}.e" --mem=${MEM} --time=7-00:00:00 --job-name=sumstats_service_celery_worker_prod --wrap="${lmod_cmd}; ${singularity_cmd} ${celery_cmd}"
 done
+echo "DONE spinning up HH celery workers"

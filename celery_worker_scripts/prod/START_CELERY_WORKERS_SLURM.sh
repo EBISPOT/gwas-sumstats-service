@@ -44,7 +44,7 @@ singularity_cmd="singularity exec --env-file $ENV_FILE $SINGULARITY_CACHEDIR/gwa
 # Submit new SLURM jobs for HH celery workers
 echo "spinning up HH celery workers:"
 for WORKER_ID in {4..6}; do
-	echo $WORKER_ID
+    echo $WORKER_ID
     sbatch --parsable --output="cel_${WORKER_ID}.o" --error="cel_${WORKER_ID}.e" --mem=${MEM} --time=7-00:00:00 --job-name=sumstats_service_celery_worker_prod --wrap="${lmod_cmd}; ${singularity_cmd} ${celery_cmd}"
 done
 echo "DONE spinning up HH celery workers"

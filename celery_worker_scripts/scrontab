@@ -27,4 +27,4 @@
 0 10 */3 * * sbatch --mem=1200M --time=00:30:00 -o /hps/software/users/parkinso/spot/gwas/dev/scripts/cron/sumstats_service/deploy.out -e /hps/software/users/parkinso/spot/gwas/dev/scripts/cron/sumstats_service/deploy.err  --wrap="/hps/software/users/parkinso/spot/gwas/dev/scripts/cron/sumstats_service/start_celery_worker_slurm.sh"
 
 # Celery worker start for sumstats service (PROD):
-0 10 */3 * * sbatch --mem=1200M --time=02:00:00 -o /hps/software/users/parkinso/spot/gwas/prod/scripts/cron/sumstats_service/deploy.out -e /hps/software/users/parkinso/spot/gwas/prod/scripts/cron/sumstats_service/deploy.err  --wrap="/hps/software/users/parkinso/spot/gwas/prod/scripts/cron/sumstats_service/start_celery_worker_slurm.sh"
+0 10 */3 * * sbatch --mem=1200M --time=00:30:00 -o /hps/software/users/parkinso/spot/gwas/prod/scripts/cron/sumstats_service/deploy.out -e /hps/software/users/parkinso/spot/gwas/prod/scripts/cron/sumstats_service/deploy.err  --wrap="/hps/software/users/parkinso/spot/gwas/prod/scripts/cron/sumstats_service/start_celery_worker_slurm.sh"

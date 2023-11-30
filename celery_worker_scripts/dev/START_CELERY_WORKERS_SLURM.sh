@@ -38,6 +38,7 @@ celery_cmd="celery -A sumstats_service.app.celery worker --loglevel=${LOG_LEVEL}
 # are not sent to the batch step (the shell script). With this 
 # option scancel also signals the batch script and its children processes."
 # See https://slurm.schedmd.com/scancel.html#OPT_full
+echo "sending SIGTERM signal to dev celery workers"
 scancel --name=sumstats_service_celery_worker --signal=TERM --full
 
 echo "START spinning up dev celery workers:"
