@@ -16,15 +16,19 @@ lmod_cmd="module load singularity-3.6.4-gcc-9.3.0-yvkwp5n; module load openjdk-1
 
 if [ ! -z "${COMMIT_SHA}" ];
 then
+    echo "START pulling Singularity Image"
     sed -i "s/SINGULARITY_TAG=.*/SINGULARITY_TAG=\"${COMMIT_SHA}\"/g" $ENV_FILE
     singularity pull --dir $SINGULARITY_CACHEDIR docker://${SINGULARITY_REPO}/${SINGULARITY_IMAGE}:${COMMIT_SHA}
     SINGULARITY_TAG=$COMMIT_SHA
+    echo "DONE pulling Singularity Image"
 else
-    echo "not set"
+    echo "COMMIT_SHA not set"
 fi
 
 # Set Singularity cmd
+echo "START setting Singularity cmd"
 singularity_cmd="singularity exec --env-file $ENV_FILE $SINGULARITY_CACHEDIR/gwas-sumstats-service_${SINGULARITY_TAG}.sif"
+echo "DONE setting Singularity cmd"
 
 # Set celery worker cmd
 celery_cmd="celery -A sumstats_service.app.celery worker --loglevel=${LOG_LEVEL} --queues=${CELERY_QUEUE1},${CELERY_QUEUE2}"
@@ -36,7 +40,10 @@ celery_cmd="celery -A sumstats_service.app.celery worker --loglevel=${LOG_LEVEL}
 # See https://slurm.schedmd.com/scancel.html#OPT_full
 scancel --name=sumstats_service_celery_worker --signal=TERM --full
 
+echo "START spinning up dev celery workers:"
 # Submit new SLURM jobs for celery workers
 for WORKER_ID in {1..2}; do
+	echo $WORKER_ID
     sbatch --parsable --output="cel_${WORKER_ID}.o" --error="cel_${WORKER_ID}.e" --mem=${MEM} --time=7-00:00:00 --job-name=sumstats_service_celery_worker --wrap="${lmod_cmd}; ${singularity_cmd} ${celery_cmd}"
 done
+echo "DONE spinning up dev celery workers"
