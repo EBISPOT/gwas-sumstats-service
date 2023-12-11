@@ -12,6 +12,7 @@ from typing import Union
 
 import pandas as pd
 import yaml
+import ruamel.yaml
 from gwas_sumstats_tools.schema.metadata import SumStatsMetadata, SampleMetadata
 from packaging import version
 from pydantic import validator
@@ -291,8 +292,19 @@ class MetadataConverter:
 
     def _write_metadata_to_file(self):
         if self._out_type == "ssf_yaml":
+            yaml_data =yaml.dump(self.metadata.dict(exclude_none=True), default_flow_style=False,sort_keys=False)
+            yaml_yaml=ruamel.yaml.YAML().load(str(yaml_data))
+            yaml_yaml.yaml_set_start_comment("Study meta-data")
+            yaml_yaml.yaml_set_comment_before_after_key('trait_description','\nTrait Information')
+            yaml_yaml.yaml_set_comment_before_after_key('genome_assembly','\nGenotyping Information')
+            yaml_yaml.yaml_set_comment_before_after_key('samples','\nSample Information')
+            yaml_yaml.yaml_set_comment_before_after_key('data_file_name','\nSummary Statistic information')
+            yaml_yaml.yaml_set_comment_before_after_key('is_harmonised','\nHarmonization status')
             with open(self._out_file, "w") as f:
-                yaml.dump(self.metadata.dict(exclude_unset=True), f, encoding="utf-8")
+                yml = ruamel.yaml.YAML()
+                yml.indent(mapping=2, sequence=4, offset=2)
+                yml.dump(yaml_yaml,
+                      f)
         else:
             logger.error("Output type not recognised")
 
@@ -358,7 +370,7 @@ class MetadataConverter:
 
     def _add_defaults_to_meta(self):
         self._formatted_metadata["file_type"] = self._get_file_type()
-        self._formatted_metadata["date_last_modified"] = date.today()
+        self._formatted_metadata["date_metadata_last_modified"] = date.today()
 
     def _add_gwas_cat_link(self):
         self._formatted_metadata["gwas_catalog_catalog_api"] = (
@@ -367,6 +379,37 @@ class MetadataConverter:
 
     def _add_genome_assembly(self):
         self._formatted_metadata["genome_assembly"] = self._genome_assembly
+    
+    def yscbak(self, key, before=None, indent=0, after=None, after_indent=None):
+        """
+        expects comment (before/after) to be without `#` and possible have multiple lines
+        """
+        from ruamel.yaml.error import Mark
+        from ruamel.yaml.tokens import CommentToken
+        
+        def comment_token(s, mark):
+            # handle empty lines as having no comment
+            return CommentToken(('# ' if s else '') + s + '\n', mark, None)
+        
+        if after_indent is None:
+            after_indent = indent + 2
+        if before and before[-1] == '\n':
+            before = before[:-1]  # strip final newline if there
+        if after and after[-1] == '\n':
+            after = after[:-1]  # strip final newline if there
+        start_mark = Mark(None, None, None, indent, None, None)
+        c = self.ca.items.setdefault(key, [None, [], None, None])
+        if before:
+            for com in before.split('\n'):
+                c[1].append(comment_token(com, start_mark))
+        if after:
+            start_mark = Mark(None, None, None, after_indent, None, None)
+            if c[3] is None:
+                c[3] = []
+            for com in after.split('\n'):
+                c[3].append(comment_token(com, start_mark))
+    if not hasattr(ruamel.yaml.comments.CommentedMap,'yaml_set_comment_before_after_key'):
+        ruamel.yaml.comments.CommentedMap.yaml_set_comment_before_after_key = yscbak
 
 
 def main():
