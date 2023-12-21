@@ -220,7 +220,7 @@ def nextflow_command_string(
         f"--zerop {zero_p_values} "
         f"--validatedPath {config.VALIDATED_PATH} "
         f"-w {wd} "
-        f"-c {nextflow_config_path} "
+        f"-C {nextflow_config_path} "
         f"-with-singularity {config.SINGULARITY_IMAGE}_{config.SINGULARITY_TAG}.sif"
     )
     if containerise is False:
