@@ -26,6 +26,8 @@ build:
   only:
    - master
    - dev
+  tags:
+   - sxu1Yvzr9
 
 
 # if a tag is created create an images with the tag and a latest
@@ -61,6 +63,8 @@ deploy_staging_app:
   only:
     - master
     - dev
+  tags:
+   - sxu1Yvzr9
 
 deploy_staging_workers:
   image: alpine
@@ -79,6 +83,8 @@ deploy_staging_workers:
   only:
     - master
     - dev
+  tags:
+   - sxu1Yvzr9
 
 deploy_prod_workers:
   image: alpine
