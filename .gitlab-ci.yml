@@ -27,7 +27,7 @@ build:
    - master
    - dev
   tags:
-   - sxu1Yvzr9
+   - gwas
 
 
 # if a tag is created create an images with the tag and a latest
@@ -64,7 +64,7 @@ deploy_staging_app:
     - master
     - dev
   tags:
-   - sxu1Yvzr9
+   - gwas
 
 deploy_staging_workers:
   image: alpine
@@ -84,7 +84,7 @@ deploy_staging_workers:
     - master
     - dev
   tags:
-   - sxu1Yvzr9
+   - gwas
 
 deploy_prod_workers:
   image: alpine
