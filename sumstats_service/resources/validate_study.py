@@ -225,7 +225,7 @@ def main():
         )
     else:
         minrows = (
-            None if len(args.minrows) == 0 or args.minrows == "None" else args.minrows
+            None if len(args.minrows) == 0 or args.minrows == "None" else int(args.minrows)
         )
         validate_study(
             args.cid,
