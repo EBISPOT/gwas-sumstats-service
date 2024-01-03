@@ -155,7 +155,7 @@ def validate_files(
     ) as f:
         write_data_to_path(data=f.read(), path=nf_script_path)
     subprocess.run(nextflow_cmd.split(), capture_output=True)
-    json_out_files = glob.glob(os.path.join(wd, "[!payload]*.json"))
+    json_out_files = [f for f in glob.glob(os.path.join(wd, "*.json")) if not f.endswith('payload.json')]
     results = {"callbackID": callback_id, "validationList": []}
     if len(json_out_files) > 0:
         for j in json_out_files:
@@ -223,7 +223,7 @@ def nextflow_command_string(
         f"-C {nextflow_config_path} "
         f"-with-singularity {config.SINGULARITY_IMAGE}_{config.SINGULARITY_TAG}.sif"
     )
-    if containerise is False:
+    if containerise == 'False':
         nextflow_cmd = nextflow_cmd.split("-with-singularity")[0]
     return nextflow_cmd
 

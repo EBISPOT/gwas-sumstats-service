@@ -41,6 +41,18 @@ celery = Celery(
 celery.conf.update(app.config)
 
 
+# @app.before_first_request
+# def setup_logging():
+#     # if not app.debug:
+#     #     # In production mode, add log handler to sys.stderr.
+#     #     app.logger.addHandler(logging.StreamHandler())
+#     #     app.logger.setLevel(logging.INFO)
+#     if not app.debug:
+#         gunicorn_logger = logging.getLogger('gunicorn.error')
+#         app.logger.handlers = gunicorn_logger.handlers
+#         app.logger.setLevel(gunicorn_logger.level)    
+
+
 # --- Errors --- #
 
 
@@ -92,18 +104,25 @@ def sumstats():
     """Register sumstats and validate them"""
     content = request.get_json(force=True)
     logger.info("POST content: " + str(content))
+
     resp = endpoints.generate_callback_id()
     resp_dict = json.loads(resp)
     callback_id = au.val_from_dict(key="callbackID", dict=resp_dict)
-    # minrows is the minimum number of rows for the validation to pass
-    minrows = au.val_from_dict(key="minrows", dict=content)
+
     # option to force submission to be valid and continue the pipeline
-    force_valid = au.val_from_dict(key="forceValid", dict=content, default=False)
+    force_valid = au.val_from_dict(key="forceValid", dict=content["requestEntries"][0], default=False)
+
+    # minrows is the minimum number of rows for the validation to pass
+    minrows = None if force_valid else au.val_from_dict(key="minrows", dict=content["requestEntries"][0])
+
     # option to allow zero p values
-    zero_p_values = au.val_from_dict(key="zeroPvalue", dict=content, default=False)
+    zero_p_values = au.val_from_dict(key="zeroPvalue", dict=content["requestEntries"][0], default=False)
+
     # option to bypass all validation and downstream steps
-    bypass = au.val_from_dict(key="skipValidation", dict=content, default=False)
-    minrows = None if force_valid is True else minrows
+    bypass = au.val_from_dict(key="skipValidation", dict=content["requestEntries"][0], default=False)
+
+    logger.info(f"{minrows=} {force_valid=} {zero_p_values=} {bypass=}")
+
     process_studies.apply_async(
         args=[callback_id, content, minrows, force_valid, zero_p_values, bypass],
         retry=True,
