@@ -15,9 +15,14 @@ from sumstats_service import config
 from sumstats_service.resources.utils import send_mail
 from sumstats_service.resources.error_classes import *
 
-logging.basicConfig(level=logging.DEBUG, format="(%(levelname)s): %(message)s")
-logger = logging.getLogger(__name__)
+from sumstats_service import logger_config
 
+logger = None
+try:
+    logger_config.setup_logging()
+    logger = logging.getLogger(__name__)
+except:
+    pass
 
 app = Flask(__name__)
 app.config["CELERY_BROKER_URL"] = "{msg_protocol}://{user}:{pwd}@{host}:{port}".format(
@@ -39,19 +44,6 @@ celery = Celery(
     backend=app.config["CELERY_RESULT_BACKEND"],
 )
 celery.conf.update(app.config)
-
-
-# @app.before_first_request
-# def setup_logging():
-#     # if not app.debug:
-#     #     # In production mode, add log handler to sys.stderr.
-#     #     app.logger.addHandler(logging.StreamHandler())
-#     #     app.logger.setLevel(logging.INFO)
-#     if not app.debug:
-#         gunicorn_logger = logging.getLogger('gunicorn.error')
-#         app.logger.handlers = gunicorn_logger.handlers
-#         app.logger.setLevel(gunicorn_logger.level)    
-
 
 # --- Errors --- #
 
@@ -250,12 +242,19 @@ def validate_files_in_background(
     bypass: bool = False,
     zero_p_values: bool = False,
 ):
+    print("[validate_files_in_background]")
+    print(f">>>>>>> {callback_id=} with {minrows=} {forcevalid=} {bypass=} {zero_p_values=}")
+
+    print('calling store_validation_method')
     au.store_validation_method(callback_id=callback_id, bypass_validation=forcevalid)
+
     if bypass is True:
+        print('Bypassing the validation.')
         results = au.skip_validation_completely(
             callback_id=callback_id, content=content
         )
     else:
+        print('Validating files.')
         results = au.validate_files(
             callback_id=callback_id,
             content=content,
