@@ -154,7 +154,7 @@ VALID_ASSEMBLIES = ["GRCh38", "GRCh37", "NCBI36", "NCBI35", "NCBI34", "NR"]
 
 NEXTFLOW_CONFIG = (
     "executor.name = 'slurm'\n"
-    # "executor.name = 'local'\n"
+    "process.executor = 'slurm'\n"
     "executor.queueSize = 100\n"
     "singularity.cacheDir = '{sing_cache_dir}'\n"
 ).format(
