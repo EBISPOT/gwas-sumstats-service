@@ -64,6 +64,8 @@ This section guides you through using Docker-compose to set up and run the `gwas
   ```
 
 ### Steps to Run
+0. Replace the local [Dockerfile](./dockerfile.local) and [docker-compose file](./docker-compose.local.yaml) with `Dockerfile` and `docker-compose.yaml`, respectively. 
+
 1. **Build the Docker Containers**
    
    Navigate to the cloned directory and build the Docker containers:
