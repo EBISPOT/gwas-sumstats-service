@@ -31,7 +31,7 @@ singularity_cmd="singularity exec --env-file $ENV_FILE $SINGULARITY_CACHEDIR/gwa
 echo "DONE setting Singularity cmd"
 
 # Set celery worker cmd
-celery_cmd="celery -A sumstats_service.app.celery worker --loglevel=${LOG_LEVEL} --queues=${CELERY_QUEUE1},${CELERY_QUEUE2}"
+celery_cmd="celery -A sumstats_service.app.celery worker --loglevel=${LOG_LEVEL} --queues=${CELERY_QUEUE1},${CELERY_QUEUE2} > celery_worker_dev.log 2>&1"
 
 # Shutdown gracefully all jobs named sumstats_service_celery_worker
 # --full is required because "By default, signals other than SIGKILL 
@@ -44,7 +44,7 @@ scancel --name=sumstats_service_celery_worker --signal=TERM --full
 echo "START spinning up dev celery workers:"
 # Submit new SLURM jobs for celery workers
 for WORKER_ID in {1..2}; do
-	echo $WORKER_ID
+    echo $WORKER_ID
     sbatch --parsable --output="cel_${WORKER_ID}.o" --error="cel_${WORKER_ID}.e" --mem=${MEM} --time=7-00:00:00 --job-name=sumstats_service_celery_worker --wrap="${lmod_cmd}; ${singularity_cmd} ${celery_cmd}"
 done
 echo "DONE spinning up dev celery workers"
