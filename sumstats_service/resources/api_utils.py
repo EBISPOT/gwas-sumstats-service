@@ -18,14 +18,14 @@ from sumstats_service.resources.error_classes import *
 from sumstats_service import logger_config
 
 
-logger = None
 try:
     logger_config.setup_logging()
     logger = logging.getLogger(__name__)
-except:
-    # logger_config.setup_logging_celery()
-    # logger = logging.getLogger('celery')
-    pass
+except Exception as e:
+    logging.basicConfig(level=logging.DEBUG, format="(%(levelname)s): %(message)s")
+    logger = logging.getLogger(__name__)
+    logger.error(f"Logging setup failed: {e}")
+
 
 def create_href(method_name, params=None):
     params = params or {}

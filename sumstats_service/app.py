@@ -17,12 +17,14 @@ from sumstats_service.resources.error_classes import *
 
 from sumstats_service import logger_config
 
-logger = None
 try:
     logger_config.setup_logging()
     logger = logging.getLogger(__name__)
-except:
-    pass
+except Exception as e:
+    logging.basicConfig(level=logging.DEBUG, format="(%(levelname)s): %(message)s")
+    logger = logging.getLogger(__name__)
+    logger.error(f"Logging setup failed: {e}")
+
 
 app = Flask(__name__)
 app.config["CELERY_BROKER_URL"] = "{msg_protocol}://{user}:{pwd}@{host}:{port}".format(
