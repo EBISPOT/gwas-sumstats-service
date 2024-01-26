@@ -20,7 +20,7 @@ CONTAINERISE = _env_variable_else("CONTAINERISE", "./depo_data")
 BROKER = "amqp"
 BROKER_HOST = "rabbitmq"
 BROKER_PORT = 5672
-# the following two queues were required for EHK + EBI LSF cluster
+# the following two queues were required for EHK + EBI SLURM cluster
 # install (pre-validation and post-validation) but are not required
 # if the worker is able to perform validation and see the database
 CELERY_QUEUE1 = _env_variable_else("CELERY_QUEUE1", "preval")
@@ -153,8 +153,8 @@ VALIDATION_ERRORS = [
 VALID_ASSEMBLIES = ["GRCh38", "GRCh37", "NCBI36", "NCBI35", "NCBI34", "NR"]
 
 NEXTFLOW_CONFIG = (
-    "executor.name = 'lsf'\n"
-    "process.executor = 'lsf'\n"
+    "executor.name = 'slurm'\n"
+    "process.executor = 'slurm'\n"
     "executor.queueSize = 100\n"
     "singularity.cacheDir = '{sing_cache_dir}'\n"
 ).format(

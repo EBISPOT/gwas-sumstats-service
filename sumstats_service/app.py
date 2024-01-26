@@ -15,9 +15,14 @@ from sumstats_service import config
 from sumstats_service.resources.utils import send_mail
 from sumstats_service.resources.error_classes import *
 
-logging.basicConfig(level=logging.DEBUG, format="(%(levelname)s): %(message)s")
-logger = logging.getLogger(__name__)
+from sumstats_service import logger_config
 
+logger = None
+try:
+    logger_config.setup_logging()
+    logger = logging.getLogger(__name__)
+except:
+    pass
 
 app = Flask(__name__)
 app.config["CELERY_BROKER_URL"] = "{msg_protocol}://{user}:{pwd}@{host}:{port}".format(
@@ -39,7 +44,6 @@ celery = Celery(
     backend=app.config["CELERY_RESULT_BACKEND"],
 )
 celery.conf.update(app.config)
-
 
 # --- Errors --- #
 
@@ -92,18 +96,25 @@ def sumstats():
     """Register sumstats and validate them"""
     content = request.get_json(force=True)
     logger.info("POST content: " + str(content))
+
     resp = endpoints.generate_callback_id()
     resp_dict = json.loads(resp)
     callback_id = au.val_from_dict(key="callbackID", dict=resp_dict)
-    # minrows is the minimum number of rows for the validation to pass
-    minrows = au.val_from_dict(key="minrows", dict=content)
+
     # option to force submission to be valid and continue the pipeline
-    force_valid = au.val_from_dict(key="forceValid", dict=content, default=False)
+    force_valid = au.val_from_dict(key="forceValid", dict=content["requestEntries"][0], default=False)
+
+    # minrows is the minimum number of rows for the validation to pass
+    minrows = None if force_valid else au.val_from_dict(key="minrows", dict=content["requestEntries"][0])
+
     # option to allow zero p values
-    zero_p_values = au.val_from_dict(key="zeroPvalue", dict=content, default=False)
+    zero_p_values = au.val_from_dict(key="zeroPvalue", dict=content["requestEntries"][0], default=False)
+
     # option to bypass all validation and downstream steps
-    bypass = au.val_from_dict(key="skipValidation", dict=content, default=False)
-    minrows = None if force_valid is True else minrows
+    bypass = au.val_from_dict(key="skipValidation", dict=content["requestEntries"][0], default=False)
+
+    logger.info(f"{minrows=} {force_valid=} {zero_p_values=} {bypass=}")
+
     process_studies.apply_async(
         args=[callback_id, content, minrows, force_valid, zero_p_values, bypass],
         retry=True,
@@ -231,12 +242,19 @@ def validate_files_in_background(
     bypass: bool = False,
     zero_p_values: bool = False,
 ):
+    print("[validate_files_in_background]")
+    print(f">>>>>>> {callback_id=} with {minrows=} {forcevalid=} {bypass=} {zero_p_values=}")
+
+    print('calling store_validation_method')
     au.store_validation_method(callback_id=callback_id, bypass_validation=forcevalid)
+
     if bypass is True:
+        print('Bypassing the validation.')
         results = au.skip_validation_completely(
             callback_id=callback_id, content=content
         )
     else:
+        print('Validating files.')
         results = au.validate_files(
             callback_id=callback_id,
             content=content,

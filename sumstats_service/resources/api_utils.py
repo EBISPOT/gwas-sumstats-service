@@ -15,10 +15,17 @@ import sumstats_service.resources.study_service as st
 import sumstats_service.resources.validate_payload as vp
 from sumstats_service import config
 from sumstats_service.resources.error_classes import *
+from sumstats_service import logger_config
 
-logging.basicConfig(level=logging.DEBUG, format="(%(levelname)s): %(message)s")
-logger = logging.getLogger(__name__)
 
+logger = None
+try:
+    logger_config.setup_logging()
+    logger = logging.getLogger(__name__)
+except:
+    # logger_config.setup_logging_celery()
+    # logger = logging.getLogger('celery')
+    pass
 
 def create_href(method_name, params=None):
     params = params or {}
@@ -122,10 +129,15 @@ def validate_files(
     forcevalid: bool = False,
     zero_p_values: bool = False,
 ):
+    print(f'[validate_files] for {callback_id=} with {minrows=} {forcevalid=} {zero_p_values=}')
+
     validate_metadata = vp.validate_metadata_for_payload(callback_id, content)
     if any([i["errorCode"] for i in json.loads(validate_metadata)["validationList"]]):
         # metadata invalid stop here
+        print('Error code exists!')
         return validate_metadata
+
+    print('No error code.')
     (
         wd,
         payload_path,
@@ -144,7 +156,7 @@ def validate_files(
         wd=wd,
         nf_script_path=nf_script_path,
     )
-    logger.info(nextflow_cmd)
+    print(nextflow_cmd)
     write_data_to_path(data=json.dumps(content), path=payload_path)
     write_data_to_path(data=config.NEXTFLOW_CONFIG, path=nextflow_config_path)
     with open(
@@ -154,8 +166,22 @@ def validate_files(
         "r",
     ) as f:
         write_data_to_path(data=f.read(), path=nf_script_path)
-    subprocess.run(nextflow_cmd.split(), capture_output=True)
-    json_out_files = glob.glob(os.path.join(wd, "[!payload]*.json"))
+
+    try:
+        print('Running NextFlow command...')
+        result = subprocess.run(nextflow_cmd, capture_output=True, text=True, shell=True)
+
+        if result.returncode != 0:
+            print("Error in submitting job: ", result.stderr)
+            return
+
+        print("Command output: ", result.stdout)
+    except Exception as e:
+        print('=== EXCEPTION ===')
+        print(e)
+    
+
+    json_out_files = [f for f in glob.glob(os.path.join(wd, "*.json")) if not f.endswith('payload.json')]
     results = {"callbackID": callback_id, "validationList": []}
     if len(json_out_files) > 0:
         for j in json_out_files:
@@ -164,7 +190,8 @@ def validate_files(
         add_errors_if_study_missing(callback_id, content, results)
     else:
         results = results_if_failure(callback_id, content)
-    logger.info("results: " + json.dumps(results))
+    
+    print("results: " + json.dumps(results))
     # remove_payload_files(callback_id)
     return json.dumps(results)
 
@@ -223,7 +250,7 @@ def nextflow_command_string(
         f"-c {nextflow_config_path} "
         f"-with-singularity {config.SINGULARITY_IMAGE}_{config.SINGULARITY_TAG}.sif"
     )
-    if containerise is False:
+    if containerise == 'False':
         nextflow_cmd = nextflow_cmd.split("-with-singularity")[0]
     return nextflow_cmd
 
