@@ -301,11 +301,6 @@ def remove_payload_files(callback_id):
 
 
 @celery.task(queue=config.CELERY_QUEUE1, options={"queue": config.CELERY_QUEUE1})
-def publish_and_clean_sumstats(resp):
-    au.publish_and_clean_sumstats(resp)
-
-
-@celery.task(queue=config.CELERY_QUEUE1, options={"queue": config.CELERY_QUEUE1})
 def move_files_to_staging(resp):
     return au.move_files_to_staging(resp)
 
