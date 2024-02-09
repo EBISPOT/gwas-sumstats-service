@@ -168,9 +168,31 @@ def delete_sumstats(callback_id):
 @app.route("/v1/sum-stats/<string:callback_id>", methods=["PUT"])
 def update_sumstats(callback_id):
     content = request.get_json(force=True)
+
     resp = endpoints.update_sumstats(callback_id=callback_id, content=content)
+    logger.debug(f'>>>>>>>>>>>>>>>>>>>> {resp=}')
+
     if resp:
-        publish_and_clean_sumstats.apply_async(args=[resp], retry=True)
+        move_files_result = move_files_to_staging.apply_async(
+            args=[resp], 
+            retry=True,
+        )
+        move_files_result.wait()
+        
+        if move_files_result.successful():
+            metadata_conversion_result = convert_metadata_to_yaml.apply_async(
+                args=[resp['studyList'][0]['gcst']], 
+                retry=True,
+            )
+            metadata_conversion_result.wait()
+
+            if metadata_conversion_result.successful():
+                delete_endpoint_result = delete_globus_endpoint.apply_async(
+                    args=[move_files_result.get()["globus_endpoint_id"]], 
+                    retry=True,
+                )
+                delete_endpoint_result.wait()
+
     return Response(status=200, mimetype="application/json")
 
 
@@ -281,6 +303,21 @@ def remove_payload_files(callback_id):
 @celery.task(queue=config.CELERY_QUEUE1, options={"queue": config.CELERY_QUEUE1})
 def publish_and_clean_sumstats(resp):
     au.publish_and_clean_sumstats(resp)
+
+
+@celery.task(queue=config.CELERY_QUEUE1, options={"queue": config.CELERY_QUEUE1})
+def move_files_to_staging(resp):
+    return au.move_files_to_staging(resp)
+
+
+@celery.task(queue=config.CELERY_QUEUE1, options={"queue": config.CELERY_QUEUE1})
+def convert_metadata_to_yaml(metadata):
+    return au.convert_metadata_to_yaml(metadata)
+
+
+@celery.task(queue=config.CELERY_QUEUE1, options={"queue": config.CELERY_QUEUE1})
+def delete_globus_endpoint(globus_endpoint_id):
+    return au.delete_globus_endpoint(globus_endpoint_id)
 
 
 @task_failure.connect
