@@ -16,7 +16,7 @@ import sumstats_service.resources.validate_payload as vp
 from sumstats_service import config
 from sumstats_service.resources.error_classes import *
 from sumstats_service import logger_config
-
+from gwas_sumstats_tools.interfaces.metadata import MetadataClient, metadata_dict_from_gwas_cat
 
 try:
     logger_config.setup_logging()
@@ -312,17 +312,83 @@ def publish_and_clean_sumstats(study_list):
             raw_ss=s["rawSS"],
             md5=s["md5"],
         )
+
         if study.move_file_to_staging() is True:
             moved += 1
+
         if callback_id is None:
             callback_id = s["callback_id"]
+
         if globus_endpoint_id is None:
             globus_endpoint_id = s["entryUUID"]
+
     if callback_id and globus_endpoint_id:
         payload = pl.Payload(callback_id=callback_id)
         payload.get_data_for_callback_id()
         if len(payload.study_obj_list) == moved:
             delete_globus_endpoint(globus_endpoint_id)
+
+
+def move_files_to_staging(study_list):
+    logger.info(f'==> Move sumstats files to staging for publishing for {study_list=}')
+
+    moved = 0
+    callback_id = None
+    globus_endpoint_id = None
+
+    for s in study_list["studyList"]:
+        study = st.Study(
+            study_id=s["id"],
+            file_path=s["file_path"],
+            assembly=s["assembly"],
+            callback_id=s["callback_id"],
+            readme=s["readme"],
+            entryUUID=s["entryUUID"],
+            author_name=s["author_name"],
+            pmid=s["pmid"],
+            gcst=s["gcst"],
+            raw_ss=s["rawSS"],
+            md5=s["md5"],
+        )
+
+        if study.move_file_to_staging():
+            moved += 1
+
+        if callback_id is None:
+            callback_id = s["callback_id"]
+
+        if globus_endpoint_id is None:
+            globus_endpoint_id = s["entryUUID"]
+
+    return {
+        "moved": moved, 
+        "callback_id": callback_id, 
+        "globus_endpoint_id": globus_endpoint_id,
+    }
+
+
+def convert_metadata_to_yaml(accession_id: str):
+    try:
+        # TODO: can we use file_handler here?
+        out_dir = os.path.join(config.STAGING_PATH, accession_id)
+        out_file = os.path.join(out_dir, accession_id + '-meta.yaml')
+        metadata_client = MetadataClient(out_file=out_file)
+        metadata_client.update_metadata(metadata_dict_from_gwas_cat(accession_id))
+
+        # print('::' * 50)
+        # print(f'{metadata_client.metadata=}')
+        # print('==' * 50)
+        # print(f'{metadata_client.metadata.dict=}')
+        # print('==' * 50)
+        # print(f'{metadata_client._meta_dict=}')
+        # print('::' * 50)
+
+        # TODO: Compare this file before and after
+        metadata_client.to_file()
+    except Exception as e:
+        logger.error(e)
+
+    return True
 
 
 def construct_get_payload_response(callback_id):
