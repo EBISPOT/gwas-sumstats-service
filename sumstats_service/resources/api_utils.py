@@ -338,14 +338,6 @@ def convert_metadata_to_yaml(accession_id: str):
         metadata_client = MetadataClient(out_file=out_file)
         metadata_client.update_metadata(metadata_dict_from_gwas_cat(accession_id))
 
-        # print('::' * 50)
-        # print(f'{metadata_client.metadata=}')
-        # print('==' * 50)
-        # print(f'{metadata_client.metadata.dict=}')
-        # print('==' * 50)
-        # print(f'{metadata_client._meta_dict=}')
-        # print('::' * 50)
-
         # TODO: Compare this file before and after
         metadata_client.to_file()
     except Exception as e:
