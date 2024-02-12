@@ -334,9 +334,14 @@ def convert_metadata_to_yaml(accession_id: str):
     try:
         # TODO: can we use file_handler here?
         out_dir = os.path.join(config.STAGING_PATH, accession_id)
-        out_file = os.path.join(out_dir, accession_id + '-meta.yaml')
+        out_file = os.path.join(out_dir, accession_id + "-meta.yaml")
         metadata_client = MetadataClient(out_file=out_file)
-        metadata_client.update_metadata(metadata_dict_from_gwas_cat(accession_id))
+        metadata_client.update_metadata(
+            metadata_dict_from_gwas_cat(
+                accession_id=accession_id,
+                is_bypass_rest_api=True,
+            )
+        )
 
         # TODO: Compare this file before and after
         metadata_client.to_file()
