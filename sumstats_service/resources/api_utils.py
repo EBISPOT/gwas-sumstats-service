@@ -1,22 +1,30 @@
+import ftplib
 import glob
+import hashlib
+import io
 import json
 import logging
 import os
 import subprocess
+import urllib
+from datetime import date
 from pathlib import Path
 from typing import Union
 from urllib.parse import unquote
 
 from flask import url_for
+from gwas_sumstats_tools.interfaces.metadata import (
+    MetadataClient, metadata_dict_from_gwas_cat)
 
+import sumstats_service.resources.file_handler as fh
 import sumstats_service.resources.globus as globus
 import sumstats_service.resources.payload as pl
 import sumstats_service.resources.study_service as st
 import sumstats_service.resources.validate_payload as vp
-from sumstats_service import config
+from sumstats_service import config, logger_config
 from sumstats_service.resources.error_classes import *
-from sumstats_service import logger_config
-from gwas_sumstats_tools.interfaces.metadata import MetadataClient, metadata_dict_from_gwas_cat
+from sumstats_service.resources.mongo_client import MongoClient
+from sumstats_service.resources.utils import download_with_requests
 
 try:
     logger_config.setup_logging()
@@ -33,9 +41,9 @@ def create_href(method_name, params=None):
     return {"href": unquote(url_for(method_name, **params))}
 
 
-def json_payload_to_db(content, callback_id=None):
-    payload = pl.Payload(payload=content, callback_id=callback_id)
-    payload.payload_to_db()
+def json_payload_to_db(content, file_type=None, callback_id=None):
+    payload = pl.Payload(payload=content, file_type=file_type, callback_id=callback_id)
+    payload.payload_to_db(file_type=file_type)
     if len(payload.metadata_errors) != 0:
         return False
     return payload.callback_id
@@ -83,10 +91,10 @@ def delete_globus_endpoint(globus_uuid):
     return status
 
 
-def skip_validation_completely(callback_id, content):
+def skip_validation_completely(callback_id, content, file_type=None):
     results = {"callbackID": callback_id, "validationList": []}
-    payload = pl.Payload(callback_id=callback_id, payload=content)
-    payload.create_study_obj_list()
+    payload = pl.Payload(callback_id=callback_id, payload=content, file_type=file_type)
+    payload.create_study_obj_list(file_type)
     study_list = [s.study_id for s in payload.study_obj_list]
     for study in study_list:
         results["validationList"].append(
@@ -128,10 +136,11 @@ def validate_files(
     minrows: Union[int, None] = None,
     forcevalid: bool = False,
     zero_p_values: bool = False,
+    file_type: Union[str, None] = None,
 ):
-    print(f'[validate_files] for {callback_id=} with {minrows=} {forcevalid=} {zero_p_values=}')
+    print(f'[validate_files] for {callback_id=} with {minrows=} {forcevalid=} {zero_p_values=} {file_type=}')
 
-    validate_metadata = vp.validate_metadata_for_payload(callback_id, content)
+    validate_metadata = vp.validate_metadata_for_payload(callback_id, content, file_type)
     if any([i["errorCode"] for i in json.loads(validate_metadata)["validationList"]]):
         # metadata invalid stop here
         print('Error code exists!')
@@ -330,26 +339,191 @@ def move_files_to_staging(study_list):
     }
 
 
-def convert_metadata_to_yaml(accession_id: str):
+
+def determine_file_type(is_in_file, is_bypass) -> str:
+    if is_bypass:
+        return "Non-GWAS-SSF"
+    return config.SUMSTATS_FILE_TYPE + ("-incomplete-meta" if not is_in_file else "")
+
+
+def get_template(callback_id):
+    """
+    Get template or None
+    download template
+    :param self:
+    :return: bytes or None
+    """
+    return download_with_requests(
+        url=urllib.parse.urljoin(config.GWAS_DEPO_REST_API_URL, "submissions/uploads"), 
+        params={"callbackId": callback_id}, 
+        headers={"jwt": config.DEPO_API_AUTH_TOKEN},
+    )
+
+
+def get_file_type_from_mongo(study_id) -> str:
+    mdb = MongoClient(
+        config.MONGO_URI,
+        config.MONGO_USER,
+        config.MONGO_PASSWORD,
+        config.MONGO_DB,
+    )
+    study_metadata = mdb.get_study_metadata(study_id)
+    return study_metadata['fileType']
+
+
+# TODO: refactor this method
+def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
     try:
-        # TODO: can we use file_handler here?
         out_dir = os.path.join(config.STAGING_PATH, accession_id)
         out_file = os.path.join(out_dir, accession_id + "-meta.yaml")
+
+        hm_dir = os.path.join(out_dir, 'harmonised')
+        out_file_hm = os.path.join(hm_dir, accession_id + ".h-meta.yaml")
+        
         metadata_client = MetadataClient(out_file=out_file)
-        metadata_client.update_metadata(
-            metadata_dict_from_gwas_cat(
-                accession_id=accession_id,
-                is_bypass_rest_api=True,
-            )
+
+        # Consume Ingest API via gwas-sumstats-tools
+        metadata_from_gwas_cat = metadata_dict_from_gwas_cat(
+            accession_id=accession_id,
+            is_bypass_rest_api=True,
         )
 
-        # TODO: Compare this file before and after
+        metadata_from_gwas_cat["trait_description"] = [metadata_from_gwas_cat["trait"]]
+        metadata_from_gwas_cat["date_metadata_last_modified"] = date.today()
+        metadata_from_gwas_cat["file_type"] = get_file_type_from_mongo(metadata_from_gwas_cat["studyId"])
+
+        filenames_to_md5_values = compute_and_write_md5_for_files(
+            config.FTP_SERVER_EBI, 
+            generate_path(accession_id), 
+            accession_id,
+            os.path.join(out_dir, 'md5sum.txt'),
+        )
+
+        filename_to_md5sum = get_md5_for_accession(filenames_to_md5_values, accession_id)
+        for k,v in filename_to_md5sum.items():
+            metadata_from_gwas_cat['data_file_name'] = k
+            metadata_from_gwas_cat['data_file_md5sum'] = v
+
+        metadata_from_gwas_cat["gwas_id"] = accession_id
+
+        metadata_from_gwas_cat["gwas_catalog_catalog_api"] = f'{config.GWAS_CATALOG_REST_API_STUDY_URL}{accession_id}'
+
+        metadata_client.update_metadata(metadata_from_gwas_cat)
+        
         metadata_client.to_file()
+
+        if not is_harmonised_included:
+            return True
+
+        # HM CASE
+        # Also generate client for hm case, i.e., if is_harmonised_included
+        metadata_client_hm = MetadataClient(out_file=out_file_hm)
+
+        metadata_from_gwas_cat['is_harmonised'] = True
+        metadata_from_gwas_cat['is_sorted'] = get_is_sorted(
+            config.FTP_SERVER_EBI, 
+            f'{generate_path(accession_id)}/harmonised',
+        )
+        filenames_to_md5_values = compute_and_write_md5_for_files(
+            config.FTP_SERVER_EBI, 
+            f'{generate_path(accession_id)}/harmonised', 
+            accession_id,
+            os.path.join(hm_dir, 'md5sum.txt'),
+        )
+        filename_to_md5sum = get_md5_for_accession(filenames_to_md5_values, accession_id, True)
+        for k,v in filename_to_md5sum.items():
+            metadata_from_gwas_cat['data_file_name'] = k
+            metadata_from_gwas_cat['data_file_md5sum'] = v
+
+        metadata_client_hm.update_metadata(metadata_from_gwas_cat)
+        metadata_client_hm.to_file()
     except Exception as e:
         logger.error(e)
+        return False
 
     return True
 
+
+def generate_path(gcst_id):
+    # Extract the numerical part of the GCST id
+    num_part = int(gcst_id[4:])
+    
+    # Determine the directory range
+    lower_bound = (num_part // 1000) * 1000 + 1
+    upper_bound = lower_bound + 999
+    
+    # Format the directory range and GCST id to create the path
+    path = f"/pub/databases/gwas/summary_statistics/GCST{lower_bound:07d}-GCST{upper_bound:07d}/{gcst_id}"
+    return path
+
+def get_is_sorted(ftp_server: str, ftp_directory: str):
+    with ftplib.FTP(ftp_server) as ftp:
+        ftp.login()
+        ftp.cwd(ftp_directory)
+        return any(f.endswith('.tbi') for f in ftp.nlst())
+
+
+
+def compute_and_write_md5_for_files(ftp_server: str, ftp_directory: str, file_id: str, output_file: str):
+    """Compute MD5 checksums for files starting with a specific ID in an FTP directory and write to a file."""
+    md5_lines = []  # To store lines for the output file
+    filename_to_md5 = {}
+
+    with ftplib.FTP(ftp_server) as ftp:
+        ftp.login()
+        ftp.cwd(ftp_directory)
+
+        # List files in the directory
+        files = ftp.nlst()
+
+        # Filter files by the starting ID
+        files_of_interest = [f for f in files if f.startswith(file_id)]
+
+        # Compute MD5 for each file and store the line for the output file
+        for filename in files_of_interest:
+            md5_checksum = compute_md5_ftp(ftp, ftp_directory, filename)
+            md5_lines.append(f"{md5_checksum} {filename}")
+            filename_to_md5[filename] = md5_checksum
+
+    # Write the MD5 checksums to the output file
+    with open(output_file, 'w') as f:
+        for line in md5_lines:
+            f.write(f"{line}\n")
+
+    return filename_to_md5
+
+
+def compute_md5_ftp(ftp: ftplib.FTP, ftp_path: str, filename: str) -> str:
+    """Compute MD5 checksum for a single file on an FTP server using an existing FTP connection."""
+    md5 = hashlib.md5()
+
+    def handle_binary(m):
+        md5.update(m)
+
+    ftp.retrbinary(f"RETR {filename}", handle_binary)
+
+    return md5.hexdigest()
+
+
+def get_md5_for_accession(md5_checksums: dict, accession_id: str, is_harmonised=False) -> dict:
+    """
+    Return the key (filename) and value (MD5 checksum) from md5_checksums
+    if there's a key that equals to accession_id.tsv.gz or accession_id.tsv.
+
+    Parameters:
+    - md5_checksums: Dictionary with filenames as keys and their MD5 checksums as values.
+    - accession_id: The accession ID to look for, with .tsv or .tsv.gz extensions.
+
+    Returns:
+    - A dictionary with the matching filename and its MD5 checksum. Empty if no match is found.
+    """
+    possible_keys = [f"{accession_id}.tsv", f"{accession_id}.tsv.gz"] if not is_harmonised else [f"{accession_id}.h.tsv", f"{accession_id}.h.tsv.gz"]
+    
+    for key in possible_keys:
+        if key in md5_checksums:
+            return {key: md5_checksums[key]}
+    
+    return {}
 
 def construct_get_payload_response(callback_id):
     response = None
