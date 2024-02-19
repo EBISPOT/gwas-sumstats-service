@@ -255,7 +255,6 @@ class SumStatFile:
             dest_file = os.path.join(dest_dir, self.staging_file_name + ext)
             pathlib.Path(dest_dir).mkdir(parents=True, exist_ok=True)
             shutil.move(source_file, dest_file)
-            self.convert_metadata_to_yaml(dest_file)
         except (IndexError, FileNotFoundError, OSError) as e:
             raise IOError(
                 "Error: {}\nCould not move file {} to staging,\ "

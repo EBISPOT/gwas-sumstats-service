@@ -22,8 +22,8 @@ def delete_sumstats(callback_id):
     return json.dumps(response)
 
 
-def create_studies(content, callback_id=None):
-    if au.json_payload_to_db(content=content, callback_id=callback_id):
+def create_studies(content, file_type=None, callback_id=None):
+    if au.json_payload_to_db(content=content, file_type=file_type, callback_id=callback_id):
         return True
     return False
 

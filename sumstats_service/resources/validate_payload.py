@@ -6,9 +6,9 @@ import sumstats_service.resources.payload as pl
 from sumstats_service import config
 
 
-def validate_metadata_for_payload(callback_id, content):
-    payload = pl.Payload(callback_id=callback_id, payload=content)
-    payload.create_study_obj_list()
+def validate_metadata_for_payload(callback_id, content, file_type=None):
+    payload = pl.Payload(callback_id=callback_id, payload=content, file_type=file_type)
+    payload.create_study_obj_list(file_type)
     payload.set_callback_id_for_studies()
     payload.validate_payload_metadata()
     response = construct_validation_response(callback_id, payload)

@@ -19,7 +19,7 @@ singularity pull --dir $SINGULARITY_CACHEDIR --force  docker://${SINGULARITY_REP
 singularity_cmd="singularity exec --env-file $ENV_FILE $SINGULARITY_CACHEDIR/gwas-sumstats-service_latest.sif"
 
 # Set celery worker cmd
-celery_cmd="celery -A sumstats_service.app.celery worker --loglevel=${LOG_LEVEL} --queues=${CELERY_QUEUE1},${CELERY_QUEUE2}"
+celery_cmd="celery -A sumstats_service.app.celery worker --loglevel=${LOG_LEVEL} --queues=${CELERY_QUEUE1},${CELERY_QUEUE2},${CELERY_QUEUE3}"
 
 
 # Warm shutdown existing celery workers
