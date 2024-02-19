@@ -19,7 +19,7 @@ echo "DONE pulling Singularity Image"
 singularity_cmd="singularity exec --env-file $ENV_FILE $SINGULARITY_CACHEDIR/gwas-sumstats-service_latest.sif"
 
 # Set celery worker cmd
-celery_cmd="celery -A sumstats_service.app.celery worker --loglevel=${LOG_LEVEL} --queues=${CELERY_QUEUE1},${CELERY_QUEUE2}"
+celery_cmd="celery -A sumstats_service.app.celery worker --loglevel=${LOG_LEVEL} --queues=${CELERY_QUEUE1},${CELERY_QUEUE2},${CELERY_QUEUE3}"
 
 # Shutdown gracefully all jobs named sumstats_service_celery_worker
 # --full is required because "By default, signals other than SIGKILL 
