@@ -42,6 +42,8 @@ spec:
           value: {{.Values.image.env.celeryQueue1}}
         - name: CELERY_QUEUE2
           value: {{.Values.image.env.celeryQueue2}}
+        - name: CELERY_QUEUE3
+          value: {{.Values.image.env.celeryQueue3}}
         - name: GWAS_ENDPOINT_ID
           value: {{.Values.image.env.gwasEndpointID}}
         - name: CLIENT_SECRET
