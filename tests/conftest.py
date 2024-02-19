@@ -1,5 +1,6 @@
-import pytest
 import os
+
+import pytest
 
 
 @pytest.fixture(scope='session')
@@ -13,7 +14,7 @@ def celery_config():
                 port=os.environ['QUEUE_PORT']
                 ),
             'result_backend': 'rpc://',
-            'queues':('preval', 'postval'),
+            'queues':('preval', 'postval', 'metadata-yml-update-sandbox'),
             'task_always_eager': True
            }
 

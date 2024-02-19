@@ -11,11 +11,9 @@ from flask import Flask, Response, abort, jsonify, make_response, request
 import sumstats_service.resources.api_endpoints as endpoints
 import sumstats_service.resources.api_utils as au
 import sumstats_service.resources.globus as globus
-from sumstats_service import config
-from sumstats_service.resources.utils import send_mail
+from sumstats_service import config, logger_config
 from sumstats_service.resources.error_classes import *
-
-from sumstats_service import logger_config
+from sumstats_service.resources.utils import send_mail
 
 try:
     logger_config.setup_logging()
@@ -115,10 +113,12 @@ def sumstats():
     # option to bypass all validation and downstream steps
     bypass = au.val_from_dict(key="skipValidation", dict=content["requestEntries"][0], default=False)
 
-    logger.info(f"{minrows=} {force_valid=} {zero_p_values=} {bypass=}")
+    file_type = au.determine_file_type(is_in_file=True, is_bypass=bypass)
+
+    logger.info(f"{minrows=} {force_valid=} {zero_p_values=} {bypass=} {file_type=}")
 
     process_studies.apply_async(
-        args=[callback_id, content, minrows, force_valid, zero_p_values, bypass],
+        args=[callback_id, content, file_type, minrows, force_valid, zero_p_values, bypass],
         retry=True,
     )
     return Response(response=resp, status=201, mimetype="application/json")
@@ -143,8 +143,13 @@ def validate_sumstats(callback_id: str):
     # reset validation status
     au.reset_validation_status(callback_id=callback_id)
     # run validation
+
+    # determine file_type
+    template = au.get_template(callback_id)
+    file_type = au.determine_file_type(is_in_file=bool(template), is_bypass=bypass)
+
     validate_files_in_background.apply_async(
-        args=[callback_id, content, minrows, force_valid, zero_p_values],
+        args=[callback_id, content, minrows, force_valid, zero_p_values, file_type],
         link=store_validation_results.s(),
         retry=True,
     )
@@ -170,25 +175,25 @@ def update_sumstats(callback_id):
     content = request.get_json(force=True)
 
     resp = endpoints.update_sumstats(callback_id=callback_id, content=content)
-    logger.debug(f'>>>>>>>>>>>>>>>>>>>> {resp=}')
+    logger.debug(f">>>>>>>>>>>>>>>>>>>> {resp=}")
 
     if resp:
         move_files_result = move_files_to_staging.apply_async(
-            args=[resp], 
+            args=[resp],
             retry=True,
         )
         move_files_result.wait()
-        
+
         if move_files_result.successful():
             metadata_conversion_result = convert_metadata_to_yaml.apply_async(
-                args=[resp['studyList'][0]['gcst']], 
+                args=[resp["studyList"][0]["gcst"], False],
                 retry=True,
             )
             metadata_conversion_result.wait()
 
             if metadata_conversion_result.successful():
                 delete_endpoint_result = delete_globus_endpoint.apply_async(
-                    args=[move_files_result.get()["globus_endpoint_id"]], 
+                    args=[move_files_result.get()["globus_endpoint_id"]],
                     retry=True,
                 )
                 delete_endpoint_result.wait()
@@ -238,20 +243,22 @@ def get_dir_contents(unique_id):
 # --- Celery tasks --- #
 # postval --> app side worker queue
 # preval --> compute cluster side worker queue
+# metadata-yml-update-sandbox --> dynamic metadata update queue
 
 
 @celery.task(queue=config.CELERY_QUEUE2, options={"queue": config.CELERY_QUEUE2})
 def process_studies(
     callback_id: str,
     content: dict,
+    file_type=None,
     minrows: Union[int, None] = None,
     forcevalid: bool = False,
     zero_p_values: bool = False,
     bypass: bool = False,
 ):
-    if endpoints.create_studies(callback_id=callback_id, content=content):
+    if endpoints.create_studies(callback_id=callback_id, file_type=file_type, content=content):
         validate_files_in_background.apply_async(
-            args=[callback_id, content, minrows, forcevalid, bypass, zero_p_values],
+            args=[callback_id, content, minrows, forcevalid, bypass, zero_p_values, file_type],
             link=store_validation_results.s(),
             retry=True,
         )
@@ -265,9 +272,10 @@ def validate_files_in_background(
     forcevalid: bool = False,
     bypass: bool = False,
     zero_p_values: bool = False,
+    file_type: Union[str, None] = None,
 ):
     print("[validate_files_in_background]")
-    print(f">>>>>>> {callback_id=} with {minrows=} {forcevalid=} {bypass=} {zero_p_values=}")
+    print(f">>>>>>> {callback_id=} with {minrows=} {forcevalid=} {bypass=} {zero_p_values=} {file_type=}")
 
     print('calling store_validation_method')
     au.store_validation_method(callback_id=callback_id, bypass_validation=forcevalid)
@@ -275,7 +283,9 @@ def validate_files_in_background(
     if bypass is True:
         print('Bypassing the validation.')
         results = au.skip_validation_completely(
-            callback_id=callback_id, content=content
+            callback_id=callback_id, 
+            content=content, 
+            file_type=file_type,
         )
     else:
         print('Validating files.')
@@ -285,6 +295,7 @@ def validate_files_in_background(
             minrows=minrows,
             forcevalid=forcevalid,
             zero_p_values=zero_p_values,
+            file_type=file_type,
         )
     return results
 
@@ -305,9 +316,9 @@ def move_files_to_staging(resp):
     return au.move_files_to_staging(resp)
 
 
-@celery.task(queue=config.CELERY_QUEUE1, options={"queue": config.CELERY_QUEUE1})
-def convert_metadata_to_yaml(metadata):
-    return au.convert_metadata_to_yaml(metadata)
+@celery.task(queue=config.CELERY_QUEUE3, options={"queue": config.CELERY_QUEUE3})
+def convert_metadata_to_yaml(gcst_id, is_harmonised_included=True):
+    return au.convert_metadata_to_yaml(gcst_id, is_harmonised_included)
 
 
 @celery.task(queue=config.CELERY_QUEUE1, options={"queue": config.CELERY_QUEUE1})

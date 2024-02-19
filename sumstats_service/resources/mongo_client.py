@@ -1,4 +1,5 @@
 from pymongo import MongoClient as pymc
+
 from sumstats_service import config
 
 
@@ -24,7 +25,9 @@ class MongoClient:
     def insert(self, collection, data):
         return collection.insert_one(data)
 
-    """ specific methods """
+    ######################
+    ## Specific Methods ##
+    ######################
 
     def insert_new_study(self, data):
         fields = [
@@ -36,6 +39,7 @@ class MongoClient:
             "readme",
             "entryUUID",
             "rawSS",
+            "fileType",
         ]
         study_data_dict = dict(zip(fields, data))
         self.insert(self.study_collection, study_data_dict)

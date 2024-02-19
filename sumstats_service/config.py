@@ -25,6 +25,7 @@ BROKER_PORT = 5672
 # if the worker is able to perform validation and see the database
 CELERY_QUEUE1 = _env_variable_else("CELERY_QUEUE1", "preval")
 CELERY_QUEUE2 = _env_variable_else("CELERY_QUEUE2", "postval")
+CELERY_QUEUE3 = _env_variable_else("CELERY_QUEUE3", "metadata-yml-update-sandbox")
 
 # --- Remote --- #
 
@@ -51,6 +52,7 @@ MONGO_DB = _env_variable_else("MONGO_DB", None)
 FTP_SERVER = _env_variable_else("FTP_SERVER", None)
 FTP_USERNAME = _env_variable_else("FTP_USERNAME", None)
 FTP_PASSWORD = _env_variable_else("FTP_PASSWORD", None)
+FTP_SERVER_EBI = _env_variable_else("FTP_SERVER_EBI", "ftp.ebi.ac.uk")
 
 TOKEN_FILE = "refresh-tokens.json"
 REDIRECT_URI = "https://auth.globus.org/v2/web/auth-code"
