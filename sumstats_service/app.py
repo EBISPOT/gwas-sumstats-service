@@ -144,6 +144,9 @@ def validate_sumstats(callback_id: str):
     au.reset_validation_status(callback_id=callback_id)
     # run validation
 
+    # option to bypass all validation and downstream steps
+    bypass = au.val_from_dict(key="skipValidation", dict=body, default=False)
+
     # determine file_type
     template = au.get_template(callback_id)
     file_type = au.determine_file_type(is_in_file=bool(template), is_bypass=bypass)
