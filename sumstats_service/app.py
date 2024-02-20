@@ -118,7 +118,15 @@ def sumstats():
     logger.info(f"{minrows=} {force_valid=} {zero_p_values=} {bypass=} {file_type=}")
 
     process_studies.apply_async(
-        args=[callback_id, content, file_type, minrows, force_valid, zero_p_values, bypass],
+        kwargs={
+            "callback_id": callback_id,
+            "content": content,
+            "file_type": file_type,
+            "minrows": minrows,
+            "forcevalid": force_valid,
+            "zero_p_values": zero_p_values,
+            "bypass": bypass,
+        },
         retry=True,
     )
     return Response(response=resp, status=201, mimetype="application/json")
@@ -149,7 +157,15 @@ def validate_sumstats(callback_id: str):
     file_type = au.determine_file_type(is_in_file=bool(template), is_bypass=bypass)
 
     validate_files_in_background.apply_async(
-        args=[callback_id, content, minrows, force_valid, zero_p_values, file_type],
+        kwargs={
+            "callback_id": callback_id,
+            "content": content,
+            "minrows": minrows,
+            "forcevalid": force_valid,
+            "bypass": bypass,
+            "zero_p_values": zero_p_values,
+            "file_type": file_type,
+        },
         link=store_validation_results.s(),
         retry=True,
     )
@@ -258,7 +274,15 @@ def process_studies(
 ):
     if endpoints.create_studies(callback_id=callback_id, file_type=file_type, content=content):
         validate_files_in_background.apply_async(
-            args=[callback_id, content, minrows, forcevalid, bypass, zero_p_values, file_type],
+            kwargs={
+                "callback_id": callback_id,
+                "content": content,
+                "minrows": minrows,
+                "forcevalid": forcevalid,
+                "bypass": bypass,
+                "zero_p_values": zero_p_values,
+                "file_type": file_type,
+            },
             link=store_validation_results.s(),
             retry=True,
         )
