@@ -155,8 +155,8 @@ VALIDATION_ERRORS = [
 VALID_ASSEMBLIES = ["GRCh38", "GRCh37", "NCBI36", "NCBI35", "NCBI34", "NR"]
 
 NEXTFLOW_CONFIG = (
-    "executor.name = 'slurm'\n"
-    "process.executor = 'slurm'\n"
+    "executor.name = 'lsf'\n"
+    "process.executor = 'lsf'\n"
     "executor.queueSize = 100\n"
     "singularity.cacheDir = '{sing_cache_dir}'\n"
 ).format(
