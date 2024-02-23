@@ -425,6 +425,8 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
             return True
 
         # HM CASE
+        Path(hm_dir).mkdir(parents=True, exist_ok=True)
+
         # Also generate client for hm case, i.e., if is_harmonised_included
         metadata_client_hm = MetadataClient(out_file=out_file_hm)
 
