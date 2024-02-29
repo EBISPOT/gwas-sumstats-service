@@ -382,14 +382,15 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         logger.info('::: [convert_metadata_to_yaml] :::')
 
         out_dir = os.path.join(config.STAGING_PATH, accession_id)
+        logger.info(f'{out_dir=}')
         Path(out_dir).mkdir(parents=True, exist_ok=True)
 
         out_file = os.path.join(out_dir, accession_id + "-meta.yaml")
-        logger.debug(f'{out_file=}')
+        logger.info(f'{out_file=}')
 
         hm_dir = os.path.join(out_dir, 'harmonised')
         out_file_hm = os.path.join(hm_dir, accession_id + ".h-meta.yaml")
-        logger.debug(f'{out_file_hm=}')
+        logger.info(f'{out_file_hm=}')
         
         metadata_client = MetadataClient(out_file=out_file)
 
@@ -398,6 +399,7 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
             accession_id=accession_id,
             is_bypass_rest_api=True,
         )
+        logger.info(f"{metadata_from_gwas_cat=}")
 
         metadata_from_gwas_cat["trait_description"] = [metadata_from_gwas_cat["trait"]]
         metadata_from_gwas_cat["date_metadata_last_modified"] = date.today()
@@ -410,6 +412,8 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
             os.path.join(out_dir, 'md5sum.txt'),
         )
 
+        logger.info(f"{filenames_to_md5_values=}")
+
         filename_to_md5sum = get_md5_for_accession(filenames_to_md5_values, accession_id)
         for k,v in filename_to_md5sum.items():
             metadata_from_gwas_cat['data_file_name'] = k
@@ -418,6 +422,7 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         metadata_from_gwas_cat["gwas_id"] = accession_id
         metadata_from_gwas_cat["gwas_catalog_catalog_api"] = f'{config.GWAS_CATALOG_REST_API_STUDY_URL}{accession_id}'
 
+        logger.info(f"{metadata_from_gwas_cat=}")
         metadata_client.update_metadata(metadata_from_gwas_cat)
 
         # TODO: compare files
@@ -460,7 +465,7 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         logger.error(e)
         return False
 
-    logger.debug('::: ENDOF [convert_metadata_to_yaml] :::')
+    logger.info('::: ENDOF [convert_metadata_to_yaml] :::')
 
     return True
 
