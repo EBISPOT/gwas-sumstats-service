@@ -379,9 +379,12 @@ def get_file_type_from_mongo(gcst) -> str:
 # TODO: refactor this method
 def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
     try:
-        out_dir = os.path.join(config.STAGING_PATH, accession_id)
-        out_file = os.path.join(out_dir, accession_id + "-meta.yaml")
         logger.info('::: [convert_metadata_to_yaml] :::')
+
+        out_dir = os.path.join(config.STAGING_PATH, accession_id)
+        Path(out_dir).mkdir(parents=True, exist_ok=True)
+
+        out_file = os.path.join(out_dir, accession_id + "-meta.yaml")
         logger.debug(f'{out_file=}')
 
         hm_dir = os.path.join(out_dir, 'harmonised')
@@ -418,7 +421,6 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         metadata_client.update_metadata(metadata_from_gwas_cat)
 
         # TODO: compare files
-        Path(out_dir).mkdir(parents=True, exist_ok=True)
         metadata_client.to_file()
         logger.info("Metadata yaml file creation is successful for non-harmonised.")
 
