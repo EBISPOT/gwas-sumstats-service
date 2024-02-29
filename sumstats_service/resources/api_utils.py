@@ -405,9 +405,7 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         metadata_from_gwas_cat["date_metadata_last_modified"] = date.today()
         metadata_from_gwas_cat["file_type"] = get_file_type_from_mongo(accession_id)
 
-        filenames_to_md5_values = compute_and_write_md5_for_files(
-            config.FTP_SERVER_EBI, 
-            generate_path(accession_id), 
+        filenames_to_md5_values = compute_and_write_md5_for_local_files(
             accession_id,
             os.path.join(out_dir, 'md5sum.txt'),
         )
@@ -517,6 +515,50 @@ def compute_and_write_md5_for_files(ftp_server: str, ftp_directory: str, file_id
             f.write(f"{line}\n")
 
     return filename_to_md5
+
+
+def compute_and_write_md5_for_local_files(accession_id: str, output_file: str):
+    """Compute MD5 checksums for files starting with a specific ID in codon dir and write to a file."""
+    md5_lines = []
+    filename_to_md5 = {}
+    directory_path = os.path.join(config.STAGING_PATH, accession_id)
+    logger.info(f'{directory_path=}')
+
+    if not os.path.exists(directory_path):
+        raise FileNotFoundError(f"The directory {directory_path} does not exist.")
+
+    # List files in the directory
+    files = [f for f in os.listdir(directory_path) if os.path.isfile(os.path.join(directory_path, f))]
+    logger.info(f'{files=}')
+
+    # Filter files by the starting ID
+    files_of_interest = [f for f in files if f.startswith(accession_id)]
+    logger.info(f'{files_of_interest=}')
+
+    # Compute MD5 for each file and store the line for the output file
+    for filename in files_of_interest:
+        file_path = os.path.join(directory_path, filename)
+        md5_checksum = compute_md5_local(file_path)
+        md5_lines.append(f"{md5_checksum} {filename}")
+        filename_to_md5[filename] = md5_checksum
+
+    logger.info(f'{filename_to_md5=}')
+
+    # Write the MD5 checksums to the output file
+    with open(output_file, 'w') as f:
+        for line in md5_lines:
+            f.write(f"{line}\n")
+
+    return filename_to_md5
+
+
+def compute_md5_local(file_path: str) -> str:
+    """Compute the MD5 checksum of a file."""
+    hash_md5 = hashlib.md5()
+    with open(file_path, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
 
 
 def compute_md5_ftp(ftp: ftplib.FTP, ftp_path: str, filename: str) -> str:
