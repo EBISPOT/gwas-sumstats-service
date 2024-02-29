@@ -418,6 +418,7 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         metadata_client.update_metadata(metadata_from_gwas_cat)
 
         # TODO: compare files
+        Path(out_dir).mkdir(parents=True, exist_ok=True)
         metadata_client.to_file()
         logger.info("Metadata yaml file creation is successful for non-harmonised.")
 
