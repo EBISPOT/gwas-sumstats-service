@@ -360,15 +360,20 @@ def get_template(callback_id):
     )
 
 
-def get_file_type_from_mongo(study_id) -> str:
-    mdb = MongoClient(
-        config.MONGO_URI,
-        config.MONGO_USER,
-        config.MONGO_PASSWORD,
-        config.MONGO_DB,
-    )
-    study_metadata = mdb.get_study_metadata(study_id)
-    return study_metadata['fileType']
+def get_file_type_from_mongo(gcst) -> str:
+    try:
+        logger.debug(f"Fetching the `file_type` for {gcst=}")
+        mdb = MongoClient(
+            config.MONGO_URI,
+            config.MONGO_USER,
+            config.MONGO_PASSWORD,
+            config.MONGO_DB,
+        )
+        study_metadata = mdb.get_study_metadata_by_gcst(gcst)
+        return study_metadata['fileType']
+    except Exception as e:
+        logger.error(f"Error while fetching the `file_type`: {e=}")
+        return ""
 
 
 # TODO: refactor this method
@@ -376,9 +381,12 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
     try:
         out_dir = os.path.join(config.STAGING_PATH, accession_id)
         out_file = os.path.join(out_dir, accession_id + "-meta.yaml")
+        logger.info('::: [convert_metadata_to_yaml] :::')
+        logger.debug(f'{out_file=}')
 
         hm_dir = os.path.join(out_dir, 'harmonised')
         out_file_hm = os.path.join(hm_dir, accession_id + ".h-meta.yaml")
+        logger.debug(f'{out_file_hm=}')
         
         metadata_client = MetadataClient(out_file=out_file)
 
@@ -390,7 +398,7 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
 
         metadata_from_gwas_cat["trait_description"] = [metadata_from_gwas_cat["trait"]]
         metadata_from_gwas_cat["date_metadata_last_modified"] = date.today()
-        metadata_from_gwas_cat["file_type"] = get_file_type_from_mongo(metadata_from_gwas_cat["studyId"])
+        metadata_from_gwas_cat["file_type"] = get_file_type_from_mongo(accession_id)
 
         filenames_to_md5_values = compute_and_write_md5_for_files(
             config.FTP_SERVER_EBI, 
@@ -405,12 +413,13 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
             metadata_from_gwas_cat['data_file_md5sum'] = v
 
         metadata_from_gwas_cat["gwas_id"] = accession_id
-
         metadata_from_gwas_cat["gwas_catalog_catalog_api"] = f'{config.GWAS_CATALOG_REST_API_STUDY_URL}{accession_id}'
 
         metadata_client.update_metadata(metadata_from_gwas_cat)
-        
+
+        # TODO: compare files
         metadata_client.to_file()
+        logger.info("Metadata yaml file creation is successful for non-harmonised.")
 
         if not is_harmonised_included:
             return True
@@ -436,10 +445,17 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
             metadata_from_gwas_cat['data_file_md5sum'] = v
 
         metadata_client_hm.update_metadata(metadata_from_gwas_cat)
+
+        # TODO: compare files
         metadata_client_hm.to_file()
+        logger.info("Metadata yaml file creation is successful for harmonised.")
+
     except Exception as e:
+        logger.error("Error while creating metadata yaml files:")
         logger.error(e)
         return False
+
+    logger.debug('::: ENDOF [convert_metadata_to_yaml] :::')
 
     return True
 

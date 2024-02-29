@@ -48,6 +48,10 @@ class MongoClient:
         meta_dict = self.study_collection.find_one({"studyID": study})
         return meta_dict
 
+    def get_study_metadata_by_gcst(self, gcst):
+        meta_dict = self.study_collection.find_one({"gcst": gcst})
+        return meta_dict
+
     def update_retrieved_status(self, study, status):
         data = self.get_study_metadata(study)
         objectid = data["_id"]
