@@ -385,7 +385,8 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         logger.info(f'{out_dir=}')
         Path(out_dir).mkdir(parents=True, exist_ok=True)
 
-        out_file = os.path.join(out_dir, accession_id + "-meta.yaml")
+        metadata_filename = f"{accession_id}-meta.yaml"
+        out_file = os.path.join(out_dir, metadata_filename)
         logger.info(f'{out_file=}')
 
         hm_dir = os.path.join(out_dir, 'harmonised')
@@ -406,10 +407,18 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         metadata_from_gwas_cat["file_type"] = get_file_type_from_mongo(accession_id)
 
         # TODO: fix: meta files md5sum not computed
-        filenames_to_md5_values = compute_md5_for_local_files(
-            accession_id,
-            # os.path.join(out_dir, 'md5sum.txt'),
-        )
+        if not is_harmonised_included:
+            filenames_to_md5_values = compute_md5_for_local_files(
+                accession_id,
+                # os.path.join(out_dir, 'md5sum.txt'),
+            )
+        else:
+            filenames_to_md5_values = compute_md5_for_ftp_files(
+                config.FTP_SERVER_EBI, 
+                generate_path(accession_id), 
+                accession_id,
+                # os.path.join(out_dir, 'md5sum.txt'),
+            )
 
         filename_to_md5sum = get_md5_for_accession(filenames_to_md5_values, accession_id)
         for k,v in filename_to_md5sum.items():
@@ -426,13 +435,10 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         metadata_client.to_file()
 
         # compute md5sum of the meta file and write to md5sum.txt here
-        filenames_to_md5_values[out_file] = compute_md5_local(out_file)
+        filenames_to_md5_values[metadata_filename] = compute_md5_local(out_file)
         logger.info(f"{filenames_to_md5_values=}")
 
-        # Write the MD5 checksums to the output file
-        with open(os.path.join(out_dir, 'md5sum.txt'), 'w') as f:
-            for filename, md5_value in filenames_to_md5_values.items():
-                f.write(f"{md5_value} {filename}\n")
+        write_md5_for_files(filenames_to_md5_values, os.path.join(out_dir, 'md5sum.txt'))
 
         logger.info("Metadata yaml file creation is successful for non-harmonised.")
 
@@ -452,11 +458,11 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         )
 
         # TODO: fix: meta files md5sum not computed
-        filenames_to_md5_values = compute_and_write_md5_for_files(
+        filenames_to_md5_values = compute_md5_for_ftp_files(
             config.FTP_SERVER_EBI, 
             f'{generate_path(accession_id)}/harmonised', 
             accession_id,
-            os.path.join(hm_dir, 'md5sum.txt'),
+            # os.path.join(hm_dir, 'md5sum.txt'),
         )
         filename_to_md5sum = get_md5_for_accession(filenames_to_md5_values, accession_id, True)
         for k,v in filename_to_md5sum.items():
@@ -467,6 +473,10 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
 
         # TODO: compare files
         metadata_client_hm.to_file()
+        filenames_to_md5_values[metadata_filename] = compute_md5_local(out_file_hm)
+        logger.info(f"{filenames_to_md5_values=}")
+
+        write_md5_for_files(filenames_to_md5_values, os.path.join(hm_dir, 'md5sum.txt'))
         logger.info("Metadata yaml file creation is successful for harmonised.")
 
     except Exception as e:
@@ -499,9 +509,9 @@ def get_is_sorted(ftp_server: str, ftp_directory: str):
 
 
 
-def compute_and_write_md5_for_files(ftp_server: str, ftp_directory: str, file_id: str, output_file: str):
+def compute_md5_for_ftp_files(ftp_server: str, ftp_directory: str, file_id: str):
     """Compute MD5 checksums for files starting with a specific ID in an FTP directory and write to a file."""
-    md5_lines = []  # To store lines for the output file
+    # md5_lines = []  # To store lines for the output file
     filename_to_md5 = {}
 
     with ftplib.FTP(ftp_server) as ftp:
@@ -517,15 +527,21 @@ def compute_and_write_md5_for_files(ftp_server: str, ftp_directory: str, file_id
         # Compute MD5 for each file and store the line for the output file
         for filename in files_of_interest:
             md5_checksum = compute_md5_ftp(ftp, ftp_directory, filename)
-            md5_lines.append(f"{md5_checksum} {filename}")
+            # md5_lines.append(f"{md5_checksum} {filename}")
             filename_to_md5[filename] = md5_checksum
 
-    # Write the MD5 checksums to the output file
-    with open(output_file, 'w') as f:
-        for line in md5_lines:
-            f.write(f"{line}\n")
+    # # Write the MD5 checksums to the output file
+    # with open(output_file, 'w') as f:
+    #     for line in md5_lines:
+    #         f.write(f"{line}\n")
 
     return filename_to_md5
+
+
+def write_md5_for_files(filename_to_md5: dict, output_file: str) -> None:
+    with open(output_file, 'w') as f:
+        for filename,md5_checksum in filename_to_md5.items():
+            f.write(f"{md5_checksum} {filename}\n")
 
 
 def compute_md5_for_local_files(accession_id: str):
