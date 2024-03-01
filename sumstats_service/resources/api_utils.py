@@ -420,14 +420,15 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         metadata_from_gwas_cat["gwas_id"] = accession_id
         metadata_from_gwas_cat["gwas_catalog_catalog_api"] = f'{config.GWAS_CATALOG_REST_API_STUDY_URL}{accession_id}'
 
-        logger.info(f"{metadata_from_gwas_cat=}")
-        metadata_client.update_metadata(metadata_from_gwas_cat)
-
         # TODO: fix: metadata filename should be accession_id.tsv-meta.yaml or accession_id.tsv.gz-meta.yaml
         metadata_filename = f"{metadata_from_gwas_cat['data_file_name']}-meta.yaml"
         out_file = os.path.join(out_dir, metadata_filename)
         logger.info(f'{out_file=}')
         metadata_client = MetadataClient(out_file=out_file)
+
+        logger.info(f"{metadata_from_gwas_cat=}")
+        metadata_client.update_metadata(metadata_from_gwas_cat)
+
         # TODO: compare files
         metadata_client.to_file()
 
@@ -444,9 +445,6 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
 
         # HM CASE
         Path(hm_dir).mkdir(parents=True, exist_ok=True)
-
-        # Also generate client for hm case, i.e., if is_harmonised_included
-        metadata_client_hm = MetadataClient(out_file=out_file_hm)
 
         metadata_from_gwas_cat['is_harmonised'] = True
         metadata_from_gwas_cat['is_sorted'] = get_is_sorted(
@@ -466,13 +464,18 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
             metadata_from_gwas_cat['data_file_name'] = k
             metadata_from_gwas_cat['data_file_md5sum'] = v
 
-        metadata_client_hm.update_metadata(metadata_from_gwas_cat)
-
         # TODO: fix: metadata filename should be accession_id.h.tsv-meta.yaml or accession_id.h.tsv.gz-meta.yaml
         metadata_filename_hm = f"{metadata_from_gwas_cat['data_file_name']}-meta.yaml"
         hm_dir = os.path.join(out_dir, 'harmonised')
         out_file_hm = os.path.join(hm_dir, metadata_filename_hm)
         logger.info(f'{out_file_hm=}')
+
+        # Also generate client for hm case, i.e., if is_harmonised_included
+        metadata_client_hm = MetadataClient(out_file=out_file_hm)
+
+        logger.info(f"For HM case: {metadata_from_gwas_cat=}")
+        metadata_client_hm.update_metadata(metadata_from_gwas_cat)
+
         # TODO: compare files
         metadata_client_hm.to_file()
 
