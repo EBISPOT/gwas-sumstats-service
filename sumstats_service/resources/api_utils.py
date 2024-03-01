@@ -385,15 +385,7 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         logger.info(f'{out_dir=}')
         Path(out_dir).mkdir(parents=True, exist_ok=True)
 
-        metadata_filename = f"{accession_id}-meta.yaml"
-        out_file = os.path.join(out_dir, metadata_filename)
-        logger.info(f'{out_file=}')
-
-        hm_dir = os.path.join(out_dir, 'harmonised')
-        out_file_hm = os.path.join(hm_dir, accession_id + ".h-meta.yaml")
-        logger.info(f'{out_file_hm=}')
         
-        metadata_client = MetadataClient(out_file=out_file)
 
         # Consume Ingest API via gwas-sumstats-tools
         metadata_from_gwas_cat = metadata_dict_from_gwas_cat(
@@ -431,6 +423,11 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         logger.info(f"{metadata_from_gwas_cat=}")
         metadata_client.update_metadata(metadata_from_gwas_cat)
 
+        # TODO: fix: metadata filename should be accession_id.tsv-meta.yaml or accession_id.tsv.gz-meta.yaml
+        metadata_filename = f"{metadata_from_gwas_cat['data_file_name']}-meta.yaml"
+        out_file = os.path.join(out_dir, metadata_filename)
+        logger.info(f'{out_file=}')
+        metadata_client = MetadataClient(out_file=out_file)
         # TODO: compare files
         metadata_client.to_file()
 
@@ -471,8 +468,14 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
 
         metadata_client_hm.update_metadata(metadata_from_gwas_cat)
 
+        # TODO: fix: metadata filename should be accession_id.h.tsv-meta.yaml or accession_id.h.tsv.gz-meta.yaml
+        metadata_filename_hm = f"{metadata_from_gwas_cat['data_file_name']}-meta.yaml"
+        hm_dir = os.path.join(out_dir, 'harmonised')
+        out_file_hm = os.path.join(hm_dir, metadata_filename_hm)
+        logger.info(f'{out_file_hm=}')
         # TODO: compare files
         metadata_client_hm.to_file()
+
         filenames_to_md5_values[metadata_filename] = compute_md5_local(out_file_hm)
         logger.info(f"{filenames_to_md5_values=}")
 
