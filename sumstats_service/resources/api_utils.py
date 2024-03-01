@@ -444,8 +444,6 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
             return True
 
         # HM CASE
-        Path(hm_dir).mkdir(parents=True, exist_ok=True)
-
         metadata_from_gwas_cat['is_harmonised'] = True
         metadata_from_gwas_cat['is_sorted'] = get_is_sorted(
             config.FTP_SERVER_EBI, 
@@ -467,6 +465,8 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         # TODO: fix: metadata filename should be accession_id.h.tsv-meta.yaml or accession_id.h.tsv.gz-meta.yaml
         metadata_filename_hm = f"{metadata_from_gwas_cat['data_file_name']}-meta.yaml"
         hm_dir = os.path.join(out_dir, 'harmonised')
+        Path(hm_dir).mkdir(parents=True, exist_ok=True)
+
         out_file_hm = os.path.join(hm_dir, metadata_filename_hm)
         logger.info(f'{out_file_hm=}')
 
