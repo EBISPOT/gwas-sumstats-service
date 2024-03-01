@@ -405,12 +405,11 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         metadata_from_gwas_cat["date_metadata_last_modified"] = date.today()
         metadata_from_gwas_cat["file_type"] = get_file_type_from_mongo(accession_id)
 
-        filenames_to_md5_values = compute_and_write_md5_for_local_files(
+        # TODO: fix: meta files md5sum not computed
+        filenames_to_md5_values = compute_md5_for_local_files(
             accession_id,
-            os.path.join(out_dir, 'md5sum.txt'),
+            # os.path.join(out_dir, 'md5sum.txt'),
         )
-
-        logger.info(f"{filenames_to_md5_values=}")
 
         filename_to_md5sum = get_md5_for_accession(filenames_to_md5_values, accession_id)
         for k,v in filename_to_md5sum.items():
@@ -425,6 +424,16 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
 
         # TODO: compare files
         metadata_client.to_file()
+
+        # compute md5sum of the meta file and write to md5sum.txt here
+        filenames_to_md5_values[out_file] = compute_md5_local(out_file)
+        logger.info(f"{filenames_to_md5_values=}")
+
+        # Write the MD5 checksums to the output file
+        with open(os.path.join(out_dir, 'md5sum.txt'), 'w') as f:
+            for filename, md5_value in filenames_to_md5_values.items():
+                f.write(f"{md5_value} {filename}\n")
+
         logger.info("Metadata yaml file creation is successful for non-harmonised.")
 
         if not is_harmonised_included:
@@ -441,6 +450,8 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
             config.FTP_SERVER_EBI, 
             f'{generate_path(accession_id)}/harmonised',
         )
+
+        # TODO: fix: meta files md5sum not computed
         filenames_to_md5_values = compute_and_write_md5_for_files(
             config.FTP_SERVER_EBI, 
             f'{generate_path(accession_id)}/harmonised', 
@@ -517,7 +528,7 @@ def compute_and_write_md5_for_files(ftp_server: str, ftp_directory: str, file_id
     return filename_to_md5
 
 
-def compute_and_write_md5_for_local_files(accession_id: str, output_file: str):
+def compute_md5_for_local_files(accession_id: str):
     """Compute MD5 checksums for files starting with a specific ID in codon dir and write to a file."""
     md5_lines = []
     filename_to_md5 = {}
@@ -544,10 +555,10 @@ def compute_and_write_md5_for_local_files(accession_id: str, output_file: str):
 
     logger.info(f'{filename_to_md5=}')
 
-    # Write the MD5 checksums to the output file
-    with open(output_file, 'w') as f:
-        for line in md5_lines:
-            f.write(f"{line}\n")
+    # # Write the MD5 checksums to the output file
+    # with open(output_file, 'w') as f:
+    #     for line in md5_lines:
+    #         f.write(f"{line}\n")
 
     return filename_to_md5
 
