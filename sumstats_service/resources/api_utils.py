@@ -401,7 +401,7 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         )
         logger.info(f"{metadata_from_gwas_cat=}")
 
-        metadata_from_gwas_cat["trait_description"] = [metadata_from_gwas_cat["trait"]]
+        metadata_from_gwas_cat["trait_description"] = [metadata_from_gwas_cat.get("trait", "")]
         metadata_from_gwas_cat["date_metadata_last_modified"] = date.today()
         metadata_from_gwas_cat["file_type"] = get_file_type_from_mongo(accession_id)
 
