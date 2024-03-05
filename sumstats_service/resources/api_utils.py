@@ -378,7 +378,6 @@ def get_file_type_from_mongo(gcst) -> str:
 
 # TODO: refactor this method
 def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
-    accession_id = 'GCST90269910'
     try:
         logger.info('::: [convert_metadata_to_yaml] :::')
 
@@ -386,7 +385,6 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         logger.info(f'{out_dir=}')
         Path(out_dir).mkdir(parents=True, exist_ok=True)
 
-        
 
         # Consume Ingest API via gwas-sumstats-tools
         metadata_from_gwas_cat = metadata_dict_from_gwas_cat(
@@ -419,7 +417,7 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
             metadata_from_gwas_cat['data_file_md5sum'] = v
 
         metadata_from_gwas_cat["gwas_id"] = accession_id
-        metadata_from_gwas_cat["gwas_catalog_catalog_api"] = f'{config.GWAS_CATALOG_REST_API_STUDY_URL}{accession_id}'
+        metadata_from_gwas_cat["gwas_catalog_api"] = f'{config.GWAS_CATALOG_REST_API_STUDY_URL}{accession_id}'
 
         # TODO: fix: metadata filename should be accession_id.tsv-meta.yaml or accession_id.tsv.gz-meta.yaml
         metadata_filename = f"{metadata_from_gwas_cat['data_file_name']}-meta.yaml"
@@ -445,6 +443,7 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
             return True
 
         # HM CASE
+        metadata_from_gwas_cat['genome_assembly'] = config.LATEST_ASSEMBLY
         metadata_from_gwas_cat['is_harmonised'] = True
         metadata_from_gwas_cat['is_sorted'] = get_is_sorted(
             config.FTP_SERVER_EBI, 

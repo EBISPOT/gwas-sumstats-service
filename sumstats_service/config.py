@@ -154,6 +154,8 @@ VALIDATION_ERRORS = [
 
 VALID_ASSEMBLIES = ["GRCh38", "GRCh37", "NCBI36", "NCBI35", "NCBI34", "NR"]
 
+LATEST_ASSEMBLY = "GRCh38"
+
 NEXTFLOW_CONFIG = (
     "executor.name = 'lsf'\n"
     "process.executor = 'lsf'\n"
