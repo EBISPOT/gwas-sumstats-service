@@ -445,6 +445,8 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
             return True
 
         # HM CASE
+        metadata_from_gwas_cat['harmonisation_reference'] = config.HM_REFERENCE
+        metadata_from_gwas_cat['coordinate_system'] = config.HM_COORDINATE_SYSTEM
         metadata_from_gwas_cat['genome_assembly'] = config.LATEST_ASSEMBLY
         metadata_from_gwas_cat['is_harmonised'] = True
         metadata_from_gwas_cat['is_sorted'] = get_is_sorted(

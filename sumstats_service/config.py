@@ -156,6 +156,10 @@ VALID_ASSEMBLIES = ["GRCh38", "GRCh37", "NCBI36", "NCBI35", "NCBI34", "NR"]
 
 LATEST_ASSEMBLY = "GRCh38"
 
+HM_COORDINATE_SYSTEM = "1-based"
+
+HM_REFERENCE = "ftp://ftp.ensembl.org/pub/release-95/fasta/homo_sapiens/dna/"
+
 NEXTFLOW_CONFIG = (
     "executor.name = 'lsf'\n"
     "process.executor = 'lsf'\n"
