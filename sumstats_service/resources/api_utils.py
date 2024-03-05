@@ -378,6 +378,8 @@ def get_file_type_from_mongo(gcst) -> str:
 
 # TODO: refactor this method
 def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
+    # TODO: revert this hard-coded GCST ID
+    accession_id = 'GCST90309819'
     try:
         logger.info('::: [convert_metadata_to_yaml] :::')
 
