@@ -161,8 +161,8 @@ HM_COORDINATE_SYSTEM = "1-based"
 HM_REFERENCE = "ftp://ftp.ensembl.org/pub/release-95/fasta/homo_sapiens/dna/"
 
 NEXTFLOW_CONFIG = (
-    "executor.name = 'lsf'\n"
-    "process.executor = 'lsf'\n"
+    "executor.name = 'slurm'\n"
+    "process.executor = 'slurm'\n"
     "executor.queueSize = 100\n"
     "singularity.cacheDir = '{sing_cache_dir}'\n"
 ).format(
