@@ -397,18 +397,21 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         metadata_from_gwas_cat["date_metadata_last_modified"] = date.today()
         metadata_from_gwas_cat["file_type"] = get_file_type_from_mongo(accession_id)
 
-        # TODO: fix: meta files md5sum not computed
+        # Setting default values for keys that may not exist
+        default_keys = ["genome_assembly", "data_file_name", "file_type", "data_file_md5sum"]
+        for key in default_keys:
+            logger.info(f"{key} is not returned from the Ingest API, setting default value.")
+            metadata_from_gwas_cat.setdefault(key, "")
+
         if not is_harmonised_included:
             filenames_to_md5_values = compute_md5_for_local_files(
                 accession_id,
-                # os.path.join(out_dir, 'md5sum.txt'),
             )
         else:
             filenames_to_md5_values = compute_md5_for_ftp_files(
                 config.FTP_SERVER_EBI, 
                 generate_path(accession_id), 
                 accession_id,
-                # os.path.join(out_dir, 'md5sum.txt'),
             )
 
         filename_to_md5sum = get_md5_for_accession(filenames_to_md5_values, accession_id)
@@ -419,7 +422,6 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         metadata_from_gwas_cat["gwas_id"] = accession_id
         metadata_from_gwas_cat["gwas_catalog_api"] = f'{config.GWAS_CATALOG_REST_API_STUDY_URL}{accession_id}'
 
-        # TODO: fix: metadata filename should be accession_id.tsv-meta.yaml or accession_id.tsv.gz-meta.yaml
         metadata_filename = f"{metadata_from_gwas_cat['data_file_name']}-meta.yaml"
         out_file = os.path.join(out_dir, metadata_filename)
         logger.info(f'{out_file=}')
@@ -428,7 +430,6 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         logger.info(f"{metadata_from_gwas_cat=}")
         metadata_client.update_metadata(metadata_from_gwas_cat)
 
-        # TODO: compare files
         metadata_client.to_file()
 
         # compute md5sum of the meta file and write to md5sum.txt here
@@ -452,19 +453,16 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
             f'{generate_path(accession_id)}/harmonised',
         )
 
-        # TODO: fix: meta files md5sum not computed
         filenames_to_md5_values = compute_md5_for_ftp_files(
             config.FTP_SERVER_EBI, 
             f'{generate_path(accession_id)}/harmonised', 
             accession_id,
-            # os.path.join(hm_dir, 'md5sum.txt'),
         )
         filename_to_md5sum = get_md5_for_accession(filenames_to_md5_values, accession_id, True)
         for k,v in filename_to_md5sum.items():
             metadata_from_gwas_cat['data_file_name'] = k
             metadata_from_gwas_cat['data_file_md5sum'] = v
 
-        # TODO: fix: metadata filename should be accession_id.h.tsv-meta.yaml or accession_id.h.tsv.gz-meta.yaml
         metadata_filename_hm = f"{metadata_from_gwas_cat['data_file_name']}-meta.yaml"
         hm_dir = os.path.join(out_dir, 'harmonised')
         Path(hm_dir).mkdir(parents=True, exist_ok=True)
@@ -478,7 +476,6 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         logger.info(f"For HM case: {metadata_from_gwas_cat=}")
         metadata_client_hm.update_metadata(metadata_from_gwas_cat)
 
-        # TODO: compare files
         metadata_client_hm.to_file()
 
         filenames_to_md5_values[metadata_filename] = compute_md5_local(out_file_hm)
