@@ -403,7 +403,7 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         # Setting default values for keys that may not exist
         default_keys = ["genome_assembly", "data_file_name", "file_type", "data_file_md5sum"]
         for key in default_keys:
-            logger.info(f"For non-hm {accession_id=} - {key} is not returned from the Ingest API, setting default value.")
+            logger.info(f"For non-hm {accession_id=} - Setting default value for {key=}.")
             metadata_from_gwas_cat.setdefault(key, "")
 
         if not is_harmonised_included:
@@ -422,11 +422,13 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         for k,v in filename_to_md5sum.items():
             metadata_from_gwas_cat['data_file_name'] = k
             metadata_from_gwas_cat['data_file_md5sum'] = v
+        else:
+            # use accesion_id as fallback
+            metadata_filename = f"{metadata_from_gwas_cat['data_file_name']}-meta.yaml" if metadata_from_gwas_cat['data_file_name'] else f"{accession_id}.tsv-meta.yaml"
 
         metadata_from_gwas_cat["gwas_id"] = accession_id
         metadata_from_gwas_cat["gwas_catalog_api"] = f'{config.GWAS_CATALOG_REST_API_STUDY_URL}{accession_id}'
 
-        metadata_filename = f"{accession_id}-meta.yaml"
         out_file = os.path.join(out_dir, metadata_filename)
         logger.info(f"For non-hm {accession_id=} - {out_file=}")
         metadata_client = MetadataClient(out_file=out_file)
@@ -448,6 +450,9 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
             return True
 
         logger.info(f"HM CASE for {accession_id=}")
+        logger.info(f"For HM {accession_id=} - resetting data_file_name and data_file_md5sum")
+        metadata_from_gwas_cat['data_file_name'] = ""
+        metadata_from_gwas_cat['data_file_md5sum'] = ""
         metadata_from_gwas_cat['harmonisation_reference'] = config.HM_REFERENCE
         metadata_from_gwas_cat['coordinate_system'] = config.HM_COORDINATE_SYSTEM
         metadata_from_gwas_cat['genome_assembly'] = config.LATEST_ASSEMBLY
@@ -462,12 +467,14 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
             f'{generate_path(accession_id)}/harmonised', 
             accession_id,
         )
-        filename_to_md5sum = get_md5_for_accession(filenames_to_md5_values, accession_id, True)
-        for k,v in filename_to_md5sum.items():
+        filename_to_md5sum_hm = get_md5_for_accession(filenames_to_md5_values, accession_id, True)
+        for k,v in filename_to_md5sum_hm.items():
             metadata_from_gwas_cat['data_file_name'] = k
             metadata_from_gwas_cat['data_file_md5sum'] = v
+        else:
+            # use accesion_id as fallback
+            metadata_filename_hm = f"{metadata_from_gwas_cat['data_file_name']}-meta.yaml" if metadata_from_gwas_cat['data_file_name'] else f"{accession_id}.h.tsv-meta.yaml"
 
-        metadata_filename_hm = f"{accession_id}-meta.yaml"
         hm_dir = os.path.join(out_dir, 'harmonised')
         Path(hm_dir).mkdir(parents=True, exist_ok=True)
 
