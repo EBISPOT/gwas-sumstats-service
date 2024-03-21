@@ -417,6 +417,7 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
             )
 
         filename_to_md5sum = get_md5_for_accession(filenames_to_md5_values, accession_id)
+        # set if exists, default value set above
         for k,v in filename_to_md5sum.items():
             metadata_from_gwas_cat['data_file_name'] = k
             metadata_from_gwas_cat['data_file_md5sum'] = v
@@ -518,29 +519,31 @@ def get_is_sorted(ftp_server: str, ftp_directory: str):
 
 def compute_md5_for_ftp_files(ftp_server: str, ftp_directory: str, file_id: str):
     """Compute MD5 checksums for files starting with a specific ID in an FTP directory and write to a file."""
-    # md5_lines = []  # To store lines for the output file
     filename_to_md5 = {}
 
-    with ftplib.FTP(ftp_server) as ftp:
-        ftp.login()
-        ftp.cwd(ftp_directory)
+    try:
+        with ftplib.FTP(ftp_server) as ftp:
+            try:
+                ftp.login()
+                ftp.cwd(ftp_directory)
+                files = ftp.nlst()
+            except ftplib.error_perm as e:
+                logger.error(f"FTP error: {e}")
+                return {}
 
-        # List files in the directory
-        files = ftp.nlst()
+            files_of_interest = [f for f in files if f.startswith(file_id)]
 
-        # Filter files by the starting ID
-        files_of_interest = [f for f in files if f.startswith(file_id)]
+            for filename in files_of_interest:
+                try:
+                    md5_checksum = compute_md5_ftp(ftp, ftp_directory, filename)
+                    filename_to_md5[filename] = md5_checksum
+                except Exception as e:
+                    logger.error(f"Error computing MD5 for {filename}: {e}")
+                    continue
 
-        # Compute MD5 for each file and store the line for the output file
-        for filename in files_of_interest:
-            md5_checksum = compute_md5_ftp(ftp, ftp_directory, filename)
-            # md5_lines.append(f"{md5_checksum} {filename}")
-            filename_to_md5[filename] = md5_checksum
-
-    # # Write the MD5 checksums to the output file
-    # with open(output_file, 'w') as f:
-    #     for line in md5_lines:
-    #         f.write(f"{line}\n")
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        return {}
 
     return filename_to_md5
 
