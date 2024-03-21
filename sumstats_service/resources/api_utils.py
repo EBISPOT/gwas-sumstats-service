@@ -390,6 +390,8 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         metadata_from_gwas_cat = metadata_dict_from_gwas_cat(
             accession_id=accession_id,
             is_bypass_rest_api=True,
+            # TODO: Revert this to False before deployment
+            is_sandbox=True,
         )
         logger.info(f"{metadata_from_gwas_cat=}")
 
