@@ -8,13 +8,14 @@ from sumstats_service.resources.mongo_client import MongoClient
 
 
 class Payload:
-    def __init__(self, payload=None, callback_id=None):
+    def __init__(self, file_type=None, payload=None, callback_id=None):
         self.payload = payload
         self.callback_id = callback_id
         self.study_obj_list = []
         self.study_ids = []
         self.metadata_errors = []
         self.bypass_validation_status = False
+        self.file_type = file_type
 
     def _mongo_client(self) -> MongoClient:
         """Return a mongo db client
@@ -26,9 +27,9 @@ class Payload:
             config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB
         )
 
-    def payload_to_db(self):
+    def payload_to_db(self, file_type=None):
         if self.check_basic_content_present() is True:
-            self.create_study_obj_list()
+            self.create_study_obj_list(file_type=file_type)
             if self.check_study_ids_valid() is True:
                 self.set_callback_id_for_studies()
                 self.create_entry_for_studies()
@@ -149,7 +150,7 @@ class Payload:
             # raise BadUserRequest("Missing data")
         return True
 
-    def create_study_obj_list(self):
+    def create_study_obj_list(self, file_type=None):
         for item in self.payload["requestEntries"]:
             (
                 study_id,
@@ -168,6 +169,7 @@ class Payload:
                 readme=readme,
                 entryUUID=entryUUID,
                 raw_ss=raw_file_path,
+                file_type=file_type,
             )
             self.study_obj_list.append(study)
         return True

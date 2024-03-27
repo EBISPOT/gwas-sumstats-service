@@ -11,12 +11,17 @@ from flask import Flask, Response, abort, jsonify, make_response, request
 import sumstats_service.resources.api_endpoints as endpoints
 import sumstats_service.resources.api_utils as au
 import sumstats_service.resources.globus as globus
-from sumstats_service import config
-from sumstats_service.resources.utils import send_mail
+from sumstats_service import config, logger_config
 from sumstats_service.resources.error_classes import *
+from sumstats_service.resources.utils import send_mail
 
-logging.basicConfig(level=logging.DEBUG, format="(%(levelname)s): %(message)s")
-logger = logging.getLogger(__name__)
+try:
+    logger_config.setup_logging()
+    logger = logging.getLogger(__name__)
+except Exception as e:
+    logging.basicConfig(level=logging.DEBUG, format="(%(levelname)s): %(message)s")
+    logger = logging.getLogger(__name__)
+    logger.error(f"Logging setup failed: {e}")
 
 
 app = Flask(__name__)
@@ -39,7 +44,6 @@ celery = Celery(
     backend=app.config["CELERY_RESULT_BACKEND"],
 )
 celery.conf.update(app.config)
-
 
 # --- Errors --- #
 
@@ -92,20 +96,37 @@ def sumstats():
     """Register sumstats and validate them"""
     content = request.get_json(force=True)
     logger.info("POST content: " + str(content))
+
     resp = endpoints.generate_callback_id()
     resp_dict = json.loads(resp)
     callback_id = au.val_from_dict(key="callbackID", dict=resp_dict)
-    # minrows is the minimum number of rows for the validation to pass
-    minrows = au.val_from_dict(key="minrows", dict=content)
+
     # option to force submission to be valid and continue the pipeline
-    force_valid = au.val_from_dict(key="forceValid", dict=content, default=False)
+    force_valid = au.val_from_dict(key="forceValid", dict=content["requestEntries"][0], default=False)
+
+    # minrows is the minimum number of rows for the validation to pass
+    minrows = None if force_valid else au.val_from_dict(key="minrows", dict=content["requestEntries"][0])
+
     # option to allow zero p values
-    zero_p_values = au.val_from_dict(key="zeroPvalue", dict=content, default=False)
+    zero_p_values = au.val_from_dict(key="zeroPvalue", dict=content["requestEntries"][0], default=False)
+
     # option to bypass all validation and downstream steps
-    bypass = au.val_from_dict(key="skipValidation", dict=content, default=False)
-    minrows = None if force_valid is True else minrows
+    bypass = au.val_from_dict(key="skipValidation", dict=content["requestEntries"][0], default=False)
+
+    file_type = au.determine_file_type(is_in_file=True, is_bypass=bypass)
+
+    logger.info(f"{minrows=} {force_valid=} {zero_p_values=} {bypass=} {file_type=}")
+
     process_studies.apply_async(
-        args=[callback_id, content, minrows, force_valid, zero_p_values, bypass],
+        kwargs={
+            "callback_id": callback_id,
+            "content": content,
+            "file_type": file_type,
+            "minrows": minrows,
+            "forcevalid": force_valid,
+            "zero_p_values": zero_p_values,
+            "bypass": bypass,
+        },
         retry=True,
     )
     return Response(response=resp, status=201, mimetype="application/json")
@@ -130,8 +151,24 @@ def validate_sumstats(callback_id: str):
     # reset validation status
     au.reset_validation_status(callback_id=callback_id)
     # run validation
+
+    # option to bypass all validation and downstream steps
+    bypass = au.val_from_dict(key="skipValidation", dict=body, default=False)
+
+    # determine file_type
+    template = au.get_template(callback_id)
+    file_type = au.determine_file_type(is_in_file=bool(template), is_bypass=bypass)
+
     validate_files_in_background.apply_async(
-        args=[callback_id, content, minrows, force_valid, zero_p_values],
+        kwargs={
+            "callback_id": callback_id,
+            "content": content,
+            "minrows": minrows,
+            "forcevalid": force_valid,
+            "bypass": bypass,
+            "zero_p_values": zero_p_values,
+            "file_type": file_type,
+        },
         link=store_validation_results.s(),
         retry=True,
     )
@@ -155,9 +192,31 @@ def delete_sumstats(callback_id):
 @app.route("/v1/sum-stats/<string:callback_id>", methods=["PUT"])
 def update_sumstats(callback_id):
     content = request.get_json(force=True)
+
     resp = endpoints.update_sumstats(callback_id=callback_id, content=content)
+    logger.debug(f">>>>>>>>>>>>>>>>>>>> {resp=}")
+
     if resp:
-        publish_and_clean_sumstats.apply_async(args=[resp], retry=True)
+        move_files_result = move_files_to_staging.apply_async(
+            args=[resp],
+            retry=True,
+        )
+        move_files_result.wait()
+
+        if move_files_result.successful():
+            metadata_conversion_result = convert_metadata_to_yaml.apply_async(
+                args=[resp["studyList"][0]["gcst"], False],
+                retry=True,
+            )
+            metadata_conversion_result.wait()
+
+            if metadata_conversion_result.successful():
+                delete_endpoint_result = delete_globus_endpoint.apply_async(
+                    args=[move_files_result.get()["globus_endpoint_id"]],
+                    retry=True,
+                )
+                delete_endpoint_result.wait()
+
     return Response(status=200, mimetype="application/json")
 
 
@@ -203,20 +262,30 @@ def get_dir_contents(unique_id):
 # --- Celery tasks --- #
 # postval --> app side worker queue
 # preval --> compute cluster side worker queue
+# metadata-yml-update-sandbox --> dynamic metadata update queue
 
 
 @celery.task(queue=config.CELERY_QUEUE2, options={"queue": config.CELERY_QUEUE2})
 def process_studies(
     callback_id: str,
     content: dict,
+    file_type=None,
     minrows: Union[int, None] = None,
     forcevalid: bool = False,
     zero_p_values: bool = False,
     bypass: bool = False,
 ):
-    if endpoints.create_studies(callback_id=callback_id, content=content):
+    if endpoints.create_studies(callback_id=callback_id, file_type=file_type, content=content):
         validate_files_in_background.apply_async(
-            args=[callback_id, content, minrows, forcevalid, bypass, zero_p_values],
+            kwargs={
+                "callback_id": callback_id,
+                "content": content,
+                "minrows": minrows,
+                "forcevalid": forcevalid,
+                "bypass": bypass,
+                "zero_p_values": zero_p_values,
+                "file_type": file_type,
+            },
             link=store_validation_results.s(),
             retry=True,
         )
@@ -230,19 +299,30 @@ def validate_files_in_background(
     forcevalid: bool = False,
     bypass: bool = False,
     zero_p_values: bool = False,
+    file_type: Union[str, None] = None,
 ):
+    print("[validate_files_in_background]")
+    print(f">>>>>>> {callback_id=} with {minrows=} {forcevalid=} {bypass=} {zero_p_values=} {file_type=}")
+
+    print('calling store_validation_method')
     au.store_validation_method(callback_id=callback_id, bypass_validation=forcevalid)
+
     if bypass is True:
+        print('Bypassing the validation.')
         results = au.skip_validation_completely(
-            callback_id=callback_id, content=content
+            callback_id=callback_id, 
+            content=content, 
+            file_type=file_type,
         )
     else:
+        print('Validating files.')
         results = au.validate_files(
             callback_id=callback_id,
             content=content,
             minrows=minrows,
             forcevalid=forcevalid,
             zero_p_values=zero_p_values,
+            file_type=file_type,
         )
     return results
 
@@ -259,8 +339,18 @@ def remove_payload_files(callback_id):
 
 
 @celery.task(queue=config.CELERY_QUEUE1, options={"queue": config.CELERY_QUEUE1})
-def publish_and_clean_sumstats(resp):
-    au.publish_and_clean_sumstats(resp)
+def move_files_to_staging(resp):
+    return au.move_files_to_staging(resp)
+
+
+@celery.task(queue=config.CELERY_QUEUE3, options={"queue": config.CELERY_QUEUE3})
+def convert_metadata_to_yaml(gcst_id, is_harmonised_included=True):
+    return au.convert_metadata_to_yaml(gcst_id, is_harmonised_included)
+
+
+@celery.task(queue=config.CELERY_QUEUE1, options={"queue": config.CELERY_QUEUE1})
+def delete_globus_endpoint(globus_endpoint_id):
+    return au.delete_globus_endpoint(globus_endpoint_id)
 
 
 @task_failure.connect

@@ -18,6 +18,7 @@ image:
     celeryPwd: "password"
     celeryQueue1: "preval"
     celeryQueue2: "postval"
+    celeryQueue3: "metadata-yml-update-sandbox"
     storagePath: "./data"
     validateSSH: true
     computeFarmLogin: ""
@@ -77,7 +78,7 @@ service:
 
 worker:
   name: gwas-ss-worker
-  celeryCmd: '["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=INFO", "--queues=preval,postval"]'
+  celeryCmd: '["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=INFO", "--queues=preval,postval,metadata-yml-update-sandbox"]'
   celeryCmdPostOnly:  '["celery", "-A", "sumstats_service.app.celery", "worker", "--loglevel=INFO", "--queues=postval"]'
   replicaCount: 1
 

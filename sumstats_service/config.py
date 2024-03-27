@@ -20,11 +20,12 @@ CONTAINERISE = _env_variable_else("CONTAINERISE", "./depo_data")
 BROKER = "amqp"
 BROKER_HOST = "rabbitmq"
 BROKER_PORT = 5672
-# the following two queues were required for EHK + EBI LSF cluster
+# the following two queues were required for EHK + EBI SLURM cluster
 # install (pre-validation and post-validation) but are not required
 # if the worker is able to perform validation and see the database
 CELERY_QUEUE1 = _env_variable_else("CELERY_QUEUE1", "preval")
 CELERY_QUEUE2 = _env_variable_else("CELERY_QUEUE2", "postval")
+CELERY_QUEUE3 = _env_variable_else("CELERY_QUEUE3", "metadata-yml-update-sandbox")
 
 # --- Remote --- #
 
@@ -51,6 +52,7 @@ MONGO_DB = _env_variable_else("MONGO_DB", None)
 FTP_SERVER = _env_variable_else("FTP_SERVER", None)
 FTP_USERNAME = _env_variable_else("FTP_USERNAME", None)
 FTP_PASSWORD = _env_variable_else("FTP_PASSWORD", None)
+FTP_SERVER_EBI = _env_variable_else("FTP_SERVER_EBI", "ftp.ebi.ac.uk")
 
 TOKEN_FILE = "refresh-tokens.json"
 REDIRECT_URI = "https://auth.globus.org/v2/web/auth-code"
@@ -152,9 +154,15 @@ VALIDATION_ERRORS = [
 
 VALID_ASSEMBLIES = ["GRCh38", "GRCh37", "NCBI36", "NCBI35", "NCBI34", "NR"]
 
+LATEST_ASSEMBLY = "GRCh38"
+
+HM_COORDINATE_SYSTEM = "1-based"
+
+HM_REFERENCE = "ftp://ftp.ensembl.org/pub/release-95/fasta/homo_sapiens/dna/"
+
 NEXTFLOW_CONFIG = (
-    "executor.name = 'lsf'\n"
-    "process.executor = 'lsf'\n"
+    "executor.name = 'slurm'\n"
+    "process.executor = 'slurm'\n"
     "executor.queueSize = 100\n"
     "singularity.cacheDir = '{sing_cache_dir}'\n"
 ).format(

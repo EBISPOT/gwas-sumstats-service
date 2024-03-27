@@ -1,0 +1,98 @@
+{
+	"info": {
+		"_postman_id": "e03dcb59-01cb-411b-a8d0-b216e2860c9f",
+		"name": "gwas-sumstats-service",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "875166"
+	},
+	"item": [
+		{
+			"name": "POST sum-stats",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"requestEntries\": [\n    {\n      \"id\": \"{{callbackId}}\",\n      \"filePath\": \"test_sumstats_file.tsv\",\n      \"md5\": \"9b5f307016408b70cde2c9342648aa9b\",\n      \"assembly\": \"GRCh38\",\n      \"readme\": \"optional text\",\n      \"entryUUID\": \"ABC1234\",\n      \"minrows\": \"2\"\n    }\n  ]\n}"
+				},
+				"url": {
+					"raw": "{{protocol}}://{{host}}:{{port}}/v1/sum-stats",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{host}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"v1",
+						"sum-stats"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET sum-stats",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{protocol}}://{{host}}:{{port}}/v1/sum-stats/{{callbackId}}",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{host}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"v1",
+						"sum-stats",
+						"{{callbackId}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "protocol",
+			"value": "http",
+			"type": "string"
+		},
+		{
+			"key": "host",
+			"value": "localhost",
+			"type": "string"
+		},
+		{
+			"key": "port",
+			"value": "8000",
+			"type": "string"
+		}
+	]
+}

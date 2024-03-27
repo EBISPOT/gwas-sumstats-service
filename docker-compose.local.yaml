@@ -1,0 +1,86 @@
+version: '3.3'
+services:
+    gwas-ss-service:
+        build: .
+        image: gwas-ss-service:latest
+        depends_on:
+            - rabbitmq
+            - mongodb
+        environment:
+          - FLASK_APP=sumstats_service.app
+          - MONGO_URI=mongodb://mongodb:27017/
+          - MONGO_USER=myuser
+          - MONGO_PASSWORD=mypassword
+          - MONGO_DB=sumstats-service
+          - CELERY_PROTOCOL=amqp
+          - CELERY_USER=guest
+          - CELERY_PASSWORD=guest
+          - QUEUE_HOST=rabbitmq
+          - QUEUE_PORT=5672
+        command: "gunicorn -b 0.0.0.0:8000 sumstats_service.app:app --log-level=debug"
+        ports:
+            - 8000:8000
+        volumes:
+          - ./logs:/sumstats_service/logs
+          - ./data/sumstats_meta.db:/sumstats_service/data/sumstats_meta.db
+
+    rabbitmq:
+        image: rabbitmq:3.6-management
+        hostname: rabbitmq
+        ports:
+            - 15672:15672
+            - 5672:5672
+
+    celery-db:
+        build: .
+        image: gwas-ss-service:latest
+        command: "celery -A sumstats_service.app.celery worker --queues=postval --loglevel=debug"
+        depends_on:
+            - rabbitmq
+            - mongodb
+        environment:
+          - CELERY_PROTOCOL=amqp
+          - CELERY_USER=guest
+          - CELERY_PASSWORD=guest
+          - QUEUE_HOST=rabbitmq
+          - QUEUE_PORT=5672
+          - MONGO_URI=mongodb://mongodb:27017/
+          - MONGO_USER=myuser
+          - MONGO_PASSWORD=mypassword
+          - MONGO_DB=sumstats-service
+        volumes:
+          - ./logs:/sumstats_service/logs
+          - ./data/sumstats_meta.db:/sumstats_service/data/sumstats_meta.db
+
+    celery-val:
+        build: .
+        image: gwas-ss-service:latest
+        command: "celery -A sumstats_service.app.celery worker --queues=preval --loglevel=debug"
+        depends_on:
+            - rabbitmq
+            - mongodb
+        environment:
+          - CELERY_PROTOCOL=amqp
+          - CELERY_USER=guest
+          - CELERY_PASSWORD=guest
+          - QUEUE_HOST=rabbitmq
+          - QUEUE_PORT=5672
+          - MONGO_URI=mongodb://mongodb:27017/
+          - MONGO_USER=myuser
+          - MONGO_PASSWORD=mypassword
+          - MONGO_DB=sumstats-service
+        volumes:
+          - ./logs:/sumstats_service/logs
+          - ./data/sumstats_meta.db:/sumstats_service/data/sumstats_meta.db
+
+    mongodb:
+        image: mongo:latest
+        environment:
+        - MONGO_INITDB_ROOT_USERNAME=myuser
+        - MONGO_INITDB_ROOT_PASSWORD=mypassword
+        - MONGO_INITDB_DATABASE=sumstats-service
+        volumes:
+        - ./data/mongo:/data/db
+        ports:
+        - 27017:27017
+

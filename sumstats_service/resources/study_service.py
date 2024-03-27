@@ -24,6 +24,7 @@ class Study:
         pmid=None,
         gcst=None,
         raw_ss=None,
+        file_type=None,
     ):
         self.study_id = study_id
         self.file_path = file_path
@@ -40,6 +41,7 @@ class Study:
         self.pmid = pmid
         self.gcst = gcst
         self.raw_ss = raw_ss
+        self.file_type = file_type
 
     def valid_study_id(self):
         if re.match("^[a-zA-Z0-9]+$", self.study_id) and len(self.study_id) > 3:
@@ -136,7 +138,10 @@ class Study:
 
     def get_study_from_db(self):
         mdb = MongoClient(
-            config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB
+            config.MONGO_URI,
+            config.MONGO_USER,
+            config.MONGO_PASSWORD,
+            config.MONGO_DB,
         )
         study_metadata = mdb.get_study_metadata(self.study_id)
 
@@ -155,6 +160,7 @@ class Study:
             self.pmid = set_var_from_dict(study_metadata, "pmid", None)
             self.gcst = set_var_from_dict(study_metadata, "gcst", None)
             self.raw_ss = set_var_from_dict(study_metadata, "rawSS", None)
+            self.file_type = set_var_from_dict(study_metadata, "fileType", None)
             self.set_error_text()
         return study_metadata
 
@@ -180,9 +186,13 @@ class Study:
             self.readme,
             self.entryUUID,
             self.raw_ss,
+            self.file_type,
         ]
         mdb = MongoClient(
-            config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB
+            config.MONGO_URI,
+            config.MONGO_USER,
+            config.MONGO_PASSWORD,
+            config.MONGO_DB,
         )
         mdb.insert_new_study(data)
 
