@@ -420,13 +420,15 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         for k,v in filename_to_md5sum.items():
             metadata_from_gwas_cat['data_file_name'] = k
             metadata_from_gwas_cat['data_file_md5sum'] = v
-        else:
-            # use accesion_id as fallback
-            metadata_filename = f"{metadata_from_gwas_cat['data_file_name']}-meta.yaml" if metadata_from_gwas_cat['data_file_name'] else f"{accession_id}.tsv-meta.yaml"
+
+        if not metadata_from_gwas_cat.get("data_file_name"):
+            logger.info("Data file not available in FTP")
+            return False
 
         metadata_from_gwas_cat["gwas_id"] = accession_id
         metadata_from_gwas_cat["gwas_catalog_api"] = f'{config.GWAS_CATALOG_REST_API_STUDY_URL}{accession_id}'
 
+        metadata_filename = f"{metadata_from_gwas_cat['data_file_name']}-meta.yaml"
         out_file = os.path.join(out_dir, metadata_filename)
         logger.info(f"For non-hm {accession_id=} - {out_file=}")
         metadata_client = MetadataClient(out_file=out_file)
@@ -469,13 +471,15 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         for k,v in filename_to_md5sum_hm.items():
             metadata_from_gwas_cat['data_file_name'] = k
             metadata_from_gwas_cat['data_file_md5sum'] = v
-        else:
-            # use accesion_id as fallback
-            metadata_filename_hm = f"{metadata_from_gwas_cat['data_file_name']}-meta.yaml" if metadata_from_gwas_cat['data_file_name'] else f"{accession_id}.h.tsv-meta.yaml"
+
+        if not metadata_from_gwas_cat.get("data_file_name"):
+            logger.info("HM data file not available in FTP")
+            return True
 
         hm_dir = os.path.join(out_dir, 'harmonised')
         Path(hm_dir).mkdir(parents=True, exist_ok=True)
 
+        metadata_filename_hm = f"{metadata_from_gwas_cat['data_file_name']}-meta.yaml"
         out_file_hm = os.path.join(hm_dir, metadata_filename_hm)
         logger.info(f"For HM {accession_id=} - {out_file_hm=}")
 
@@ -487,7 +491,7 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
 
         metadata_client_hm.to_file()
 
-        filenames_to_md5_values[metadata_filename] = compute_md5_local(out_file_hm)
+        filenames_to_md5_values[metadata_filename_hm] = compute_md5_local(out_file_hm)
         logger.info(f"For HM {accession_id=} - {filenames_to_md5_values=}")
 
         write_md5_for_files(filenames_to_md5_values, os.path.join(hm_dir, 'md5sum.txt'))
