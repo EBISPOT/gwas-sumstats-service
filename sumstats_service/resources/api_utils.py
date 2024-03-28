@@ -421,8 +421,10 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
             metadata_from_gwas_cat['data_file_name'] = k
             metadata_from_gwas_cat['data_file_md5sum'] = v
         else:
-            # use accesion_id as fallback
-            metadata_filename = f"{metadata_from_gwas_cat['data_file_name']}-meta.yaml" if metadata_from_gwas_cat['data_file_name'] else f"{accession_id}.tsv-meta.yaml"
+            if not metadata_from_gwas_cat['data_file_name']:
+                logger.error(f"Metadata yaml file creation is not successful for non-hm {accession_id=}.")
+                logger.error(f"In the public FTP, data file name is not {accession_id}.tsv or {accession_id}.tsv.gz")
+                return False
 
         metadata_from_gwas_cat["gwas_id"] = accession_id
         metadata_from_gwas_cat["gwas_catalog_api"] = f'{config.GWAS_CATALOG_REST_API_STUDY_URL}{accession_id}'
@@ -442,7 +444,7 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
 
         write_md5_for_files(filenames_to_md5_values, os.path.join(out_dir, 'md5sum.txt'))
 
-        logger.info(f"Metadata yaml file creation is successful for non-harmonised for non-hm {accession_id=}.")
+        logger.info(f"Metadata yaml file creation is successful for non-hm {accession_id=}.")
 
         if not is_harmonised_included:
             return True
@@ -470,8 +472,11 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
             metadata_from_gwas_cat['data_file_name'] = k
             metadata_from_gwas_cat['data_file_md5sum'] = v
         else:
-            # use accesion_id as fallback
-            metadata_filename_hm = f"{metadata_from_gwas_cat['data_file_name']}-meta.yaml" if metadata_from_gwas_cat['data_file_name'] else f"{accession_id}.h.tsv-meta.yaml"
+            if not metadata_from_gwas_cat['data_file_name']:
+                logger.error(f"Metadata yaml file creation is not successful for hm {accession_id=}.")
+                logger.error(f"In the public FTP, data file name is not {accession_id}.h.tsv or {accession_id}.h.tsv.gz")
+                # return True because hm does not exist for all
+                return True
 
         hm_dir = os.path.join(out_dir, 'harmonised')
         Path(hm_dir).mkdir(parents=True, exist_ok=True)
@@ -491,7 +496,7 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         logger.info(f"For HM {accession_id=} - {filenames_to_md5_values=}")
 
         write_md5_for_files(filenames_to_md5_values, os.path.join(hm_dir, 'md5sum.txt'))
-        logger.info(f"Metadata yaml file creation is successful for harmonised for HM {accession_id=}.")
+        logger.info(f"Metadata yaml file creation is successful for hm {accession_id=}.")
 
     except Exception as e:
         logger.error(f"For {accession_id=} - error while creating metadata yaml files:")
