@@ -49,7 +49,13 @@ class MongoClient:
         return meta_dict
 
     def get_study_metadata_by_gcst(self, gcst):
-        meta_dict = self.study_collection.find_one({"gcst": gcst})
+        # meta_dict = self.study_collection.find_one({"gcst": gcst})
+        # Note that we use .find() rather than .find_one() as above. The reason 
+        # is that there might exist multiple entries for a single gcst id, e.g.,
+        # when the template is edited. Therefore, here, we first get all, then 
+        # sort by _id descending, get the last one (which should be the latest entry). 
+        last_created_entry = self.study_collection.find({"gcst": gcst}).sort('_id', -1).limit(1)
+        meta_dict = next(last_created_entry, None)
         return meta_dict
 
     def update_retrieved_status(self, study, status):
