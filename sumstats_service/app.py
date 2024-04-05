@@ -102,16 +102,16 @@ def sumstats():
     callback_id = au.val_from_dict(key="callbackID", dict=resp_dict)
 
     # option to force submission to be valid and continue the pipeline
-    force_valid = au.val_from_dict(key="forceValid", dict=content["requestEntries"][0], default=False)
+    force_valid = au.val_from_dict(key="forceValid", dict=content, default=False)
 
     # minrows is the minimum number of rows for the validation to pass
-    minrows = None if force_valid else au.val_from_dict(key="minrows", dict=content["requestEntries"][0])
+    minrows = None if force_valid else au.val_from_dict(key="minrows", dict=content)
 
     # option to allow zero p values
-    zero_p_values = au.val_from_dict(key="zeroPvalue", dict=content["requestEntries"][0], default=False)
+    zero_p_values = au.val_from_dict(key="zeroPvalue", dict=content, default=False)
 
     # option to bypass all validation and downstream steps
-    bypass = au.val_from_dict(key="skipValidation", dict=content["requestEntries"][0], default=False)
+    bypass = au.val_from_dict(key="skipValidation", dict=content, default=False)
 
     file_type = au.determine_file_type(is_in_file=True, is_bypass=bypass)
 
