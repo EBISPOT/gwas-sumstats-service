@@ -275,7 +275,9 @@ def process_studies(
     zero_p_values: bool = False,
     bypass: bool = False,
 ):
+    print(f">>> [process_studies] {callback_id=} with {minrows=} {forcevalid=} {bypass=} {zero_p_values=} {file_type=}")
     if endpoints.create_studies(callback_id=callback_id, file_type=file_type, content=content):
+        print(f'endpoints.create_studies: True for {callback_id=}')
         validate_files_in_background.apply_async(
             kwargs={
                 "callback_id": callback_id,
@@ -301,8 +303,7 @@ def validate_files_in_background(
     zero_p_values: bool = False,
     file_type: Union[str, None] = None,
 ):
-    print("[validate_files_in_background]")
-    print(f">>>>>>> {callback_id=} with {minrows=} {forcevalid=} {bypass=} {zero_p_values=} {file_type=}")
+    print(f">>> [validate_files_in_background] {callback_id=} with {minrows=} {forcevalid=} {bypass=} {zero_p_values=} {file_type=}")
 
     print('calling store_validation_method')
     au.store_validation_method(callback_id=callback_id, bypass_validation=forcevalid)
@@ -329,32 +330,39 @@ def validate_files_in_background(
 
 @celery.task(queue=config.CELERY_QUEUE2, options={"queue": config.CELERY_QUEUE2})
 def store_validation_results(results):
+    print(">>> [store_validation_results]")
     if results:
+        print('results: True')
         au.store_validation_results_in_db(results)
 
 
 @celery.task(queue=config.CELERY_QUEUE1, options={"queue": config.CELERY_QUEUE1})
 def remove_payload_files(callback_id):
+    print(">>> [remove_payload_files]")
     au.remove_payload_files(callback_id)
 
 
 @celery.task(queue=config.CELERY_QUEUE1, options={"queue": config.CELERY_QUEUE1})
 def move_files_to_staging(resp):
+    print(">>> [move_files_to_staging]")
     return au.move_files_to_staging(resp)
 
 
 @celery.task(queue=config.CELERY_QUEUE3, options={"queue": config.CELERY_QUEUE3})
 def convert_metadata_to_yaml(gcst_id, is_harmonised_included=True):
+    print(f">>> [convert_metadata_to_yaml] for {gcst_id=}")
     return au.convert_metadata_to_yaml(gcst_id, is_harmonised_included)
 
 
 @celery.task(queue=config.CELERY_QUEUE1, options={"queue": config.CELERY_QUEUE1})
 def delete_globus_endpoint(globus_endpoint_id):
+    print(f">>> [delete_globus_endpoint] for {globus_endpoint_id}")
     return au.delete_globus_endpoint(globus_endpoint_id)
 
 
 @task_failure.connect
 def task_failure_handler(sender=None, **kwargs) -> None:
+    print(">>> [task_failure_handler]")
     subject = f"Celery error in {sender.name}"
     message = """{einfo} Task was called with args: 
                  {args} kwargs: {kwargs}.\n

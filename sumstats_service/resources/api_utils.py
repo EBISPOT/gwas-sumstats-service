@@ -182,14 +182,13 @@ def validate_files(
 
         if result.returncode != 0:
             print("Error in submitting job: ", result.stderr)
-            return
+        else:
+            print("No error. Command output: ", result.stdout)
 
-        print("Command output: ", result.stdout)
     except Exception as e:
         print('=== EXCEPTION ===')
         print(e)
     
-
     json_out_files = [f for f in glob.glob(os.path.join(wd, "*.json")) if not f.endswith('payload.json')]
     results = {"callbackID": callback_id, "validationList": []}
     if len(json_out_files) > 0:
@@ -200,9 +199,10 @@ def validate_files(
     else:
         results = results_if_failure(callback_id, content)
     
-    print("results: " + json.dumps(results))
+    results_json_dumped = json.dumps(results)
+    print("results: " + results_json_dumped)
     # remove_payload_files(callback_id)
-    return json.dumps(results)
+    return results_json_dumped
 
 
 def write_data_to_path(data, path):
