@@ -19,6 +19,15 @@ from globus_sdk import (
 from sumstats_service import config
 
 
+try:
+    logger_config.setup_logging()
+    logger = logging.getLogger(__name__)
+except Exception as e:
+    logging.basicConfig(level=logging.DEBUG, format="(%(levelname)s): %(message)s")
+    logger = logging.getLogger(__name__)
+    logger.error(f"Logging setup failed: {e}")
+
+
 def mkdir(unique_id: str, email_address: str = None) -> str:
     """Create a globus guest collection on a specific
     directory and return collection id
@@ -234,7 +243,7 @@ def rename_file(dest_dir, source, dest):
         if dest not in files:
             transfer.operation_rename(config.MAPPED_COLLECTION_ID, source, dest)
     except TransferAPIError as e:
-        print(e)
+        logger.info(e)
         return False
     return True
 
@@ -246,7 +255,7 @@ def list_files(directory):
         dir_ls = transfer.operation_ls(config.MAPPED_COLLECTION_ID, path=directory)
         files = [os.path.join(directory, f["name"]) for f in dir_ls]
     except TransferAPIError as e:
-        print(e)
+        logger.info(e)
     return files
 
 
@@ -267,26 +276,26 @@ def remove_path(path_to_remove, transfer_client=None):
 
 
 def remove_endpoint_and_all_contents(uid):
-    print(f">> remove_endpoint_and_all_contents {uid=}")
+    logger.info(f">> remove_endpoint_and_all_contents {uid=}")
     transfer = init_transfer_client()
     deactivate_status = False
     endpoint_id = get_endpoint_id_from_uid(uid, transfer_client=transfer)
-    print(f">> remove_endpoint_and_all_contents {uid=} :: {endpoint_id=}")
+    logger.info(f">> remove_endpoint_and_all_contents {uid=} :: {endpoint_id=}")
     if endpoint_id:
-        print(f">> remove_endpoint_and_all_contents {uid=} :: {endpoint_id=} true")
+        logger.info(f">> remove_endpoint_and_all_contents {uid=} :: {endpoint_id=} true")
         if remove_path(path_to_remove=uid, transfer_client=transfer):
-            print(f">> remove_endpoint_and_all_contents {uid=} :: remove_path true")
+            logger.info(f">> remove_endpoint_and_all_contents {uid=} :: remove_path true")
             deactivate_status = deactivate_endpoint(endpoint_id)
-            print(f">> remove_endpoint_and_all_contents {uid=} :: {deactivate_status=}")
+            logger.info(f">> remove_endpoint_and_all_contents {uid=} :: {deactivate_status=}")
 
     return deactivate_status
 
 
 def deactivate_endpoint(endpoint_id, gcs_client=None):
-    print(f">> deactivate_endpoint {endpoint_id=}")
+    logger.info(f">> deactivate_endpoint {endpoint_id=}")
     gcs = gcs_client if gcs_client else init_gcs_client()
     status = gcs.delete_collection(endpoint_id)
-    print(f">> deactivate_endpoint {endpoint_id=} :: {status=}")
+    logger.info(f">> deactivate_endpoint {endpoint_id=} :: {status=}")
     return status.http_status
 
 
