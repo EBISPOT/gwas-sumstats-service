@@ -255,11 +255,13 @@ class SumStatFile:
             dest_file = os.path.join(dest_dir, self.staging_file_name + ext)
             pathlib.Path(dest_dir).mkdir(parents=True, exist_ok=True)
             shutil.move(source_file, dest_file)
-        except (IndexError, FileNotFoundError, OSError) as e:
-            raise IOError(
+        except (IndexError, FileNotFoundError, OSError, ValueError) as e:
+            logger.error(
                 "Error: {}\nCould not move file {} to staging,\ "
                 "callback ID: {}".format(e, self.staging_file_name, self.callback_id)
             )
+            raise 
+
         return True
 
     def create_metadata_file(self):
