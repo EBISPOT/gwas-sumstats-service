@@ -267,18 +267,26 @@ def remove_path(path_to_remove, transfer_client=None):
 
 
 def remove_endpoint_and_all_contents(uid):
+    print(f">> remove_endpoint_and_all_contents {uid=}")
     transfer = init_transfer_client()
     deactivate_status = False
     endpoint_id = get_endpoint_id_from_uid(uid, transfer_client=transfer)
+    print(f">> remove_endpoint_and_all_contents {uid=} :: {endpoint_id=}")
     if endpoint_id:
+        print(f">> remove_endpoint_and_all_contents {uid=} :: {endpoint_id=} true")
         if remove_path(path_to_remove=uid, transfer_client=transfer):
+            print(f">> remove_endpoint_and_all_contents {uid=} :: remove_path true")
             deactivate_status = deactivate_endpoint(endpoint_id)
+            print(f">> remove_endpoint_and_all_contents {uid=} :: {deactivate_status=}")
+
     return deactivate_status
 
 
 def deactivate_endpoint(endpoint_id, gcs_client=None):
+    print(f">> deactivate_endpoint {endpoint_id=}")
     gcs = gcs_client if gcs_client else init_gcs_client()
     status = gcs.delete_collection(endpoint_id)
+    print(f">> deactivate_endpoint {endpoint_id=} :: {status=}")
     return status.http_status
 
 

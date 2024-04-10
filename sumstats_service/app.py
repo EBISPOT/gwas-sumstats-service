@@ -227,6 +227,7 @@ def update_sumstats(callback_id):
 
 @app.route("/v1/sum-stats/globus/mkdir", methods=["POST"])
 def make_dir():
+    logger.info(">> /v1/sum-stats/globus/mkdir")
     req_data = request.get_json()
     unique_id = req_data["uniqueID"]
     email = req_data["email"]
@@ -244,8 +245,11 @@ def make_dir():
 @app.route("/v1/sum-stats/globus/<unique_id>", methods=["DELETE"])
 def deactivate_dir(unique_id):
     resp = {"unique_id": unique_id}
+    logger.info(f">> DELETE /v1/sum-stats/globus/{unique_id}")
     status = au.delete_globus_endpoint(unique_id)
+    logger.info(f">> {status=}")
     if status is False:
+        logger.info('aborting...')
         abort(404)
     return make_response(jsonify(resp), status)
 
