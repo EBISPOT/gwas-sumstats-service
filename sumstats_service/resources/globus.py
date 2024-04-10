@@ -15,9 +15,9 @@ from globus_sdk import (
     TransferClient,
     scopes,
 )
-# import subprocess
-from sumstats_service import config
 
+from sumstats_service import config, logger_config
+import logging
 
 try:
     logger_config.setup_logging()
