@@ -267,21 +267,21 @@ class Study:
                     self.set_error_code(11)
 
     def move_file_to_staging(self):
-        dir_name = self.gcst
-        sumstats_file_name = self.gcst
-        ssf = fh.SumStatFile(
-            file_path=self.file_path,
-            callback_id=self.callback_id,
-            study_id=self.study_id,
-            readme=self.readme,
-            entryUUID=self.entryUUID,
-            staging_dir_name=dir_name,
-            staging_file_name=sumstats_file_name,
-            md5exp=self.md5,
-            raw_ss=self.raw_ss,
-        )
-        return ssf.move_file_to_staging()
-
+        # dir_name = self.gcst
+        # sumstats_file_name = self.gcst
+        # ssf = fh.SumStatFile(
+        #     file_path=self.file_path,
+        #     callback_id=self.callback_id,
+        #     study_id=self.study_id,
+        #     readme=self.readme,
+        #     entryUUID=self.entryUUID,
+        #     staging_dir_name=dir_name,
+        #     staging_file_name=sumstats_file_name,
+        #     md5exp=self.md5,
+        #     raw_ss=self.raw_ss,
+        # )
+        # return ssf.move_file_to_staging()
+        return True
 
 def set_var_from_dict(dictionary, var_name, default):
     return dictionary[var_name] if var_name in dictionary else default
