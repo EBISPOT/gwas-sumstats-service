@@ -194,7 +194,7 @@ def update_sumstats(callback_id):
     content = request.get_json(force=True)
 
     resp = endpoints.update_sumstats(callback_id=callback_id, content=content)
-    logger.debug(f">>>>>>>>>>>>>>>>>>>> {resp=}")
+    logger.info(f">> {resp=}")
 
     if resp:
         move_files_result = move_files_to_staging.apply_async(
@@ -212,7 +212,11 @@ def update_sumstats(callback_id):
 
             if metadata_conversion_result.successful():
                 globus_endpoint_id = move_files_result.get()["globus_endpoint_id"]
-                delete_globus_endpoint(globus_endpoint_id)
+                logger.info(f">> [delete_globus_endpoint] calling {globus_endpoint_id=}")
+                delete_endpoint_result = au.delete_globus_endpoint(globus_endpoint_id)
+                logger.info(f">> {delete_endpoint_result=}")
+                # delete_globus_endpoint(globus_endpoint_id)
+
                 # delete_endpoint_result = delete_globus_endpoint.apply_async(
                 #     args=[move_files_result.get()["globus_endpoint_id"]],
                 #     retry=True,
