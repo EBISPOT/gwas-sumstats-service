@@ -211,11 +211,13 @@ def update_sumstats(callback_id):
             metadata_conversion_result.wait()
 
             if metadata_conversion_result.successful():
-                delete_endpoint_result = delete_globus_endpoint.apply_async(
-                    args=[move_files_result.get()["globus_endpoint_id"]],
-                    retry=True,
-                )
-                delete_endpoint_result.wait()
+                globus_endpoint_id = move_files_result.get()["globus_endpoint_id"]
+                delete_globus_endpoint(globus_endpoint_id)
+                # delete_endpoint_result = delete_globus_endpoint.apply_async(
+                #     args=[move_files_result.get()["globus_endpoint_id"]],
+                #     retry=True,
+                # )
+                # delete_endpoint_result.wait()
 
     return Response(status=200, mimetype="application/json")
 
