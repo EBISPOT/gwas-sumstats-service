@@ -98,13 +98,7 @@ def init_gcs_client() -> GCSClient:
     )
     client = GCSClient(config.GLOBUS_HOSTNAME, authorizer=get_authorizer(scope=scope))
     return client
-    # scope = (
-    #     "urn:globus:auth:scope:transfer.api.globus.org:all"
-    #     f"[*https://auth.globus.org/scopes/{config.MAPPED_COLLECTION_ID}/data_access]"
-    # )
-    # transfer_client = TransferClient(authorizer=get_authorizer(scope=scope))
-    # transfer_client.endpoint_autoactivate(config.MAPPED_COLLECTION_ID)
-    # return transfer_client
+
 
 def dir_contents(transfer, unique_id) -> Union[list, None]:
     # print out a directory listing from an endpoint
