@@ -506,6 +506,8 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
 
     logger.info(f"::: ENDOF [convert_metadata_to_yaml] for {accession_id=}:::")
 
+    return True
+
 
 def generate_path(gcst_id):
     # Extract the numerical part of the GCST id
