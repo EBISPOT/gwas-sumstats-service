@@ -194,6 +194,7 @@ def update_sumstats(callback_id):
     content = request.get_json(force=True)
 
     resp = endpoints.update_sumstats(callback_id=callback_id, content=content)
+    logger.info(f">> PUT /v1/sum-stats/{callback_id}")
     logger.info(f">> {resp=}")
 
     if resp:
@@ -204,6 +205,7 @@ def update_sumstats(callback_id):
         move_files_result.wait()
 
         if move_files_result.successful():
+            logger.info(f"{callback_id=} :: move_files_result successful")
             metadata_conversion_result = convert_metadata_to_yaml.apply_async(
                 args=[resp["studyList"][0]["gcst"], False],
                 retry=True,
@@ -214,15 +216,9 @@ def update_sumstats(callback_id):
                 globus_endpoint_id = move_files_result.get()["globus_endpoint_id"]
                 logger.info(f">> [delete_globus_endpoint] calling {globus_endpoint_id=}")
                 delete_endpoint_result = au.delete_globus_endpoint(globus_endpoint_id)
-                logger.info(f">> {delete_endpoint_result=}")
-                # delete_globus_endpoint(globus_endpoint_id)
+                logger.info(f"{callback_id=} :: {delete_endpoint_result=}")
 
-                # delete_endpoint_result = delete_globus_endpoint.apply_async(
-                #     args=[move_files_result.get()["globus_endpoint_id"]],
-                #     retry=True,
-                # )
-                # delete_endpoint_result.wait()
-
+    logger.info(f"{callback_id=} :: Return status 200")
     return Response(status=200, mimetype="application/json")
 
 
