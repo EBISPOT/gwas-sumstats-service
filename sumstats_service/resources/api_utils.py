@@ -388,13 +388,15 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         logger.info(f"For non-hm {accession_id=} - {out_dir=}")
         Path(out_dir).mkdir(parents=True, exist_ok=True)
 
-
         # Consume Ingest API via gwas-sumstats-tools
         metadata_from_gwas_cat = metadata_dict_from_gwas_cat(
             accession_id=accession_id,
             is_bypass_rest_api=True,
-            # Update for Sandbox
-            is_sandbox=True,
+            #### DEV ONLY #######
+            # 1. Update for Sandbox as is_sandbox=True
+            # 2. Also update gwas-sumstats-tools and make a pre-release
+            is_sandbox=False,
+            #####################
         )
         logger.info(f"For non-hm {accession_id=} - {metadata_from_gwas_cat=}")
         metadata_from_gwas_cat["date_metadata_last_modified"] = date.today()
