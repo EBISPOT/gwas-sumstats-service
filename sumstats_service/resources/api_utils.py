@@ -393,9 +393,8 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
             accession_id=accession_id,
             is_bypass_rest_api=True,
             #### DEV ONLY #######
-            # 1. Update for Sandbox as is_sandbox=True
-            # 2. Also update gwas-sumstats-tools and make a pre-release
-            is_sandbox=False,
+            # 1. Update for Sandbox in gwas-sumstats-tools
+            # 2. Make a pre-release
             #####################
         )
         logger.info(f"For non-hm {accession_id=} - {metadata_from_gwas_cat=}")
