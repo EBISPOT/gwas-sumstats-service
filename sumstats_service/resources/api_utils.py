@@ -394,7 +394,7 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
             accession_id=accession_id,
             is_bypass_rest_api=True,
             # Update for Sandbox
-            is_sandbox=False,
+            is_sandbox=True,
         )
         logger.info(f"For non-hm {accession_id=} - {metadata_from_gwas_cat=}")
         metadata_from_gwas_cat["date_metadata_last_modified"] = date.today()
