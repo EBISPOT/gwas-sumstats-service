@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+import time
+
 from typing import Union
 
 import simplejson
@@ -189,6 +191,7 @@ def delete_sumstats(callback_id):
     return Response(response=resp, status=200, mimetype="application/json")
 
 
+# TODO: refactor this
 @app.route("/v1/sum-stats/<string:callback_id>", methods=["PUT"])
 def update_sumstats(callback_id):
     content = request.get_json(force=True)
@@ -198,25 +201,51 @@ def update_sumstats(callback_id):
     logger.info(f">> {resp=}")
 
     if resp:
-        move_files_result = move_files_to_staging.apply_async(
-            args=[resp],
-            retry=True,
-        )
-        move_files_result.wait()
-
-        if move_files_result.successful():
-            logger.info(f"{callback_id=} :: move_files_result successful")
-            metadata_conversion_result = convert_metadata_to_yaml.apply_async(
-                args=[resp["studyList"][0]["gcst"], False],
+        try:
+            move_files_result = move_files_to_staging.apply_async(
+                args=[resp],
                 retry=True,
             )
-            metadata_conversion_result.wait()
+            # Wait with a timeout to avoid indefinite hanging
+            timeout = 600
+            start_time = time.time()
 
-            if metadata_conversion_result.successful():
-                globus_endpoint_id = move_files_result.get()["globus_endpoint_id"]
-                logger.info(f">> [delete_globus_endpoint] calling {globus_endpoint_id=}")
-                delete_endpoint_result = au.delete_globus_endpoint(globus_endpoint_id)
-                logger.info(f"{callback_id=} :: {delete_endpoint_result=}")
+            while (time.time() - start_time) < timeout:
+                if move_files_result.ready():
+                    logger.info('Task move_files_result ready.')
+                    break
+                logger.info(f"Waiting for move_files_result task to complete. Current state: {move_files_result.state}")
+                time.sleep(10)
+            else:
+                raise Exception("Task move_files_result did not complete within the expected time.")
+
+            if move_files_result.successful():
+                logger.info(f"{callback_id=} :: move_files_result successful")
+                metadata_conversion_result = convert_metadata_to_yaml.apply_async(
+                    args=[resp["studyList"][0]["gcst"], False],
+                    retry=True,
+                )
+
+                while (time.time() - start_time) < timeout:
+                    if metadata_conversion_result.ready():
+                        logger.info('Task metadata_conversion_result ready.')
+                        break
+                    logger.info(f"Waiting for metadata_conversion_result task to complete. Current state: {metadata_conversion_result.state}")
+                    time.sleep(10)
+                else:
+                    raise Exception("Task metadata_conversion_result did not complete within the expected time.")
+
+                if metadata_conversion_result.successful():
+                    globus_endpoint_id = move_files_result.get()["globus_endpoint_id"]
+                    logger.info(f">> [delete_globus_endpoint] calling {globus_endpoint_id=}")
+                    delete_endpoint_result = au.delete_globus_endpoint(globus_endpoint_id)
+                    logger.info(f"{callback_id=} :: {delete_endpoint_result=}")
+                else:
+                    raise Exception("Task metadata_conversion_result did not complete within the expected time.")
+            else:
+                raise Exception("Task move_files_result did not complete within the expected time.")
+        except Exception as e:
+            logger.error(f"{callback_id=} :: Error {e=}")
 
     logger.info(f"{callback_id=} :: Return status 200")
     return Response(status=200, mimetype="application/json")
