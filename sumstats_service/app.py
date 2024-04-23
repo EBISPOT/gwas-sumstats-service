@@ -246,6 +246,7 @@ def update_sumstats(callback_id):
                 raise Exception("Task move_files_result did not complete within the expected time.")
         except Exception as e:
             logger.error(f"{callback_id=} :: Error {e=}")
+            return Response(status=500, mimetype="application/json")
 
     logger.info(f"{callback_id=} :: Return status 200")
     return Response(status=200, mimetype="application/json")
