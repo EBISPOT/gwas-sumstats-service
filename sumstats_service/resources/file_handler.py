@@ -260,6 +260,13 @@ class SumStatFile:
                 "Error: {}\nCould not move file {} to staging,\ "
                 "callback ID: {}".format(e, self.staging_file_name, self.callback_id)
             )
+            # Attempt to clean up by removing the directory if it's empty
+            try:
+                os.rmdir(dest_dir)
+            except OSError:
+                # Directory not empty or other issue, cannot remove
+                pass
+
             raise 
 
         return True
