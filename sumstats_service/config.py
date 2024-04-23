@@ -25,7 +25,7 @@ BROKER_PORT = 5672
 # if the worker is able to perform validation and see the database
 CELERY_QUEUE1 = _env_variable_else("CELERY_QUEUE1", "preval")
 CELERY_QUEUE2 = _env_variable_else("CELERY_QUEUE2", "postval")
-CELERY_QUEUE3 = _env_variable_else("CELERY_QUEUE3", "metadata-yml-update-sandbox")
+CELERY_QUEUE3 = _env_variable_else("CELERY_QUEUE3", "metadata-yml-update")
 
 # --- Remote --- #
 
