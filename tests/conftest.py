@@ -14,7 +14,7 @@ def celery_config():
                 port=os.environ['QUEUE_PORT']
                 ),
             'result_backend': 'rpc://',
-            'queues':('preval', 'postval', 'metadata-yml-update-sandbox'),
+            'queues':('preval', 'postval', 'metadata-yml-update'),
             'task_always_eager': True
            }
 

@@ -298,7 +298,7 @@ def get_dir_contents(unique_id):
 # --- Celery tasks --- #
 # postval --> app side worker queue
 # preval --> compute cluster side worker queue
-# metadata-yml-update-sandbox --> dynamic metadata update queue
+# metadata-yml-update --> dynamic metadata update queue
 
 
 @celery.task(queue=config.CELERY_QUEUE2, options={"queue": config.CELERY_QUEUE2})
