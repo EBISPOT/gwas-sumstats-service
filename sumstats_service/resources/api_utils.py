@@ -384,10 +384,6 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         logger.info(f"::: [convert_metadata_to_yaml] {accession_id=} :::")
         logger.info(f"Non-HM case for {accession_id=}")
 
-        out_dir = os.path.join(config.STAGING_PATH, accession_id)
-        logger.info(f"For non-hm {accession_id=} - {out_dir=}")
-        Path(out_dir).mkdir(parents=True, exist_ok=True)
-
         # Consume Ingest API via gwas-sumstats-tools
         metadata_from_gwas_cat = metadata_dict_from_gwas_cat(
             accession_id=accession_id,
@@ -430,6 +426,11 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
 
         metadata_from_gwas_cat["gwas_id"] = accession_id
         metadata_from_gwas_cat["gwas_catalog_api"] = f'{config.GWAS_CATALOG_REST_API_STUDY_URL}{accession_id}'
+
+        # Create out_dir as late as possible to make sure that it's not empty
+        out_dir = os.path.join(config.STAGING_PATH, accession_id)
+        logger.info(f"For non-hm {accession_id=} - {out_dir=}")
+        Path(out_dir).mkdir(parents=True, exist_ok=True)
 
         metadata_filename = f"{metadata_from_gwas_cat['data_file_name']}-meta.yaml"
         out_file = os.path.join(out_dir, metadata_filename)
@@ -477,6 +478,8 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
 
         if not metadata_from_gwas_cat.get("data_file_name"):
             logger.info("HM data file not available in FTP")
+            # It's okay to return True even though we haven't got the file
+            # because not every study is harmonised
             return True
 
         hm_dir = os.path.join(out_dir, 'harmonised')
