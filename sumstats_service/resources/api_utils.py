@@ -516,13 +516,18 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
 def generate_path(gcst_id):
     # Extract the numerical part of the GCST id
     num_part = int(gcst_id[4:]) - 1
-    
+
     # Determine the directory range
     lower_bound = (num_part // 1000) * 1000 + 1
     upper_bound = lower_bound + 999
-    
+
+    number_of_digits = len(gcst_id) - 4
     # Format the directory range and GCST id to create the path
-    path = f"/pub/databases/gwas/summary_statistics/GCST{lower_bound:07d}-GCST{upper_bound:07d}/{gcst_id}"
+    if number_of_digits == 8:
+        path = f"/pub/databases/gwas/summary_statistics/GCST{lower_bound:08d}-GCST{upper_bound:08d}/{gcst_id}"
+    elif number_of_digits == 6:
+        path = f"/pub/databases/gwas/summary_statistics/GCST{lower_bound:06d}-GCST{upper_bound:06d}/{gcst_id}"
+
     return path
 
 def get_is_sorted(ftp_server: str, ftp_directory: str):
