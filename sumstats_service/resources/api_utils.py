@@ -515,7 +515,7 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
 
 def generate_path(gcst_id):
     # Extract the numerical part of the GCST id
-    num_part = int(gcst_id[4:])
+    num_part = int(gcst_id[4:]) - 1
     
     # Determine the directory range
     lower_bound = (num_part // 1000) * 1000 + 1
