@@ -202,38 +202,3 @@ curl http://localhost:8000/v1/sum-stats/TiQS2yxV
 }
 ```
 
-## Misc - Format and Lint
-
-### Installation
-
-Follow these steps to set up FormatLint:
-
-### 1. Create a Virtual Environment
-
-Create a new virtual environment for the project to manage dependencies separately from your global Python setup:
-
-```bash
-python -m venv formatlint
-```
-
-Activate the virtual environment:
-
-```bash
-source formatlint/bin/activate
-```
-
-### 2. Install Dependencies
-
-Install the required Python packages:
-
-```bash
-pip install -r requirements.dev.txt
-```
-
-### 3. Run FormatLint
-
-Execute the formatting and linting script:
-
-```bash
-./format-lint
-```
