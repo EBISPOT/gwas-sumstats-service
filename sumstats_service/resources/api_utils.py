@@ -1,7 +1,6 @@
 import ftplib
 import glob
 import hashlib
-import io
 import json
 import logging
 import os
@@ -14,15 +13,16 @@ from urllib.parse import unquote
 
 from flask import url_for
 from gwas_sumstats_tools.interfaces.metadata import (
-    MetadataClient, metadata_dict_from_gwas_cat)
+    MetadataClient,
+    metadata_dict_from_gwas_cat,
+)
 
-import sumstats_service.resources.file_handler as fh
 import sumstats_service.resources.globus as globus
 import sumstats_service.resources.payload as pl
 import sumstats_service.resources.study_service as st
 import sumstats_service.resources.validate_payload as vp
 from sumstats_service import config, logger_config
-from sumstats_service.resources.error_classes import *
+from sumstats_service.resources.error_classes import RequestedNotFound
 from sumstats_service.resources.mongo_client import MongoClient
 from sumstats_service.resources.utils import download_with_requests
 
@@ -76,7 +76,7 @@ def store_validation_results_in_db(validation_response):
         study.store_validation_statuses()
         if study.error_code:
             valid = False
-    if valid == False:
+    if not valid:
         """
         TODO: reinstate globus permissions
         """
@@ -140,15 +140,18 @@ def validate_files(
     zero_p_values: bool = False,
     file_type: Union[str, None] = None,
 ):
-    print(f'[validate_files] for {callback_id=} with {minrows=} {forcevalid=} {zero_p_values=} {file_type=}')
+    print(f"[validate_files] for {callback_id=}")
+    print(f"with {minrows=} {forcevalid=} {zero_p_values=} {file_type=}")
 
-    validate_metadata = vp.validate_metadata_for_payload(callback_id, content, file_type)
+    validate_metadata = vp.validate_metadata_for_payload(
+        callback_id, content, file_type
+    )
     if any([i["errorCode"] for i in json.loads(validate_metadata)["validationList"]]):
         # metadata invalid stop here
-        print('Error code exists!')
+        print("Error code exists!")
         return validate_metadata
 
-    print('No error code.')
+    print("No error code.")
     (
         wd,
         payload_path,
@@ -179,8 +182,10 @@ def validate_files(
         write_data_to_path(data=f.read(), path=nf_script_path)
 
     try:
-        print('Running NextFlow command...')
-        result = subprocess.run(nextflow_cmd, capture_output=True, text=True, shell=True)
+        print("Running NextFlow command...")
+        result = subprocess.run(
+            nextflow_cmd, capture_output=True, text=True, shell=True
+        )
 
         if result.returncode != 0:
             print("Error in submitting job: ", result.stderr)
@@ -188,10 +193,14 @@ def validate_files(
             print("No error. Command output: ", result.stdout)
 
     except Exception as e:
-        print('=== EXCEPTION ===')
+        print("=== EXCEPTION ===")
         print(e)
-    
-    json_out_files = [f for f in glob.glob(os.path.join(wd, "*.json")) if not f.endswith('payload.json')]
+
+    json_out_files = [
+        f
+        for f in glob.glob(os.path.join(wd, "*.json"))
+        if not f.endswith("payload.json")
+    ]
     results = {"callbackID": callback_id, "validationList": []}
     if len(json_out_files) > 0:
         for j in json_out_files:
@@ -200,7 +209,7 @@ def validate_files(
         add_errors_if_study_missing(callback_id, content, results)
     else:
         results = results_if_failure(callback_id, content)
-    
+
     results_json_dumped = json.dumps(results)
     print("results: " + results_json_dumped)
     # remove_payload_files(callback_id)
@@ -261,7 +270,7 @@ def nextflow_command_string(
         f"-c {nextflow_config_path} "
         f"-with-singularity {config.SINGULARITY_IMAGE}_{config.SINGULARITY_TAG}.sif"
     )
-    if containerise == 'False':
+    if containerise == "False":
         nextflow_cmd = nextflow_cmd.split("-with-singularity")[0]
     return nextflow_cmd
 
@@ -272,7 +281,7 @@ def validate_metadata(callback_id):
     payload.get_data_for_callback_id()
     for study in payload.study_obj_list:
         metadata_valid.append(study.validate_metadata())
-    if any(metadata_valid) == False:
+    if not any(metadata_valid):
         return False
     else:
         return True
@@ -304,7 +313,7 @@ def remove_payload_files(callback_id):
 
 
 def move_files_to_staging(study_list):
-    logger.info(f'==> Move sumstats files to staging for publishing for {study_list=}')
+    logger.info(f"==> Move sumstats files to staging for publishing for {study_list=}")
 
     moved = 0
     callback_id = None
@@ -335,11 +344,10 @@ def move_files_to_staging(study_list):
             globus_endpoint_id = s["entryUUID"]
 
     return {
-        "moved": moved, 
-        "callback_id": callback_id, 
+        "moved": moved,
+        "callback_id": callback_id,
         "globus_endpoint_id": globus_endpoint_id,
     }
-
 
 
 def determine_file_type(is_in_file, is_bypass) -> str:
@@ -356,8 +364,8 @@ def get_template(callback_id):
     :return: bytes or None
     """
     return download_with_requests(
-        url=urllib.parse.urljoin(config.GWAS_DEPO_REST_API_URL, "submissions/uploads"), 
-        params={"callbackId": callback_id}, 
+        url=urllib.parse.urljoin(config.GWAS_DEPO_REST_API_URL, "submissions/uploads"),
+        params={"callbackId": callback_id},
         headers={"jwt": config.DEPO_API_AUTH_TOKEN},
     )
 
@@ -372,7 +380,7 @@ def get_file_type_from_mongo(gcst) -> str:
             config.MONGO_DB,
         )
         study_metadata = mdb.get_study_metadata_by_gcst(gcst)
-        return study_metadata['fileType']
+        return study_metadata["fileType"]
     except Exception as e:
         logger.error(f"Error while fetching the `file_type`: {e=}")
         return ""
@@ -388,19 +396,26 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         metadata_from_gwas_cat = metadata_dict_from_gwas_cat(
             accession_id=accession_id,
             is_bypass_rest_api=True,
-            #### DEV ONLY #######
+            # DEV ONLY ###################################
             # 1. Update for Sandbox in gwas-sumstats-tools
             # 2. Make a pre-release
-            #####################
+            #
         )
         logger.info(f"For non-hm {accession_id=} - {metadata_from_gwas_cat=}")
         metadata_from_gwas_cat["date_metadata_last_modified"] = date.today()
         metadata_from_gwas_cat["file_type"] = get_file_type_from_mongo(accession_id)
 
         # Setting default values for keys that may not exist
-        default_keys = ["genome_assembly", "data_file_name", "file_type", "data_file_md5sum"]
+        default_keys = [
+            "genome_assembly",
+            "data_file_name",
+            "file_type",
+            "data_file_md5sum",
+        ]
         for key in default_keys:
-            logger.info(f"For non-hm {accession_id=} - Setting default value for {key=}.")
+            logger.info(
+                f"For non-hm {accession_id=} - Setting default value for {key=}."
+            )
             metadata_from_gwas_cat.setdefault(key, "")
 
         if not is_harmonised_included:
@@ -409,23 +424,27 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
             )
         else:
             filenames_to_md5_values = compute_md5_for_ftp_files(
-                config.FTP_SERVER_EBI, 
-                generate_path(accession_id), 
+                config.FTP_SERVER_EBI,
+                generate_path(accession_id),
                 accession_id,
             )
 
-        filename_to_md5sum = get_md5_for_accession(filenames_to_md5_values, accession_id)
+        filename_to_md5sum = get_md5_for_accession(
+            filenames_to_md5_values, accession_id
+        )
         # set if exists, default value set above
-        for k,v in filename_to_md5sum.items():
-            metadata_from_gwas_cat['data_file_name'] = k
-            metadata_from_gwas_cat['data_file_md5sum'] = v
+        for k, v in filename_to_md5sum.items():
+            metadata_from_gwas_cat["data_file_name"] = k
+            metadata_from_gwas_cat["data_file_md5sum"] = v
 
         if not metadata_from_gwas_cat.get("data_file_name"):
             logger.info("Data file not available in FTP")
             return False
 
         metadata_from_gwas_cat["gwas_id"] = accession_id
-        metadata_from_gwas_cat["gwas_catalog_api"] = f'{config.GWAS_CATALOG_REST_API_STUDY_URL}{accession_id}'
+        metadata_from_gwas_cat["gwas_catalog_api"] = (
+            f"{config.GWAS_CATALOG_REST_API_STUDY_URL}{accession_id}"
+        )
 
         # Create out_dir as late as possible to make sure that it's not empty
         out_dir = os.path.join(config.STAGING_PATH, accession_id)
@@ -446,35 +465,40 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         filenames_to_md5_values[metadata_filename] = compute_md5_local(out_file)
         logger.info(f"For non-hm {accession_id=} - {filenames_to_md5_values=}")
 
-        write_md5_for_files(filenames_to_md5_values, os.path.join(out_dir, 'md5sum.txt'))
-
-        logger.info(f"Metadata yaml file creation is successful for non-harmonised for non-hm {accession_id=}.")
+        write_md5_for_files(
+            filenames_to_md5_values, os.path.join(out_dir, "md5sum.txt")
+        )
+        logger.info(f"YAML gen is successful for non-hm {accession_id=}.")
 
         if not is_harmonised_included:
             return True
 
         logger.info(f"HM CASE for {accession_id=}")
-        logger.info(f"For HM {accession_id=} - resetting data_file_name and data_file_md5sum")
-        metadata_from_gwas_cat['data_file_name'] = ""
-        metadata_from_gwas_cat['data_file_md5sum'] = ""
-        metadata_from_gwas_cat['harmonisation_reference'] = config.HM_REFERENCE
-        metadata_from_gwas_cat['coordinate_system'] = config.HM_COORDINATE_SYSTEM
-        metadata_from_gwas_cat['genome_assembly'] = config.LATEST_ASSEMBLY
-        metadata_from_gwas_cat['is_harmonised'] = True
-        metadata_from_gwas_cat['is_sorted'] = get_is_sorted(
-            config.FTP_SERVER_EBI, 
-            f'{generate_path(accession_id)}/harmonised',
+        logger.info(
+            f"For HM {accession_id=} - resetting data_file_name and data_file_md5sum"
+        )
+        metadata_from_gwas_cat["data_file_name"] = ""
+        metadata_from_gwas_cat["data_file_md5sum"] = ""
+        metadata_from_gwas_cat["harmonisation_reference"] = config.HM_REFERENCE
+        metadata_from_gwas_cat["coordinate_system"] = config.HM_COORDINATE_SYSTEM
+        metadata_from_gwas_cat["genome_assembly"] = config.LATEST_ASSEMBLY
+        metadata_from_gwas_cat["is_harmonised"] = True
+        metadata_from_gwas_cat["is_sorted"] = get_is_sorted(
+            config.FTP_SERVER_EBI,
+            f"{generate_path(accession_id)}/harmonised",
         )
 
         filenames_to_md5_values = compute_md5_for_ftp_files(
-            config.FTP_SERVER_EBI, 
-            f'{generate_path(accession_id)}/harmonised', 
+            config.FTP_SERVER_EBI,
+            f"{generate_path(accession_id)}/harmonised",
             accession_id,
         )
-        filename_to_md5sum_hm = get_md5_for_accession(filenames_to_md5_values, accession_id, True)
-        for k,v in filename_to_md5sum_hm.items():
-            metadata_from_gwas_cat['data_file_name'] = k
-            metadata_from_gwas_cat['data_file_md5sum'] = v
+        filename_to_md5sum_hm = get_md5_for_accession(
+            filenames_to_md5_values, accession_id, True
+        )
+        for k, v in filename_to_md5sum_hm.items():
+            metadata_from_gwas_cat["data_file_name"] = k
+            metadata_from_gwas_cat["data_file_md5sum"] = v
 
         if not metadata_from_gwas_cat.get("data_file_name"):
             logger.info("HM data file not available in FTP")
@@ -482,7 +506,7 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
             # because not every study is harmonised
             return True
 
-        hm_dir = os.path.join(out_dir, 'harmonised')
+        hm_dir = os.path.join(out_dir, "harmonised")
         Path(hm_dir).mkdir(parents=True, exist_ok=True)
 
         metadata_filename_hm = f"{metadata_from_gwas_cat['data_file_name']}-meta.yaml"
@@ -500,8 +524,8 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         filenames_to_md5_values[metadata_filename_hm] = compute_md5_local(out_file_hm)
         logger.info(f"For HM {accession_id=} - {filenames_to_md5_values=}")
 
-        write_md5_for_files(filenames_to_md5_values, os.path.join(hm_dir, 'md5sum.txt'))
-        logger.info(f"Metadata yaml file creation is successful for harmonised for HM {accession_id=}.")
+        write_md5_for_files(filenames_to_md5_values, os.path.join(hm_dir, "md5sum.txt"))
+        logger.info(f"YAML gen is successful for HM {accession_id=}.")
 
     except Exception as e:
         logger.error(f"For {accession_id=} - error while creating metadata yaml files:")
@@ -517,7 +541,8 @@ def generate_path(gcst_id):
     if not gcst_id.startswith("GCST"):
         raise ValueError("Invalid GCST ID format.")
 
-    # Note that -1 required for edge cases, e.g., 'GCST90427001-GCST90428000/GCST90428000'
+    # Note that -1 required for edge cases,
+    # e.g., 'GCST90427001-GCST90428000/GCST90428000'
     num_part = int(gcst_id[4:]) - 1
 
     lower_bound = (num_part // 1000) * 1000 + 1
@@ -525,22 +550,25 @@ def generate_path(gcst_id):
     num_digits = len(gcst_id) - 4
 
     # Do zero-padding accordingly
-    return f"/pub/databases/gwas/summary_statistics/GCST{lower_bound:0{num_digits}d}-GCST{upper_bound:0{num_digits}d}/{gcst_id}"
+    return f"/pub/databases/gwas/summary_statistics/GCST{lower_bound:0{num_digits}d}-GCST{upper_bound:0{num_digits}d}/{gcst_id}"  # noqa: E501
+
 
 def get_is_sorted(ftp_server: str, ftp_directory: str):
     try:
         with ftplib.FTP(ftp_server) as ftp:
             ftp.login()
             ftp.cwd(ftp_directory)
-            return any(f.endswith('.tbi') for f in ftp.nlst())
+            return any(f.endswith(".tbi") for f in ftp.nlst())
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
         return False
 
 
-
 def compute_md5_for_ftp_files(ftp_server: str, ftp_directory: str, file_id: str):
-    """Compute MD5 checksums for files starting with a specific ID in an FTP directory and write to a file."""
+    """
+    Compute MD5 checksums for files starting with a
+    specific ID in an FTP directory and write to a file.
+    """
     filename_to_md5 = {}
 
     try:
@@ -571,28 +599,35 @@ def compute_md5_for_ftp_files(ftp_server: str, ftp_directory: str, file_id: str)
 
 
 def write_md5_for_files(filename_to_md5: dict, output_file: str) -> None:
-    with open(output_file, 'w') as f:
-        for filename,md5_checksum in filename_to_md5.items():
+    with open(output_file, "w") as f:
+        for filename, md5_checksum in filename_to_md5.items():
             f.write(f"{md5_checksum} {filename}\n")
 
 
 def compute_md5_for_local_files(accession_id: str):
-    """Compute MD5 checksums for files starting with a specific ID in codon dir and write to a file."""
+    """
+    Compute MD5 checksums for files starting with
+    a specific ID in codon dir and write to a file.
+    """
     md5_lines = []
     filename_to_md5 = {}
     directory_path = os.path.join(config.STAGING_PATH, accession_id)
-    logger.info(f'{directory_path=}')
+    logger.info(f"{directory_path=}")
 
     if not os.path.exists(directory_path):
         raise FileNotFoundError(f"The directory {directory_path} does not exist.")
 
     # List files in the directory
-    files = [f for f in os.listdir(directory_path) if os.path.isfile(os.path.join(directory_path, f))]
-    logger.info(f'{files=}')
+    files = [
+        f
+        for f in os.listdir(directory_path)
+        if os.path.isfile(os.path.join(directory_path, f))
+    ]
+    logger.info(f"{files=}")
 
     # Filter files by the starting ID
     files_of_interest = [f for f in files if f.startswith(accession_id)]
-    logger.info(f'{files_of_interest=}')
+    logger.info(f"{files_of_interest=}")
 
     # Compute MD5 for each file and store the line for the output file
     for filename in files_of_interest:
@@ -601,7 +636,7 @@ def compute_md5_for_local_files(accession_id: str):
         md5_lines.append(f"{md5_checksum} {filename}")
         filename_to_md5[filename] = md5_checksum
 
-    logger.info(f'{filename_to_md5=}')
+    logger.info(f"{filename_to_md5=}")
 
     # # Write the MD5 checksums to the output file
     # with open(output_file, 'w') as f:
@@ -621,7 +656,10 @@ def compute_md5_local(file_path: str) -> str:
 
 
 def compute_md5_ftp(ftp: ftplib.FTP, ftp_path: str, filename: str) -> str:
-    """Compute MD5 checksum for a single file on an FTP server using an existing FTP connection."""
+    """
+    Compute MD5 checksum for a single file on an
+    FTP server using an existing FTP connection.
+    """
     md5 = hashlib.md5()
 
     def handle_binary(m):
@@ -632,25 +670,34 @@ def compute_md5_ftp(ftp: ftplib.FTP, ftp_path: str, filename: str) -> str:
     return md5.hexdigest()
 
 
-def get_md5_for_accession(md5_checksums: dict, accession_id: str, is_harmonised=False) -> dict:
+def get_md5_for_accession(
+    md5_checksums: dict, accession_id: str, is_harmonised=False
+) -> dict:
     """
     Return the key (filename) and value (MD5 checksum) from md5_checksums
     if there's a key that equals to accession_id.tsv.gz or accession_id.tsv.
 
     Parameters:
-    - md5_checksums: Dictionary with filenames as keys and their MD5 checksums as values.
+    - md5_checksums: Dictionary with filenames as keys and their MD5 checksums as
+    values.
     - accession_id: The accession ID to look for, with .tsv or .tsv.gz extensions.
 
     Returns:
-    - A dictionary with the matching filename and its MD5 checksum. Empty if no match is found.
+    - A dictionary with the matching filename and its MD5 checksum.
+    Empty if no match is found.
     """
-    possible_keys = [f"{accession_id}.tsv", f"{accession_id}.tsv.gz"] if not is_harmonised else [f"{accession_id}.h.tsv", f"{accession_id}.h.tsv.gz"]
-    
+    possible_keys = (
+        [f"{accession_id}.tsv", f"{accession_id}.tsv.gz"]
+        if not is_harmonised
+        else [f"{accession_id}.h.tsv", f"{accession_id}.h.tsv.gz"]
+    )
+
     for key in possible_keys:
         if key in md5_checksums:
             return {key: md5_checksums[key]}
-    
+
     return {}
+
 
 def construct_get_payload_response(callback_id):
     response = None
