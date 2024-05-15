@@ -25,9 +25,13 @@ done
 echo '>>> black'
 python3 -m black --exclude .+\Grammar.+\.py $CHANGED_FILES
 
-echo '>>> MyPy'
-# Mypy might not work well with individual files if there are missing imports.
-python3 -m mypy --warn-unused-configs $CHANGED_FILES
+# echo '>>> MyPy'
+# # Mypy might not work well with individual files if there are missing imports.
+# python3 -m mypy --config-file './mypy.ini' --warn-unused-configs $CHANGED_FILES
+
+echo '>>> Pytype'
+# Running pytype on the changed files
+pytype --config=pytype.cfg $CHANGED_FILES
 
 echo '>>> flake8'
 python3 -m flake8 --max-line-length=88 $CHANGED_FILES
