@@ -6,9 +6,14 @@ ENV INSTALL_PATH /sumstats_service
 RUN mkdir -p $INSTALL_PATH
 WORKDIR $INSTALL_PATH
 
-RUN apt-get update && apt-get install -y gcc
-
 COPY requirements.txt requirements.txt
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends gcc \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install -r requirements.txt \
+    && apt-get purge -y --auto-remove gcc
+
 
 RUN pip install -r requirements.txt
 
