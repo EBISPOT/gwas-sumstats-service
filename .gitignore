@@ -32,3 +32,5 @@ tox.ini
 # build
 build/*
 data
+
+formatlint/*
