@@ -1,4 +1,4 @@
-FROM python:3.9-slim-buster as builder
+FROM python:3.9-slim-bullseye as builder
 
 RUN groupadd -r sumstats-service && useradd -r --create-home -g sumstats-service sumstats-service
 
@@ -7,16 +7,16 @@ WORKDIR $INSTALL_PATH
 
 COPY requirements.txt .
 
+# Update and install necessary packages
 RUN apt-get update \
-    && apt-mark hold libc6 libexpat1 \
-    && apt-get install -y --no-install-recommends gcc libmagic-dev python3.9-dev \
+    && apt-get install -y --no-install-recommends gcc libmagic-dev python3.9 python3.9-dev \
     && pip install --upgrade pip \
     && pip install -r requirements.txt \
     && apt-get purge -y --auto-remove gcc python3.9-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-FROM python:3.9-slim-buster as runtime
+FROM python:3.9-slim-bullseye as runtime
 
 COPY --from=builder /usr/local /usr/local
 COPY --from=builder /sumstats_service /sumstats_service
@@ -30,6 +30,7 @@ RUN pip install -e .
 
 EXPOSE 8000
 
+# Setting environment variables as needed
 ENV CELERY_PROTOCOL="amqp" \
     CELERY_USER="guest" \
     CELERY_PASSWORD="guest" \
