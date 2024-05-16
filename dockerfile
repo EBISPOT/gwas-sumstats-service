@@ -9,10 +9,10 @@ COPY requirements.txt .
 
 RUN apt-get update \
     && apt-mark hold libc6 libexpat1 \
-    && apt-get install -y --no-install-recommends gcc libmagic-dev python3-dev \
+    && apt-get install -y --no-install-recommends gcc libmagic-dev python3.9-dev \
     && pip install --upgrade pip \
     && pip install -r requirements.txt \
-    && apt-get purge -y --auto-remove gcc python3-dev \
+    && apt-get purge -y --auto-remove gcc python3.9-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
