@@ -6,12 +6,13 @@ ENV INSTALL_PATH /sumstats_service
 WORKDIR $INSTALL_PATH
 
 COPY requirements.txt .
+
 RUN apt-get update \
     && apt-mark hold libc6 libexpat1 \
-    && apt-get install -y --no-install-recommends libpython-dev python2.7-dev gcc python-dev libmagic-dev \
+    && apt-get install -y --no-install-recommends gcc libmagic-dev python3-dev \
     && pip install --upgrade pip \
     && pip install -r requirements.txt \
-    && apt-get purge -y --auto-remove gcc python-dev \
+    && apt-get purge -y --auto-remove gcc python3-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
