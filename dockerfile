@@ -8,14 +8,8 @@ WORKDIR $INSTALL_PATH
 COPY requirements.txt .
 
 # Update and install necessary packages
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends python3.9-dev \
-    && pip install --upgrade pip \
-    && pip install -r requirements.txt \
-    && apt-get purge -y --auto-remove python3.9-dev \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
+RUN pip install -r requirements.txt
+    
 FROM python:3.9-slim-bullseye as runtime
 
 COPY --from=builder /usr/local /usr/local
