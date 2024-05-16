@@ -9,10 +9,10 @@ COPY requirements.txt .
 
 # Update and install necessary packages
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc libmagic-dev python3.9 python3.9-dev \
+    && apt-get install -y --no-install-recommends python3.9-dev \
     && pip install --upgrade pip \
     && pip install -r requirements.txt \
-    && apt-get purge -y --auto-remove gcc python3.9-dev \
+    && apt-get purge -y --auto-remove python3.9-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
