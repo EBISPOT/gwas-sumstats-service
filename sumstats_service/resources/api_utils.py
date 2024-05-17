@@ -514,16 +514,18 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
 
 
 def generate_path(gcst_id):
-    # Extract the numerical part of the GCST id
-    num_part = int(gcst_id[4:])
-    
-    # Determine the directory range
+    if not gcst_id.startswith("GCST"):
+        raise ValueError("Invalid GCST ID format.")
+
+    # Note that -1 required for edge cases, e.g., 'GCST90427001-GCST90428000/GCST90428000'
+    num_part = int(gcst_id[4:]) - 1
+
     lower_bound = (num_part // 1000) * 1000 + 1
     upper_bound = lower_bound + 999
-    
-    # Format the directory range and GCST id to create the path
-    path = f"/pub/databases/gwas/summary_statistics/GCST{lower_bound:07d}-GCST{upper_bound:07d}/{gcst_id}"
-    return path
+    num_digits = len(gcst_id) - 4
+
+    # Do zero-padding accordingly
+    return f"/pub/databases/gwas/summary_statistics/GCST{lower_bound:0{num_digits}d}-GCST{upper_bound:0{num_digits}d}/{gcst_id}"
 
 def get_is_sorted(ftp_server: str, ftp_directory: str):
     try:
