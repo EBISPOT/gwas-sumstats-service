@@ -432,7 +432,8 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
             )
 
         filename_to_md5sum = get_md5_for_accession(
-            filenames_to_md5_values, accession_id
+            filenames_to_md5_values,
+            accession_id,
         )
         # set if exists, default value set above
         for k, v in filename_to_md5sum.items():
@@ -499,7 +500,9 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
             accession_id,
         )
         filename_to_md5sum_hm = get_md5_for_accession(
-            filenames_to_md5_values, accession_id, True
+            filenames_to_md5_values,
+            accession_id,
+            True,
         )
         for k, v in filename_to_md5sum_hm.items():
             metadata_from_gwas_cat["data_file_name"] = k
@@ -572,8 +575,7 @@ def get_is_sorted(ftp_server: str, ftp_directory: str):
 
 
 def compute_md5_for_ftp_files(ftp_server: str, ftp_directory: str, file_id: str):
-    """Compute MD5 checksums for files starting with a specific ID in an FTP directory
-    and write to a file."""
+    """Compute MD5 checksums for files in an FTP directory."""
     filename_to_md5 = {}
 
     try:
@@ -586,7 +588,7 @@ def compute_md5_for_ftp_files(ftp_server: str, ftp_directory: str, file_id: str)
                 logger.error(f"FTP error: {e}")
                 return {}
 
-            files_of_interest = [f for f in files if f.startswith(file_id)]
+            files_of_interest = files
 
             for filename in files_of_interest:
                 try:
@@ -610,8 +612,10 @@ def write_md5_for_files(filename_to_md5: dict, output_file: str) -> None:
 
 
 def compute_md5_for_local_files(accession_id: str):
-    """Compute MD5 checksums for files starting with a specific ID in codon dir and
-    write to a file."""
+    """
+    Compute MD5 checksums for files starting with a specific ID in codon dir and
+    write to a file.
+    """
     md5_lines = []
     filename_to_md5 = {}
     directory_path = os.path.join(config.STAGING_PATH, accession_id)
@@ -672,7 +676,9 @@ def compute_md5_ftp(ftp: ftplib.FTP, ftp_path: str, filename: str) -> str:
 
 
 def get_md5_for_accession(
-    md5_checksums: dict, accession_id: str, is_harmonised=False
+    md5_checksums: dict,
+    accession_id: str,
+    is_harmonised=False,
 ) -> dict:
     """
     Return the key (filename) and value (MD5 checksum) from md5_checksums
@@ -693,8 +699,28 @@ def get_md5_for_accession(
         else [f"{accession_id}.h.tsv", f"{accession_id}.h.tsv.gz"]
     )
 
+    # Check for exact matches first
     for key in possible_keys:
         if key in md5_checksums:
+            return {key: md5_checksums[key]}
+
+    # Check for partial matches if no exact match is found
+    # i.e., files are named <GCST ID>_<build number>.*
+    # e.g. http://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/GCST90308001-GCST90309000/GCST90308682/ # noqa:E501
+    for key in md5_checksums:
+        if accession_id in key:
+            return {key: md5_checksums[key]}
+
+    # If still no match, look for any .tsv, .tsv.gz, .txt or .txt.gz files
+    # except md5sums.txt and YAML files. This is probably very early
+    # submission where files are named freely,
+    # e.g., http://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/GCST005001-GCST006000/GCST005529/ # noqa:E501
+    for key in md5_checksums:
+        if (
+            key.endswith((".tsv", ".tsv.gz", ".txt", ".txt.gz"))
+            and key != "md5sums.txt"
+            and "yaml" not in key
+        ):
             return {key: md5_checksums[key]}
 
     return {}
