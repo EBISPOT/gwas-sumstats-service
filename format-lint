@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+set -e
+
+echo ':::::::::::::::: FORMAT AND LINT ::::::::::::::::'
+
+# Get list of changed .py files
+CHANGED_FILES=$(git diff --name-only HEAD | grep '\.py$')
+
+if [ -z "$CHANGED_FILES" ]; then
+    echo "No Python files have been modified."
+    exit 0
+fi
+
+echo "List of changed files: " $CHANGED_FILES
+
+echo '>>> isort'
+python3 -m isort $CHANGED_FILES
+
+echo '>>> autoflake'
+for file in $CHANGED_FILES; do
+    python3 -m autoflake --remove-all-unused-imports --remove-unused-variables --in-place $file
+done
+
+echo '>>> black'
+python3 -m black --exclude .+\Grammar.+\.py $CHANGED_FILES
+
+# echo '>>> MyPy'
+# # # Mypy might not work well with individual files if there are missing imports.
+# python3 -m mypy --config-file 'mypy.ini' --warn-unused-configs --ignore-missing-imports $CHANGED_FILES
+
+echo '>>> Pytype'
+# Running pytype on the changed files
+pytype --config=pytype.cfg $CHANGED_FILES
+
+echo '>>> flake8'
+python3 -m flake8 --max-line-length=88 $CHANGED_FILES
+
+# echo '>>> pydocstyle'
+# python3 -m pydocstyle $CHANGED_FILES
+
+echo ':::::::::::::::: FORMAT AND LINT ✔️ ::::::::::::::::'
