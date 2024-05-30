@@ -414,9 +414,7 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         "data_file_md5sum",
     ]
     for key in default_keys:
-        logger.info(
-            f"For non-hm {accession_id=} - Setting default value for {key=}."
-        )
+        logger.info(f"For non-hm {accession_id=} - Setting default value for {key=}.")
         metadata_from_gwas_cat.setdefault(key, "")
 
     if not is_harmonised_included:
@@ -441,7 +439,12 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
 
     if not metadata_from_gwas_cat.get("data_file_name"):
         logger.info("Data file not available in FTP")
-        raise FileNotFoundError(f"Data file not available for {gcst_id} at {generate_path(accession_id)}")
+        raise FileNotFoundError(
+            f"""
+            Data file not available for {accession_id}
+            at '{generate_path(accession_id)}'
+            """
+        )
 
     metadata_from_gwas_cat["gwas_id"] = accession_id
     metadata_from_gwas_cat["gwas_catalog_api"] = (
@@ -467,9 +470,7 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
     filenames_to_md5_values[metadata_filename] = compute_md5_local(out_file)
     logger.info(f"For non-hm {accession_id=} - {filenames_to_md5_values=}")
 
-    write_md5_for_files(
-        filenames_to_md5_values, os.path.join(out_dir, "md5sum.txt")
-    )
+    write_md5_for_files(filenames_to_md5_values, os.path.join(out_dir, "md5sum.txt"))
 
     logger.info(
         f"Metadata yaml file creation is successful for non-hm {accession_id=}."
@@ -479,7 +480,9 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         return True
 
     logger.info(f"HM CASE for {accession_id=}")
-    logger.info(f"For HM {accession_id=} - resetting data_file_name and data_file_md5sum")
+    logger.info(
+        f"For HM {accession_id=} - resetting data_file_name and data_file_md5sum"
+    )
     metadata_from_gwas_cat["data_file_name"] = ""
     metadata_from_gwas_cat["data_file_md5sum"] = ""
     metadata_from_gwas_cat["harmonisation_reference"] = config.HM_REFERENCE
@@ -506,7 +509,12 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         metadata_from_gwas_cat["data_file_md5sum"] = v
 
     if not metadata_from_gwas_cat.get("data_file_name"):
-        logger.info(f"HM data file not available for {gcst_id} at {generate_path(accession_id)}/harmonised")
+        logger.info(
+            f"""
+            HM data file not available for {accession_id}
+            at '{generate_path(accession_id)}/harmonised'
+            """
+        )
         # It's okay to return True even though we haven't got the file
         # because not every study is harmonised
         return True
@@ -530,9 +538,7 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
     logger.info(f"For HM {accession_id=} - {filenames_to_md5_values=}")
 
     write_md5_for_files(filenames_to_md5_values, os.path.join(hm_dir, "md5sum.txt"))
-    logger.info(
-        f"Metadata yaml file creation is successful for HM {accession_id=}."
-    )
+    logger.info(f"Metadata yaml file creation is successful for HM {accession_id=}.")
 
     logger.info(f"::: ENDOF [convert_metadata_to_yaml] for {accession_id=}:::")
 
