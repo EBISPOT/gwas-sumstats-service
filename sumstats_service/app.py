@@ -387,14 +387,7 @@ def move_files_to_staging(resp):
 @celery.task(queue=config.CELERY_QUEUE3, options={"queue": config.CELERY_QUEUE3})
 def convert_metadata_to_yaml(gcst_id, is_harmonised_included=True):
     logger.info(f">>> [convert_metadata_to_yaml] for {gcst_id=}")
-    result = au.convert_metadata_to_yaml(gcst_id, is_harmonised_included)
-
-    if result is False:
-        raise RuntimeError()
-
-    return result
-
-
+    return au.convert_metadata_to_yaml(gcst_id, is_harmonised_included)
 
 
 @celery.task(queue=config.CELERY_QUEUE1, options={"queue": config.CELERY_QUEUE1})
