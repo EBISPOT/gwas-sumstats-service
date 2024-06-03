@@ -64,7 +64,7 @@ numpy==1.24.2
 openpyxl==3.0.10
 packaging==23.0
 pamqp==2.3.0
-pandas==2.0.2
+pandas
 pandera==0.13.4
 paramiko==2.6.0
 parso==0.8.3
@@ -105,7 +105,7 @@ requests==2.28.2
 requests-mock==1.6.0
 rfc3986==2.0.0
 rich==12.6.0
-ruamel.yaml==0.18.5
+ruamel.yaml
 shellingham==1.5.0.post1
 shortuuid==0.5.0
 simpleeval==0.9.13
