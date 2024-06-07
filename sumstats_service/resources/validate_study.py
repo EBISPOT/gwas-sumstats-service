@@ -53,7 +53,9 @@ def validate_study(
         entryUUID=entryUUID,
     )
     study.validate_study(
-        minrows=minrows, forcevalid=forcevalid, zero_p_values=zero_p_values
+        minrows=minrows,
+        forcevalid=forcevalid,
+        zero_p_values=zero_p_values,
     )
     write_result(study, out)
     if study.data_valid != 1:
@@ -108,7 +110,7 @@ def is_path(string):
     try:
         path_object = os.path.isfile(string)
         return path_object
-    except TypeError as e:
+    except TypeError:
         return False
 
 
@@ -208,9 +210,13 @@ def main():
         # if content is given as json string
         content = json.loads(args.payload)
 
-    filepath, md5, assembly, readme, entryUUID = parse_payload(
-        content, args.id, args.cid
-    )
+    result = parse_payload(content, args.id, args.cid)
+    if result is False:
+        logger.error("Error: Could not find a matching study id in payload.")
+        return
+
+    filepath, md5, assembly, readme, entryUUID = result
+
     out = os.path.join(args.validated_path, args.cid, args.out)
     logger.info(f"validation out json: {out}")
     if args.copy_only:
@@ -225,7 +231,9 @@ def main():
         )
     else:
         minrows = (
-            None if len(args.minrows) == 0 or args.minrows == "None" else int(args.minrows)
+            None
+            if len(args.minrows) == 0 or args.minrows == "None"
+            else int(args.minrows)
         )
         validate_study(
             args.cid,

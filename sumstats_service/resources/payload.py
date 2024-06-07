@@ -3,7 +3,7 @@ import shortuuid
 import sumstats_service.resources.file_handler as fh
 import sumstats_service.resources.study_service as st
 from sumstats_service import config
-from sumstats_service.resources.error_classes import *
+from sumstats_service.resources.error_classes import BadUserRequest, RequestedNotFound
 from sumstats_service.resources.mongo_client import MongoClient
 
 
@@ -140,7 +140,7 @@ class Payload:
         self.metadata_errors = mdb.get_metadata_errors(self.callback_id)
 
     def check_basic_content_present(self):
-        if not "requestEntries" in self.payload:
+        if "requestEntries" not in self.payload:
             self.metadata_errors.append("Missing 'requestEntries' in json")
             return False
             # raise BadUserRequest("Missing 'requestEntries' in json")
@@ -186,7 +186,8 @@ class Payload:
                 self.metadata_errors.append(
                     "Study ID: {} exists already".format(study.study_id)
                 )
-                # raise BadUserRequest("Study ID: {} exists already".format(study.study_id))
+                # raise BadUserRequest("Study ID: {} exists already"
+                # .format(study.study_id))
                 return False
             if study.study_id not in self.study_ids:
                 self.study_ids.append(study.study_id)
@@ -194,7 +195,8 @@ class Payload:
                 self.metadata_errors.append(
                     "Study ID: {} duplicated in payload".format(study.study_id)
                 )
-                # raise BadUserRequest("Study ID: {} duplicated in payload".format(study.study_id))
+                # raise BadUserRequest("Study ID: {} duplicated in payload"
+                # .format(study.study_id))
                 return False
         return True
 
@@ -255,6 +257,7 @@ class Payload:
         raw_file_path = (
             study_dict["rawFilePath"] if "rawFilePath" in study_dict else None
         )
+
         return (study_id, file_path, md5, assembly, readme, entryUUID, raw_file_path)
 
     def remove_payload_directory(self):
