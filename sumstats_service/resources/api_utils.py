@@ -137,11 +137,10 @@ def validate_files(
     content: dict,
     minrows: Union[int, None] = None,
     forcevalid: bool = False,
-    zero_p_values: bool = False,
     file_type: Union[str, None] = None,
 ):
     print(f"[validate_files] for {callback_id=}")
-    print(f"{minrows=} {forcevalid=} {zero_p_values=} {file_type=}")
+    print(f"{minrows=} {forcevalid=} {file_type=}")
 
     validate_metadata = vp.validate_metadata_for_payload(
         callback_id, content, file_type
@@ -165,7 +164,6 @@ def validate_files(
         log_dir=log_dir,
         minrows=minrows,
         forcevalid=forcevalid,
-        zero_p_values=zero_p_values,
         nextflow_config_path=nextflow_config_path,
         wd=wd,
         nf_script_path=nf_script_path,
@@ -251,7 +249,6 @@ def nextflow_command_string(
     nextflow_config_path,
     wd,
     nf_script_path="workflows/process_submission.nf",
-    zero_p_values=False,
     containerise=config.CONTAINERISE,
 ) -> str:
     """Constructor for nextflow command string"""
@@ -264,7 +261,6 @@ def nextflow_command_string(
         f"--depo_data {config.DEPO_PATH} "
         f"--minrows {minrows} "
         f"--forcevalid {forcevalid} "
-        f"--zerop {zero_p_values} "
         f"--validatedPath {config.VALIDATED_PATH} "
         f"-w {wd} "
         f"-c {nextflow_config_path} "
