@@ -441,7 +441,7 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         raise FileNotFoundError(
             f"""
             Data file not available for {accession_id}
-            at '{config.FTP_PREFIX}/{generate_path(accession_id)}/{accession_id}'
+            at '{config.FTP_STAGING_PATH}/{generate_path(accession_id)}/{accession_id}'
             """
         )
 
