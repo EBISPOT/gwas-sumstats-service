@@ -14,6 +14,7 @@ import sumstats_service.resources.api_utils as au
 import sumstats_service.resources.globus as globus
 from sumstats_service import config, logger_config
 from sumstats_service.resources.error_classes import APIException
+from sumstats_service.resources.mongo_client import MongoClient
 from sumstats_service.resources.utils import send_mail
 
 try:
@@ -39,6 +40,7 @@ app.config["CELERY_RESULT_BACKEND"] = (
 )
 app.config["BROKER_TRANSPORT_OPTIONS"] = {"confirm_publish": True}
 app.url_map.strict_slashes = False
+
 
 celery = Celery(
     "app",
@@ -416,7 +418,27 @@ def task_failure_handler(sender=None, **kwargs) -> None:
               """.format(
         **kwargs
     )
-    send_mail(subject=subject, message=message)
+
+    if sender.name != "sumstats_service.app.convert_metadata_to_yaml":
+        send_mail(subject=subject, message=message)
+    else:
+        args = kwargs.get("args", [])
+        exception = kwargs.get("exception", "No exception info")
+        gcst_id = args[0] if args else "Unknown GCST ID"
+
+        # Save to MongoDB
+        mdb = MongoClient(
+            config.MONGO_URI,
+            config.MONGO_USER,
+            config.MONGO_PASSWORD,
+            config.MONGO_DB,
+        )
+        study_data = mdb.get_study(gcst_id=gcst_id)
+        if study_data.get("summaryStatisticsFile", "") != config.NR:
+            logger.info(f"Adding {gcst_id=} to the task failures collection")
+            mdb.insert_task_failure(gcst_id=gcst_id, exception=str(exception))
+        else:
+            logger.info(f"Skipping {gcst_id=} as it has no sumstats.")
 
 
 if __name__ == "__main__":

@@ -386,157 +386,160 @@ def get_file_type_from_mongo(gcst) -> str:
 
 # TODO: refactor this method
 def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
-    try:
-        logger.info(f"::: [convert_metadata_to_yaml] {accession_id=} :::")
-        logger.info(f"Non-HM case for {accession_id=}")
+    logger.info(f"::: [convert_metadata_to_yaml] {accession_id=} :::")
+    logger.info(f"Non-HM case for {accession_id=}")
 
-        # Consume Ingest API via gwas-sumstats-tools
-        metadata_from_gwas_cat = metadata_dict_from_gwas_cat(
+    # Consume Ingest API via gwas-sumstats-tools
+    metadata_from_gwas_cat = metadata_dict_from_gwas_cat(
+        accession_id=accession_id,
+        is_bypass_rest_api=True,
+        # DEV ONLY #######
+        # 1. Update for Sandbox in gwas-sumstats-tools
+        # 2. Make a pre-release
+        #
+    )
+    logger.info(f"For non-hm {accession_id=} - {metadata_from_gwas_cat=}")
+    metadata_from_gwas_cat["date_metadata_last_modified"] = date.today()
+    metadata_from_gwas_cat["file_type"] = get_file_type_from_mongo(accession_id)
+
+    # Setting default values for keys that may not exist
+    default_keys = [
+        "genome_assembly",
+        "data_file_name",
+        "file_type",
+        "data_file_md5sum",
+    ]
+    for key in default_keys:
+        logger.info(f"For non-hm {accession_id=} - Setting default value for {key=}.")
+        metadata_from_gwas_cat.setdefault(key, "")
+
+    if not is_harmonised_included:
+        filenames_to_md5_values = compute_md5_for_local_files(
             accession_id=accession_id,
-            is_bypass_rest_api=True,
-            # DEV ONLY #######
-            # 1. Update for Sandbox in gwas-sumstats-tools
-            # 2. Make a pre-release
-            #
+            path=os.path.join(config.STAGING_PATH, accession_id),
         )
-        logger.info(f"For non-hm {accession_id=} - {metadata_from_gwas_cat=}")
-        metadata_from_gwas_cat["date_metadata_last_modified"] = date.today()
-        metadata_from_gwas_cat["file_type"] = get_file_type_from_mongo(accession_id)
-
-        # Setting default values for keys that may not exist
-        default_keys = [
-            "genome_assembly",
-            "data_file_name",
-            "file_type",
-            "data_file_md5sum",
-        ]
-        for key in default_keys:
-            logger.info(
-                f"For non-hm {accession_id=} - Setting default value for {key=}."
-            )
-            metadata_from_gwas_cat.setdefault(key, "")
-
-        if not is_harmonised_included:
-            filenames_to_md5_values = compute_md5_for_local_files(
-                accession_id,
-            )
-        else:
-            filenames_to_md5_values = compute_md5_for_ftp_files(
-                config.FTP_SERVER_EBI,
-                generate_path(accession_id),
-                accession_id,
-            )
-
-        filename_to_md5sum = get_md5_for_accession(
-            filenames_to_md5_values,
-            accession_id,
-        )
-        # set if exists, default value set above
-        for k, v in filename_to_md5sum.items():
-            metadata_from_gwas_cat["data_file_name"] = k
-            metadata_from_gwas_cat["data_file_md5sum"] = v
-
-        if not metadata_from_gwas_cat.get("data_file_name"):
-            logger.info("Data file not available in FTP")
-            return False
-
-        metadata_from_gwas_cat["gwas_id"] = accession_id
-        metadata_from_gwas_cat["gwas_catalog_api"] = (
-            f"{config.GWAS_CATALOG_REST_API_STUDY_URL}{accession_id}"
+    else:
+        logger.info(f"{accession_id=}")
+        filenames_to_md5_values = compute_md5_for_local_files(
+            accession_id=accession_id,
+            path=os.path.join(
+                config.FTP_STAGING_PATH, generate_path(accession_id), accession_id
+            ),
         )
 
-        # Create out_dir as late as possible to make sure that it's not empty
-        out_dir = os.path.join(config.STAGING_PATH, accession_id)
-        logger.info(f"For non-hm {accession_id=} - {out_dir=}")
-        Path(out_dir).mkdir(parents=True, exist_ok=True)
+    filename_to_md5sum = get_md5_for_accession(
+        filenames_to_md5_values,
+        accession_id,
+    )
+    # set if exists, default value set above
+    for k, v in filename_to_md5sum.items():
+        metadata_from_gwas_cat["data_file_name"] = k
+        metadata_from_gwas_cat["data_file_md5sum"] = v
 
-        metadata_filename = f"{metadata_from_gwas_cat['data_file_name']}-meta.yaml"
-        out_file = os.path.join(out_dir, metadata_filename)
-        logger.info(f"For non-hm {accession_id=} - {out_file=}")
-        metadata_client = MetadataClient(out_file=out_file)
-
-        logger.info(f"For non-hm {accession_id=} updated -> {metadata_from_gwas_cat=}")
-        metadata_client.update_metadata(metadata_from_gwas_cat)
-
-        metadata_client.to_file()
-
-        # compute md5sum of the meta file and write to md5sum.txt here
-        filenames_to_md5_values[metadata_filename] = compute_md5_local(out_file)
-        logger.info(f"For non-hm {accession_id=} - {filenames_to_md5_values=}")
-
-        write_md5_for_files(
-            filenames_to_md5_values, os.path.join(out_dir, "md5sum.txt")
+    if not metadata_from_gwas_cat.get("data_file_name"):
+        logger.info("Data file not available in FTP")
+        raise FileNotFoundError(
+            f"""
+            Data file not available for {accession_id}
+            at '{config.FTP_PREFIX}/{generate_path(accession_id)}/{accession_id}'
+            """
         )
 
+    metadata_from_gwas_cat["gwas_id"] = accession_id
+    metadata_from_gwas_cat["gwas_catalog_api"] = (
+        f"{config.GWAS_CATALOG_REST_API_STUDY_URL}{accession_id}"
+    )
+
+    # Create out_dir as late as possible to make sure that it's not empty
+    out_dir = os.path.join(config.STAGING_PATH, accession_id)
+    logger.info(f"For non-hm {accession_id=} - {out_dir=}")
+    Path(out_dir).mkdir(parents=True, exist_ok=True)
+
+    metadata_filename = f"{metadata_from_gwas_cat['data_file_name']}-meta.yaml"
+    out_file = os.path.join(out_dir, metadata_filename)
+    logger.info(f"For non-hm {accession_id=} - {out_file=}")
+    metadata_client = MetadataClient(out_file=out_file)
+
+    logger.info(f"For non-hm {accession_id=} updated -> {metadata_from_gwas_cat=}")
+    metadata_client.update_metadata(metadata_from_gwas_cat)
+
+    metadata_client.to_file()
+
+    # compute md5sum of the meta file and write to md5sum.txt here
+    filenames_to_md5_values[metadata_filename] = compute_md5_local(out_file)
+    logger.info(f"For non-hm {accession_id=} - {filenames_to_md5_values=}")
+
+    write_md5_for_files(filenames_to_md5_values, os.path.join(out_dir, "md5sum.txt"))
+
+    logger.info(
+        f"Metadata yaml file creation is successful for non-hm {accession_id=}."
+    )
+
+    if not is_harmonised_included:
+        return True
+
+    logger.info(f"HM CASE for {accession_id=}")
+    logger.info(
+        f"For HM {accession_id=} - resetting data_file_name and data_file_md5sum"
+    )
+    metadata_from_gwas_cat["data_file_name"] = ""
+    metadata_from_gwas_cat["data_file_md5sum"] = ""
+    metadata_from_gwas_cat["harmonisation_reference"] = config.HM_REFERENCE
+    metadata_from_gwas_cat["coordinate_system"] = config.HM_COORDINATE_SYSTEM
+    metadata_from_gwas_cat["genome_assembly"] = config.LATEST_ASSEMBLY
+    metadata_from_gwas_cat["is_harmonised"] = True
+    metadata_from_gwas_cat["is_sorted"] = get_is_sorted(
+        config.FTP_SERVER_EBI,
+        f"{config.FTP_PREFIX}/{generate_path(accession_id)}/{accession_id}/harmonised",
+    )
+
+    # We don't use staging ftp because old harmonised files are not in there
+    # but only in public ftp
+    filenames_to_md5_values = compute_md5_for_ftp_files(
+        config.FTP_SERVER_EBI,
+        f"{config.FTP_PREFIX}/{generate_path(accession_id)}/{accession_id}/harmonised",
+        accession_id,
+    )
+    filename_to_md5sum_hm = get_md5_for_accession(
+        filenames_to_md5_values,
+        accession_id,
+        True,
+    )
+    for k, v in filename_to_md5sum_hm.items():
+        metadata_from_gwas_cat["data_file_name"] = k
+        metadata_from_gwas_cat["data_file_md5sum"] = v
+
+    if not metadata_from_gwas_cat.get("data_file_name"):
         logger.info(
-            f"Metadata yaml file creation is successful for non-hm {accession_id=}."
+            f"""
+            HM data file not available for {accession_id} at
+            '{config.FTP_PREFIX}/{generate_path(accession_id)}/{accession_id}/harmonised'
+            """
         )
+        # It's okay to return True even though we haven't got the file
+        # because not every study is harmonised
+        return True
 
-        if not is_harmonised_included:
-            return True
+    hm_dir = os.path.join(out_dir, "harmonised")
+    Path(hm_dir).mkdir(parents=True, exist_ok=True)
 
-        logger.info(f"HM CASE for {accession_id=}")
-        logger.info(
-            f"For HM {accession_id=} - resetting data_file_name and data_file_md5sum"
-        )
-        metadata_from_gwas_cat["data_file_name"] = ""
-        metadata_from_gwas_cat["data_file_md5sum"] = ""
-        metadata_from_gwas_cat["harmonisation_reference"] = config.HM_REFERENCE
-        metadata_from_gwas_cat["coordinate_system"] = config.HM_COORDINATE_SYSTEM
-        metadata_from_gwas_cat["genome_assembly"] = config.LATEST_ASSEMBLY
-        metadata_from_gwas_cat["is_harmonised"] = True
-        metadata_from_gwas_cat["is_sorted"] = get_is_sorted(
-            config.FTP_SERVER_EBI,
-            f"{generate_path(accession_id)}/harmonised",
-        )
+    metadata_filename_hm = f"{metadata_from_gwas_cat['data_file_name']}-meta.yaml"
+    out_file_hm = os.path.join(hm_dir, metadata_filename_hm)
+    logger.info(f"For HM {accession_id=} - {out_file_hm=}")
 
-        filenames_to_md5_values = compute_md5_for_ftp_files(
-            config.FTP_SERVER_EBI,
-            f"{generate_path(accession_id)}/harmonised",
-            accession_id,
-        )
-        filename_to_md5sum_hm = get_md5_for_accession(
-            filenames_to_md5_values,
-            accession_id,
-            True,
-        )
-        for k, v in filename_to_md5sum_hm.items():
-            metadata_from_gwas_cat["data_file_name"] = k
-            metadata_from_gwas_cat["data_file_md5sum"] = v
+    # Also generate client for hm case, i.e., if is_harmonised_included
+    metadata_client_hm = MetadataClient(out_file=out_file_hm)
 
-        if not metadata_from_gwas_cat.get("data_file_name"):
-            logger.info("HM data file not available in FTP")
-            # It's okay to return True even though we haven't got the file
-            # because not every study is harmonised
-            return True
+    logger.info(f"For HM {accession_id=} updated -> {metadata_from_gwas_cat=}")
+    metadata_client_hm.update_metadata(metadata_from_gwas_cat)
 
-        hm_dir = os.path.join(out_dir, "harmonised")
-        Path(hm_dir).mkdir(parents=True, exist_ok=True)
+    metadata_client_hm.to_file()
 
-        metadata_filename_hm = f"{metadata_from_gwas_cat['data_file_name']}-meta.yaml"
-        out_file_hm = os.path.join(hm_dir, metadata_filename_hm)
-        logger.info(f"For HM {accession_id=} - {out_file_hm=}")
+    filenames_to_md5_values[metadata_filename_hm] = compute_md5_local(out_file_hm)
+    logger.info(f"For HM {accession_id=} - {filenames_to_md5_values=}")
 
-        # Also generate client for hm case, i.e., if is_harmonised_included
-        metadata_client_hm = MetadataClient(out_file=out_file_hm)
-
-        logger.info(f"For HM {accession_id=} updated -> {metadata_from_gwas_cat=}")
-        metadata_client_hm.update_metadata(metadata_from_gwas_cat)
-
-        metadata_client_hm.to_file()
-
-        filenames_to_md5_values[metadata_filename_hm] = compute_md5_local(out_file_hm)
-        logger.info(f"For HM {accession_id=} - {filenames_to_md5_values=}")
-
-        write_md5_for_files(filenames_to_md5_values, os.path.join(hm_dir, "md5sum.txt"))
-        logger.info(
-            f"Metadata yaml file creation is successful for HM {accession_id=}."
-        )
-
-    except Exception as e:
-        logger.error(f"For {accession_id=} - error while creating metadata yaml files:")
-        logger.error(e)
-        return False
+    write_md5_for_files(filenames_to_md5_values, os.path.join(hm_dir, "md5sum.txt"))
+    logger.info(f"Metadata yaml file creation is successful for HM {accession_id=}.")
 
     logger.info(f"::: ENDOF [convert_metadata_to_yaml] for {accession_id=}:::")
 
@@ -556,7 +559,7 @@ def generate_path(gcst_id):
     num_digits = len(gcst_id) - 4
 
     # Do zero-padding accordingly
-    return f"/pub/databases/gwas/summary_statistics/GCST{lower_bound:0{num_digits}d}-GCST{upper_bound:0{num_digits}d}/{gcst_id}"  # noqa: E501
+    return f"GCST{lower_bound:0{num_digits}d}-GCST{upper_bound:0{num_digits}d}"
 
 
 def get_is_sorted(ftp_server: str, ftp_directory: str):
@@ -607,25 +610,20 @@ def write_md5_for_files(filename_to_md5: dict, output_file: str) -> None:
             f.write(f"{md5_checksum} {filename}\n")
 
 
-def compute_md5_for_local_files(accession_id: str):
+def compute_md5_for_local_files(accession_id, path):
     """
     Compute MD5 checksums for files starting with a specific ID in codon dir and
     write to a file.
     """
     md5_lines = []
     filename_to_md5 = {}
-    directory_path = os.path.join(config.STAGING_PATH, accession_id)
-    logger.info(f"{directory_path=}")
+    logger.info(f"Compute md5sum for files in {path=}")
 
-    if not os.path.exists(directory_path):
-        raise FileNotFoundError(f"The directory {directory_path} does not exist.")
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"The directory {path} does not exist.")
 
     # List files in the directory
-    files = [
-        f
-        for f in os.listdir(directory_path)
-        if os.path.isfile(os.path.join(directory_path, f))
-    ]
+    files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
     logger.info(f"{files=}")
 
     # Filter files by the starting ID
@@ -634,17 +632,12 @@ def compute_md5_for_local_files(accession_id: str):
 
     # Compute MD5 for each file and store the line for the output file
     for filename in files_of_interest:
-        file_path = os.path.join(directory_path, filename)
+        file_path = os.path.join(path, filename)
         md5_checksum = compute_md5_local(file_path)
         md5_lines.append(f"{md5_checksum} {filename}")
         filename_to_md5[filename] = md5_checksum
 
     logger.info(f"{filename_to_md5=}")
-
-    # # Write the MD5 checksums to the output file
-    # with open(output_file, 'w') as f:
-    #     for line in md5_lines:
-    #         f.write(f"{line}\n")
 
     return filename_to_md5
 
