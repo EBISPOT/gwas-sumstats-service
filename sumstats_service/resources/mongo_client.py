@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pymongo import MongoClient as pymc
 
 from sumstats_service import config
@@ -13,6 +15,8 @@ class MongoClient:
         self.study_collection = self.database["sumstats-study-meta"]
         self.error_collection = self.database["sumstats-errors"]
         self.callback_collection = self.database["sumstats-callback-tracking"]
+        self.task_failure_collection = self.database["sumstats-celery-task-failures"]
+        self.studies_collection = self.database["studies"]
 
     """ generic methods"""
 
@@ -26,7 +30,7 @@ class MongoClient:
         return collection.insert_one(data)
 
     ######################
-    ## Specific Methods ##
+    # Specific Methods
     ######################
 
     def insert_new_study(self, data):
@@ -50,11 +54,13 @@ class MongoClient:
 
     def get_study_metadata_by_gcst(self, gcst):
         # meta_dict = self.study_collection.find_one({"gcst": gcst})
-        # Note that we use .find() rather than .find_one() as above. The reason 
+        # Note that we use .find() rather than .find_one() as above. The reason
         # is that there might exist multiple entries for a single gcst id, e.g.,
-        # when the template is edited. Therefore, here, we first get all, then 
-        # sort by _id descending, get the last one (which should be the latest entry). 
-        last_created_entry = self.study_collection.find({"gcst": gcst}).sort('_id', -1).limit(1)
+        # when the template is edited. Therefore, here, we first get all, then
+        # sort by _id descending, get the last one (which should be the latest entry).
+        last_created_entry = (
+            self.study_collection.find({"gcst": gcst}).sort("_id", -1).limit(1)
+        )
         meta_dict = next(last_created_entry, None)
         return meta_dict
 
@@ -147,3 +153,16 @@ class MongoClient:
 
     def delete_study_entry(self, study):
         self.study_collection.delete_many({"studyID": study})
+
+    def insert_task_failure(self, gcst_id, exception):
+        self.insert(
+            self.task_failure_collection,
+            {
+                "gcst_id": gcst_id,
+                "exception": str(exception),
+                "timestamp": datetime.now(),
+            },
+        )
+
+    def get_study(self, gcst_id):
+        return self.studies_collection.find_one({"accession": gcst_id})
