@@ -1,3 +1,4 @@
+# flake8: noqa: W291,E501
 import os
 
 
@@ -13,6 +14,7 @@ VALIDATED_PATH = _env_variable_else("VALIDATED_PATH", "depo_ss_validated")
 SW_PATH = _env_variable_else("SW_PATH", "./bin")
 DEPO_PATH = _env_variable_else("DEPO_PATH", "./depo_data")
 CONTAINERISE = _env_variable_else("CONTAINERISE", "./depo_data")
+FTP_STAGING_PATH = _env_variable_else("FTP_STAGING_PATH", "depo_ss_staging_ftp")
 
 
 # --- Rabbit and Celery --- #
@@ -45,7 +47,7 @@ MONGO_URI = _env_variable_else("MONGO_URI", None)
 MONGO_USER = _env_variable_else("MONGO_USER", "")
 MONGO_PASSWORD = _env_variable_else("MONGO_PASSWORD", "")
 MONGO_DB = _env_variable_else("MONGO_DB", None)
-
+NR = "NR"
 
 # --- File transfer (FTP nad Globus) config --- #
 
@@ -53,6 +55,7 @@ FTP_SERVER = _env_variable_else("FTP_SERVER", None)
 FTP_USERNAME = _env_variable_else("FTP_USERNAME", None)
 FTP_PASSWORD = _env_variable_else("FTP_PASSWORD", None)
 FTP_SERVER_EBI = _env_variable_else("FTP_SERVER_EBI", "ftp.ebi.ac.uk")
+FTP_PREFIX = _env_variable_else("FTP_PREFIX", "/pub/databases/gwas/summary_statistics")
 
 TOKEN_FILE = "refresh-tokens.json"
 REDIRECT_URI = "https://auth.globus.org/v2/web/auth-code"

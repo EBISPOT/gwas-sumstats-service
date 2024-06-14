@@ -415,13 +415,16 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
 
     if not is_harmonised_included:
         filenames_to_md5_values = compute_md5_for_local_files(
-            accession_id,
+            accession_id=accession_id,
+            path=os.path.join(config.STAGING_PATH, accession_id),
         )
     else:
-        filenames_to_md5_values = compute_md5_for_ftp_files(
-            config.FTP_SERVER_EBI,
-            generate_path(accession_id),
-            accession_id,
+        logger.info(f"{accession_id=}")
+        filenames_to_md5_values = compute_md5_for_local_files(
+            accession_id=accession_id,
+            path=os.path.join(
+                config.FTP_STAGING_PATH, generate_path(accession_id), accession_id
+            ),
         )
 
     filename_to_md5sum = get_md5_for_accession(
@@ -438,7 +441,7 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         raise FileNotFoundError(
             f"""
             Data file not available for {accession_id}
-            at '{generate_path(accession_id)}'
+            at '{config.FTP_PREFIX}/{generate_path(accession_id)}/{accession_id}'
             """
         )
 
@@ -487,12 +490,14 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
     metadata_from_gwas_cat["is_harmonised"] = True
     metadata_from_gwas_cat["is_sorted"] = get_is_sorted(
         config.FTP_SERVER_EBI,
-        f"{generate_path(accession_id)}/harmonised",
+        f"{config.FTP_PREFIX}/{generate_path(accession_id)}/{accession_id}/harmonised",
     )
 
+    # We don't use staging ftp because old harmonised files are not in there
+    # but only in public ftp
     filenames_to_md5_values = compute_md5_for_ftp_files(
         config.FTP_SERVER_EBI,
-        f"{generate_path(accession_id)}/harmonised",
+        f"{config.FTP_PREFIX}/{generate_path(accession_id)}/{accession_id}/harmonised",
         accession_id,
     )
     filename_to_md5sum_hm = get_md5_for_accession(
@@ -507,8 +512,8 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
     if not metadata_from_gwas_cat.get("data_file_name"):
         logger.info(
             f"""
-            HM data file not available for {accession_id}
-            at '{generate_path(accession_id)}/harmonised'
+            HM data file not available for {accession_id} at
+            '{config.FTP_PREFIX}/{generate_path(accession_id)}/{accession_id}/harmonised'
             """
         )
         # It's okay to return True even though we haven't got the file
@@ -554,7 +559,7 @@ def generate_path(gcst_id):
     num_digits = len(gcst_id) - 4
 
     # Do zero-padding accordingly
-    return f"/pub/databases/gwas/summary_statistics/GCST{lower_bound:0{num_digits}d}-GCST{upper_bound:0{num_digits}d}/{gcst_id}"  # noqa: E501
+    return f"GCST{lower_bound:0{num_digits}d}-GCST{upper_bound:0{num_digits}d}"
 
 
 def get_is_sorted(ftp_server: str, ftp_directory: str):
@@ -605,25 +610,20 @@ def write_md5_for_files(filename_to_md5: dict, output_file: str) -> None:
             f.write(f"{md5_checksum} {filename}\n")
 
 
-def compute_md5_for_local_files(accession_id: str):
+def compute_md5_for_local_files(accession_id, path):
     """
     Compute MD5 checksums for files starting with a specific ID in codon dir and
     write to a file.
     """
     md5_lines = []
     filename_to_md5 = {}
-    directory_path = os.path.join(config.STAGING_PATH, accession_id)
-    logger.info(f"{directory_path=}")
+    logger.info(f"Compute md5sum for files in {path=}")
 
-    if not os.path.exists(directory_path):
-        raise FileNotFoundError(f"The directory {directory_path} does not exist.")
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"The directory {path} does not exist.")
 
     # List files in the directory
-    files = [
-        f
-        for f in os.listdir(directory_path)
-        if os.path.isfile(os.path.join(directory_path, f))
-    ]
+    files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
     logger.info(f"{files=}")
 
     # Filter files by the starting ID
@@ -632,17 +632,12 @@ def compute_md5_for_local_files(accession_id: str):
 
     # Compute MD5 for each file and store the line for the output file
     for filename in files_of_interest:
-        file_path = os.path.join(directory_path, filename)
+        file_path = os.path.join(path, filename)
         md5_checksum = compute_md5_local(file_path)
         md5_lines.append(f"{md5_checksum} {filename}")
         filename_to_md5[filename] = md5_checksum
 
     logger.info(f"{filename_to_md5=}")
-
-    # # Write the MD5 checksums to the output file
-    # with open(output_file, 'w') as f:
-    #     for line in md5_lines:
-    #         f.write(f"{line}\n")
 
     return filename_to_md5
 
