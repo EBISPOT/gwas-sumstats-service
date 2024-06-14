@@ -434,7 +434,7 @@ def task_failure_handler(sender=None, **kwargs) -> None:
             config.MONGO_DB,
         )
         study_data = mdb.get_study(gcst_id=gcst_id)
-        if study_data.get("summaryStatisticsFile", "") != config.NR:
+        if not study_data or study_data.get("summaryStatisticsFile", "") != config.NR:
             logger.info(f"Adding {gcst_id=} to the task failures collection")
             mdb.insert_task_failure(gcst_id=gcst_id, exception=str(exception))
         else:
