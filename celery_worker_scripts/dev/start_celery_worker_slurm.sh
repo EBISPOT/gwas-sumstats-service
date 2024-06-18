@@ -8,7 +8,7 @@ CLUSTER_QUEUE="standard"
 source $ENV_FILE
 
 # Module install cmd
-lmod_cmd="module load singularity-3.6.4-gcc-9.3.0-yvkwp5n; module load openjdk-16.0.2-gcc-9.3.0-xyn6nf5; module load nextflow-21.10.6-gcc-9.3.0-tkuemwd"
+lmod_cmd="module load singularity-3.6.4-gcc-9.3.0-yvkwp5n; module load openjdk-16.0.2-gcc-9.3.0-xyn6nf5; module load nextflow-21.10.6-gcc-9.3.0-tkuemwd; module load curl-7.81.0-gcc-11.2.0-g424d63; module load wget/1.21.3"
 
 # Set Singularity cmd
 singularity_cmd="singularity exec --env-file $ENV_FILE --bind /usr/lib64/libmunge.so.2:/usr/lib/x86_64-linux-gnu/libmunge.so.2 --bind /var/run/munge:/var/run/munge $SINGULARITY_CACHEDIR/gwas-sumstats-service_${SINGULARITY_TAG}.sif"
