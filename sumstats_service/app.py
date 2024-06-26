@@ -115,7 +115,10 @@ def sumstats():
     # option to bypass all validation and downstream steps
     bypass = au.val_from_dict(key="skipValidation", dict=content, default=False)
 
-    file_type = au.determine_file_type(is_in_file=True, is_bypass=bypass)
+    file_type = au.determine_file_type(
+        is_in_file=True,
+        is_force_valid=bool(force_valid),
+    )
 
     logger.info(f"{minrows=} {force_valid=} {bypass=} {file_type=}")
 
@@ -156,7 +159,10 @@ def validate_sumstats(callback_id: str):
 
     # determine file_type
     template = au.get_template(callback_id)
-    file_type = au.determine_file_type(is_in_file=bool(template), is_bypass=force_valid)
+    file_type = au.determine_file_type(
+        is_in_file=bool(template),
+        is_force_valid=bool(force_valid),
+    )
 
     validate_files_in_background.apply_async(
         kwargs={
