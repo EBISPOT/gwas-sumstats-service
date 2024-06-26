@@ -156,7 +156,7 @@ def validate_sumstats(callback_id: str):
 
     # determine file_type
     template = au.get_template(callback_id)
-    file_type = au.determine_file_type(is_in_file=bool(template), is_bypass=bypass)
+    file_type = au.determine_file_type(is_in_file=bool(template), is_bypass=force_valid)
 
     validate_files_in_background.apply_async(
         kwargs={
