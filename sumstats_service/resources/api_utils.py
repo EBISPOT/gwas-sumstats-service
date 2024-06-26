@@ -348,10 +348,12 @@ def move_files_to_staging(study_list):
     }
 
 
-def determine_file_type(is_in_file, is_bypass) -> str:
-    if is_bypass:
-        return "Non-GWAS-SSF"
-    return config.SUMSTATS_FILE_TYPE + ("-incomplete-meta" if not is_in_file else "")
+def determine_file_type(is_in_file, is_force_valid) -> str:
+    return (
+        "Non-GWAS-SSF"
+        if is_force_valid
+        else config.SUMSTATS_FILE_TYPE + ("-incomplete-meta" if not is_in_file else "")
+    )
 
 
 def get_template(callback_id):
