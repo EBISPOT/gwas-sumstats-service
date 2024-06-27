@@ -153,6 +153,10 @@ VALIDATION_ERRORS = [
         "errorText": "There is a problem on our side, please contact gwas-subs@ebi.ac.uk for further advice.",
     },
     {"id": 11, "errorText": "The raw sumstats file can not be found"},
+    {
+        "id": 12,
+        "errorText": "Analysis software must be provided in the metadata template for summary statistics containing 0 p-values.",
+    },
 ]
 
 VALID_ASSEMBLIES = ["GRCh38", "GRCh37", "NCBI36", "NCBI35", "NCBI34", "NR"]
