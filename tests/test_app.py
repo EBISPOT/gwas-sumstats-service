@@ -4,7 +4,6 @@ from pymongo import MongoClient
 
 from sumstats_service import config
 from sumstats_service.app import app, celery
-from tests.test_constants import *
 
 
 class TestAPP:
@@ -17,8 +16,13 @@ class TestAPP:
         )
 
     def teardown_method(self, method):
-        client = MongoClient(config.MONGO_URI)
-        client.drop_database(config.MONGO_DB)
+        mongo_uri = os.getenv("MONGO_URI", config.MONGO_URI)
+        mongo_user = os.getenv("MONGO_USER", None)
+        mongo_password = os.getenv("MONGO_PASSWORD", None)
+        mongo_db = os.getenv("MONGO_DB", config.MONGO_DB)
+
+        client = MongoClient(mongo_uri, username=mongo_user, password=mongo_password)
+        client.drop_database(mongo_db)
 
     def test_index(self):
         tester = app.test_client(self)
@@ -113,4 +117,4 @@ class TestAPP:
 
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main()  # noqa

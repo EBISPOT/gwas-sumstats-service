@@ -5,8 +5,7 @@ from pymongo import MongoClient
 
 import sumstats_service.resources.payload as pl
 from sumstats_service import config
-from sumstats_service.resources.error_classes import *
-from tests.test_constants import *
+from tests.test_constants import VALID_POST
 
 
 class TestPayload(unittest.TestCase):
@@ -17,8 +16,13 @@ class TestPayload(unittest.TestCase):
         config.BROKER_HOST = "localhost"
 
     def tearDown(self):
-        client = MongoClient(config.MONGO_URI)
-        client.drop_database(config.MONGO_DB)
+        mongo_uri = os.getenv("MONGO_URI", config.MONGO_URI)
+        mongo_user = os.getenv("MONGO_USER", None)
+        mongo_password = os.getenv("MONGO_PASSWORD", None)
+        mongo_db = os.getenv("MONGO_DB", config.MONGO_DB)
+
+        client = MongoClient(mongo_uri, username=mongo_user, password=mongo_password)
+        client.drop_database(mongo_db)
 
     def test_generate_callback_id(self):
         payload = pl.Payload()
