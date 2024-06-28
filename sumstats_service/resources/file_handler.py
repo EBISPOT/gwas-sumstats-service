@@ -1,7 +1,6 @@
 import csv
 import gzip
 import hashlib
-import io
 import logging
 import os
 import pathlib
@@ -187,6 +186,7 @@ class SumStatFile:
                 "minrows": 9,
                 "data": 3,
                 "field order": 7,
+                "p_val": 12,
             }
             self.validation_error = error_to_code_dict.get(validator.primary_error_type)
             if validator.errors_table:
@@ -246,19 +246,23 @@ class SumStatFile:
         """
         TODO: move raw ss if needed
         """
+
+        source_dir = os.path.join(config.STORAGE_PATH, self.callback_id)
+        source_file_without_ext = os.path.join(source_dir, self.study_id)
+        source_file = add_ext_to_file_without_ext(source_file_without_ext)
+        dest_dir = os.path.join(config.STAGING_PATH, self.staging_dir_name)
+        ext = get_ext_for_file(file_path=source_file)
+        dest_file = os.path.join(dest_dir, self.staging_file_name + ext)
+
         try:
-            source_dir = os.path.join(config.STORAGE_PATH, self.callback_id)
-            source_file_without_ext = os.path.join(source_dir, self.study_id)
-            source_file = add_ext_to_file_without_ext(source_file_without_ext)
-            dest_dir = os.path.join(config.STAGING_PATH, self.staging_dir_name)
-            ext = get_ext_for_file(file_path=source_file)
-            dest_file = os.path.join(dest_dir, self.staging_file_name + ext)
+
             pathlib.Path(dest_dir).mkdir(parents=True, exist_ok=True)
             shutil.move(source_file, dest_file)
         except (IndexError, FileNotFoundError, OSError, ValueError) as e:
             logger.error(
-                "Error: {}\nCould not move file {} to staging,\ "
-                "callback ID: {}".format(e, self.staging_file_name, self.callback_id)
+                "Error: {}\nCould not move file {} to staging, callback ID: {}".format(
+                    e, self.staging_file_name, self.callback_id
+                )
             )
             # Attempt to clean up by removing the directory if it's empty
             try:
@@ -267,7 +271,7 @@ class SumStatFile:
                 # Directory not empty or other issue, cannot remove
                 pass
 
-            raise 
+            raise
 
         return True
 
@@ -326,7 +330,7 @@ def get_source_file_from_id(source_dir, source):
     source_with_ext = None
     ext = None
     filter_files = [
-        f for f in [f for f in files if not ".README" in f] if not ".log" in f
+        f for f in [f for f in files if ".README" not in f] if ".log" not in f
     ]
     if filter_files:
         for f in filter_files:
@@ -344,7 +348,7 @@ def mv_file_with_globus(dest_dir, source, dest):
     # create the new dir
     try:
         globus.mkdir(unique_id=dest_dir)
-    except:
+    except Exception:
         pass
     status = globus.rename_file(dest_dir, source, dest)
     return status

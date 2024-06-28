@@ -23,6 +23,8 @@ class TestStudyService(unittest.TestCase):
         self.valid_file_md5 = "9b5f307016408b70cde2c9342648aa9b"
         self.assembly = "GRCh38"
         self.valid_file = "test_sumstats_file.tsv"
+        self.file_zero_p_values = "test_sumstats_file_zero_p_values.tsv"
+        self.md5_file_zero_p_values = "912032fda7691a6e811f54bc66168f98"
         self.test_validate_path = os.path.join(config.VALIDATED_PATH, self.callback_id)
         os.makedirs(config.STORAGE_PATH, exist_ok=True)
         os.makedirs(self.test_validate_path, exist_ok=True)
@@ -30,8 +32,14 @@ class TestStudyService(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.test_storepath)
         shutil.rmtree(self.test_validate_path)
-        client = MongoClient(config.MONGO_URI)
-        client.drop_database(config.MONGO_DB)
+
+        mongo_uri = os.getenv("MONGO_URI", config.MONGO_URI)
+        mongo_user = os.getenv("MONGO_USER", None)
+        mongo_password = os.getenv("MONGO_PASSWORD", None)
+        mongo_db = os.getenv("MONGO_DB", config.MONGO_DB)
+
+        client = MongoClient(mongo_uri, username=mongo_user, password=mongo_password)
+        client.drop_database(mongo_db)
 
     def test_valid_study_id(self):
         study = st.Study(
@@ -260,6 +268,21 @@ class TestStudyService(unittest.TestCase):
         study.retrieve_study_file()
         study.validate_study(minrows=100)
         self.assertEqual(study.data_valid, 0)
+        self.assertEqual(study.error_code, 9)
+
+    def test_validate_invalid_study_zero_p_values(self):
+        study = st.Study(
+            study_id=self.study_id,
+            file_path=self.file_zero_p_values,
+            md5=self.md5_file_zero_p_values,
+            assembly=self.assembly,
+            callback_id=self.callback_id,
+            entryUUID=self.entryUUID,
+        )
+        study.retrieve_study_file()
+        study.validate_study(minrows=2, zero_p_values=False)
+        self.assertEqual(study.data_valid, 0)
+        self.assertEqual(study.error_code, 12)
 
 
 if __name__ == "__main__":

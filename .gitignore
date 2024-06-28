@@ -11,11 +11,15 @@ __pycache__
 # pytest coverage plugin files
 htmlcov
 
-# virtualenv
+# virtualenvs
 .env
+formatlint/*
+unittest/*
 
 # data
 *.tsv*
+depo_ss_validated/*
+.hypothesis/*
 # *.txt*
 *.csv*
 *.db
@@ -32,5 +36,3 @@ tox.ini
 # build
 build/*
 data
-
-/formatlint/*

@@ -33,9 +33,13 @@ This handles the uploaded summary statistics files, validates them, reports erro
   
 ### Run the tests
 
-- Run this, to setup up a RabbitMQ server, run the tests, and tear it all down.
-- `tox` 
-
+- Make sure that the installation is complete.
+- Start locally or `docker-compose up`.
+- To setup up a RabbitMQ server, run the tests, and tear it all down:
+  ```bash
+  rm -rf .tox
+  tox
+  ```
 
 ### Run as a flask app
 

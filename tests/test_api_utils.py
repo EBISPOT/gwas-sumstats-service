@@ -6,7 +6,7 @@ from pymongo import MongoClient
 
 import sumstats_service.resources.api_utils as au
 from sumstats_service import config
-from tests.test_constants import *
+from tests.test_constants import VALID_POST
 
 
 class TestAPIUtils(unittest.TestCase):
@@ -35,8 +35,13 @@ class TestAPIUtils(unittest.TestCase):
         }
 
     def tearDown(self):
-        client = MongoClient(config.MONGO_URI)
-        client.drop_database(config.MONGO_DB)
+        mongo_uri = os.getenv("MONGO_URI", config.MONGO_URI)
+        mongo_user = os.getenv("MONGO_USER", None)
+        mongo_password = os.getenv("MONGO_PASSWORD", None)
+        mongo_db = os.getenv("MONGO_DB", config.MONGO_DB)
+
+        client = MongoClient(mongo_uri, username=mongo_user, password=mongo_password)
+        client.drop_database(mongo_db)
 
     def test_json_payload_to_db(self):
         result = au.json_payload_to_db(VALID_POST)
