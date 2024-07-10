@@ -155,7 +155,7 @@ VALIDATION_ERRORS = [
     {"id": 11, "errorText": "The raw sumstats file can not be found"},
     {
         "id": 12,
-        "errorText": "Analysis software must be provided in the metadata template for summary statistics containing 0 p-values.",
+        "errorText": "Analysis software must be provided in the metadata template for summary statistics containing p-values equal to zero.",
     },
 ]
 
