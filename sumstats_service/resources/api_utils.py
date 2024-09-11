@@ -386,6 +386,33 @@ def get_file_type_from_mongo(gcst) -> str:
         return ""
 
 
+def save_convert_metadata_to_yaml(gcst_id: str, is_harmonised_included: bool):
+    mdb = MongoClient(
+        config.MONGO_URI,
+        config.MONGO_USER,
+        config.MONGO_PASSWORD,
+        config.MONGO_DB,
+    )
+    study_data = mdb.get_study(gcst_id=gcst_id)
+    if not study_data or study_data.get("summaryStatisticsFile", "") != config.NR:
+        logger.info(f"Adding {gcst_id=} to the metadata yaml collection")
+        mdb.insert_or_update_metadata_yaml_request(
+            gcst_id=gcst_id, status=config.MetadataYamlStatus.PENDING
+        )
+    else:
+        logger.info(
+            f"Adding {gcst_id=} to the metadata yaml coll as it has no sumstats."
+        )
+        additional_info = {"note": f"GCST ID {gcst_id} do not have summary statistics."}
+        mdb.insert_or_update_metadata_yaml_request(
+            gcst_id=gcst_id,
+            status=config.MetadataYamlStatus.COMPLETED,
+            additional_info=additional_info,
+        )
+
+    return True
+
+
 # TODO: refactor this method
 def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
     logger.info(f"::: [convert_metadata_to_yaml] {accession_id=} :::")

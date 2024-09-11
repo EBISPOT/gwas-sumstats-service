@@ -1,5 +1,6 @@
 # flake8: noqa: W291,E501
 import os
+from enum import Enum
 
 
 def _env_variable_else(env_var_name, default):
@@ -219,3 +220,10 @@ GWAS_CATALOG_REST_API_STUDY_URL = "https://www.ebi.ac.uk/gwas/rest/api/studies/"
 GWAS_DEPO_REST_API_URL = _env_variable_else(
     "GWAS_DEPO_REST_API_URL", "https://www.ebi.ac.uk/gwas/deposition/api/v1/"
 )
+
+
+class MetadataYamlStatus(Enum):
+    PENDING = "pending"
+    IN_PROGRESS = "in-progress"
+    COMPLETED = "completed"
+    FAILED = "failed"

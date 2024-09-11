@@ -15,7 +15,9 @@ class MongoClient:
         self.study_collection = self.database["sumstats-study-meta"]
         self.error_collection = self.database["sumstats-errors"]
         self.callback_collection = self.database["sumstats-callback-tracking"]
+        # TODO: update cron entries and delete this collection
         self.task_failure_collection = self.database["sumstats-celery-task-failures"]
+        self.metadata_yaml_collection = self.database["sumstats-metadata-yaml"]
         self.studies_collection = self.database["studies"]
 
     """ generic methods"""
@@ -166,3 +168,22 @@ class MongoClient:
 
     def get_study(self, gcst_id):
         return self.studies_collection.find_one({"accession": gcst_id})
+
+    def insert_or_update_metadata_yaml_request(
+        self, gcst_id, status, additional_info={}
+    ):
+        self.metadata_yaml_collection.update_one(
+            {"gcst_id": gcst_id},
+            {
+                "$set": {
+                    "request_updated": datetime.now(),
+                    "status": status.value,
+                    "additional_info": additional_info,
+                },
+                "$setOnInsert": {
+                    "request_created": datetime.now(),
+                },
+            },
+            upsert=True,
+        )
+        print(f"Metadata YAML request for {gcst_id} inserted or updated.")
