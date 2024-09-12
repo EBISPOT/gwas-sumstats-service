@@ -170,10 +170,17 @@ class MongoClient:
         return self.studies_collection.find_one({"accession": gcst_id})
 
     def insert_or_update_metadata_yaml_request(
-        self, gcst_id, status, additional_info={}
+        self,
+        gcst_id,
+        status,
+        is_harmonised=False,
+        additional_info={},
     ):
         self.metadata_yaml_collection.update_one(
-            {"gcst_id": gcst_id},
+            {
+                "gcst_id": gcst_id,
+                "is_harmonised": is_harmonised,
+            },
             {
                 "$set": {
                     "request_updated": datetime.now(),
