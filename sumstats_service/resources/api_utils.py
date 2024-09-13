@@ -386,7 +386,14 @@ def get_file_type_from_mongo(gcst) -> str:
         return ""
 
 
-def save_convert_metadata_to_yaml(gcst_id: str, is_harmonised_included: bool):
+def save_convert_metadata_to_yaml(
+    gcst_id: str, is_harmonised_included: bool, globus_endpoint_id: str
+):
+    logger.info(
+        f"""save_convert_metadata_to_yaml called for {gcst_id}
+        and hm: {is_harmonised_included}"""
+    )
+
     mdb = MongoClient(
         config.MONGO_URI,
         config.MONGO_USER,
@@ -399,9 +406,14 @@ def save_convert_metadata_to_yaml(gcst_id: str, is_harmonised_included: bool):
         mdb.insert_or_update_metadata_yaml_request(
             gcst_id=gcst_id,
             status=config.MetadataYamlStatus.PENDING,
+            globus_endpoint_id=globus_endpoint_id,
         )
 
         if is_harmonised_included:
+            logger.info(
+                f"""Adding {gcst_id=} hm:{is_harmonised_included}
+                to the metadata yaml collection"""
+            )
             mdb.insert_or_update_metadata_yaml_request(
                 gcst_id=gcst_id,
                 status=config.MetadataYamlStatus.PENDING,

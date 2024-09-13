@@ -226,39 +226,27 @@ def update_sumstats(callback_id):
 
             if move_files_result.successful():
                 logger.info(f"{callback_id=} :: move_files_result successful")
-                convert_metadata_to_yaml.apply_async(
+                globus_endpoint_id = move_files_result.get()["globus_endpoint_id"]
+                # TODO: test by calling update_sumstats
+                metadata_conversion_result = convert_metadata_to_yaml.apply_async(
                     args=[resp["studyList"][0]["gcst"], False],
+                    kwargs={"globus_endpoint_id": globus_endpoint_id},
                     retry=True,
                 )
 
-                # TODO: delete globus endpoint when yamls are generated
-                # while (time.time() - start_time) < timeout:
-                #     if metadata_conversion_result.ready():
-                #         logger.info("Task metadata_conversion_result ready.")
-                #         break
-                #     logger.info(
-                #         "Waiting for metadata_conversion_result task to complete."
-                #     )
-                #     logger.info(f"Current state: {metadata_conversion_result.state}")
-                #     time.sleep(10)
-                # else:
-                #     raise Exception(
-                #         "Task metadata_conversion_result did not complete in time."
-                #     )
-
-                # if metadata_conversion_result.successful():
-                #     globus_endpoint_id = move_files_result.get()["globus_endpoint_id"]
-                #     logger.info(
-                #         f">> [delete_globus_endpoint] calling {globus_endpoint_id=}"
-                #     )
-                #     delete_endpoint_result = au.delete_globus_endpoint(
-                #         globus_endpoint_id
-                #     )
-                #     logger.info(f"{callback_id=} :: {delete_endpoint_result=}")
-                # else:
-                #     raise Exception(
-                #         "Task metadata_conversion_result did not complete in time."
-                #     )
+                while (time.time() - start_time) < timeout:
+                    if metadata_conversion_result.ready():
+                        logger.info("Task metadata_conversion_result ready.")
+                        break
+                    logger.info(
+                        "Waiting for metadata_conversion_result task to complete."
+                    )
+                    logger.info(f"Current state: {metadata_conversion_result.state}")
+                    time.sleep(10)
+                else:
+                    raise Exception(
+                        "Task metadata_conversion_result did not complete in time."
+                    )
             else:
                 raise Exception("Task move_files_result did not complete in time.")
         except Exception as e:
@@ -406,15 +394,42 @@ def move_files_to_staging(resp):
 # while publishing to rabbitmq pass is_harmonised_included from db
 # and is_save=False
 @celery.task(queue=config.CELERY_QUEUE3, options={"queue": config.CELERY_QUEUE3})
-def convert_metadata_to_yaml(gcst_id, is_harmonised_included=True, is_save=True):
+def convert_metadata_to_yaml(
+    gcst_id,
+    is_harmonised_included=True,
+    is_save=True,
+    globus_endpoint_id=None,
+):
     logger.info(f">>> [convert_metadata_to_yaml] for {gcst_id=}")
+    logger.info(f">>>>>>>>>>>>>> {globus_endpoint_id=}")
+
+    # TODO: test by publishing to rabbitmq directly as in deposition
+    # ie is_save default value
+    # TODO: test by publishing to rabbitmq directly as in nightly cron ie is_save false
 
     # save by default.
     # TODO: Explicitly set otherwise in nightly cron scripts.
     if is_save:
-        return au.save_convert_metadata_to_yaml(gcst_id, is_harmonised_included)
+        logger.info("is save true")
+        return au.save_convert_metadata_to_yaml(
+            gcst_id, is_harmonised_included, globus_endpoint_id
+        )
     else:
-        return au.convert_metadata_to_yaml(gcst_id, is_harmonised_included)
+        logger.info("is save false")
+        au.convert_metadata_to_yaml(gcst_id, is_harmonised_included)
+        mdb = MongoClient(
+            config.MONGO_URI,
+            config.MONGO_USER,
+            config.MONGO_PASSWORD,
+            config.MONGO_DB,
+        )
+        globus_endpoint_id = mdb.get_globus_endpoint_id(gcst_id)
+        logger.info(f"<<<<<<<< {globus_endpoint_id=}")
+        if globus_endpoint_id:
+            logger.info(f"Deleting {globus_endpoint_id}.")
+            au.delete_globus_endpoint(globus_endpoint_id)
+        else:
+            logger.info(f"No globus endpoint id found for {gcst_id}.")
 
 
 @celery.task(queue=config.CELERY_QUEUE1, options={"queue": config.CELERY_QUEUE1})

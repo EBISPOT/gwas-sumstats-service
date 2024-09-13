@@ -175,7 +175,10 @@ class MongoClient:
         status,
         is_harmonised=False,
         additional_info={},
+        globus_endpoint_id=None,
     ):
+
+        print(f"adding {gcst_id} with hm: {is_harmonised} to yaml")
         self.metadata_yaml_collection.update_one(
             {
                 "gcst_id": gcst_id,
@@ -189,8 +192,29 @@ class MongoClient:
                 },
                 "$setOnInsert": {
                     "request_created": datetime.now(),
+                    "globus_endpoint_id": globus_endpoint_id,
                 },
             },
             upsert=True,
         )
         print(f"Metadata YAML request for {gcst_id} inserted or updated.")
+
+    def get_globus_endpoint_id(self, gcst_id):
+        """
+        Retrieve the globus_endpoint_id for a given gcst_id.
+
+        Args:
+            gcst_id (str): The GCST identifier.
+
+        Returns:
+            str or None: The globus_endpoint_id if found, otherwise None.
+        """
+        result = self.metadata_yaml_collection.find_one(
+            {"gcst_id": gcst_id}, {"globus_endpoint_id": 1}
+        )
+
+        if result and "globus_endpoint_id" in result:
+            return result["globus_endpoint_id"]
+
+        print(f"No globus_endpoint_id found for gcst_id: {gcst_id}")
+        return None
