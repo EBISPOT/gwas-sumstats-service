@@ -15,7 +15,9 @@ class MongoClient:
         self.study_collection = self.database["sumstats-study-meta"]
         self.error_collection = self.database["sumstats-errors"]
         self.callback_collection = self.database["sumstats-callback-tracking"]
+        # TODO: update cron entries and delete this collection
         self.task_failure_collection = self.database["sumstats-celery-task-failures"]
+        self.metadata_yaml_collection = self.database["sumstats-metadata-yaml"]
         self.studies_collection = self.database["studies"]
 
     """ generic methods"""
@@ -166,3 +168,53 @@ class MongoClient:
 
     def get_study(self, gcst_id):
         return self.studies_collection.find_one({"accession": gcst_id})
+
+    def insert_or_update_metadata_yaml_request(
+        self,
+        gcst_id,
+        status,
+        is_harmonised=False,
+        additional_info={},
+        globus_endpoint_id=None,
+    ):
+
+        print(f"adding {gcst_id} with hm: {is_harmonised} to yaml")
+        self.metadata_yaml_collection.update_one(
+            {
+                "gcst_id": gcst_id,
+                "is_harmonised": is_harmonised,
+            },
+            {
+                "$set": {
+                    "request_updated": datetime.now(),
+                    "status": status.value,
+                    "additional_info": additional_info,
+                },
+                "$setOnInsert": {
+                    "request_created": datetime.now(),
+                    "globus_endpoint_id": globus_endpoint_id,
+                },
+            },
+            upsert=True,
+        )
+        print(f"Metadata YAML request for {gcst_id} inserted or updated.")
+
+    def get_globus_endpoint_id(self, gcst_id):
+        """
+        Retrieve the globus_endpoint_id for a given gcst_id.
+
+        Args:
+            gcst_id (str): The GCST identifier.
+
+        Returns:
+            str or None: The globus_endpoint_id if found, otherwise None.
+        """
+        result = self.metadata_yaml_collection.find_one(
+            {"gcst_id": gcst_id}, {"globus_endpoint_id": 1}
+        )
+
+        if result and "globus_endpoint_id" in result:
+            return result["globus_endpoint_id"]
+
+        print(f"No globus_endpoint_id found for gcst_id: {gcst_id}")
+        return None

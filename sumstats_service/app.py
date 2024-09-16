@@ -226,8 +226,11 @@ def update_sumstats(callback_id):
 
             if move_files_result.successful():
                 logger.info(f"{callback_id=} :: move_files_result successful")
+                globus_endpoint_id = move_files_result.get()["globus_endpoint_id"]
+                # TODO: test by calling update_sumstats
                 metadata_conversion_result = convert_metadata_to_yaml.apply_async(
                     args=[resp["studyList"][0]["gcst"], False],
+                    kwargs={"globus_endpoint_id": globus_endpoint_id},
                     retry=True,
                 )
 
@@ -240,20 +243,6 @@ def update_sumstats(callback_id):
                     )
                     logger.info(f"Current state: {metadata_conversion_result.state}")
                     time.sleep(10)
-                else:
-                    raise Exception(
-                        "Task metadata_conversion_result did not complete in time."
-                    )
-
-                if metadata_conversion_result.successful():
-                    globus_endpoint_id = move_files_result.get()["globus_endpoint_id"]
-                    logger.info(
-                        f">> [delete_globus_endpoint] calling {globus_endpoint_id=}"
-                    )
-                    delete_endpoint_result = au.delete_globus_endpoint(
-                        globus_endpoint_id
-                    )
-                    logger.info(f"{callback_id=} :: {delete_endpoint_result=}")
                 else:
                     raise Exception(
                         "Task metadata_conversion_result did not complete in time."
@@ -401,10 +390,46 @@ def move_files_to_staging(resp):
     return au.move_files_to_staging(resp)
 
 
+# The task name is misleading but keeping it as it's hard-coded in Java side.
+# while publishing to rabbitmq pass is_harmonised_included from db
+# and is_save=False
 @celery.task(queue=config.CELERY_QUEUE3, options={"queue": config.CELERY_QUEUE3})
-def convert_metadata_to_yaml(gcst_id, is_harmonised_included=True):
+def convert_metadata_to_yaml(
+    gcst_id,
+    is_harmonised_included=True,
+    is_save=True,
+    globus_endpoint_id=None,
+):
     logger.info(f">>> [convert_metadata_to_yaml] for {gcst_id=}")
-    return au.convert_metadata_to_yaml(gcst_id, is_harmonised_included)
+    logger.info(f">>>>>>>>>>>>>> {globus_endpoint_id=}")
+
+    # TODO: test by publishing to rabbitmq directly as in deposition
+    # ie is_save default value
+    # TODO: test by publishing to rabbitmq directly as in nightly cron ie is_save false
+
+    # save by default.
+    # TODO: Explicitly set otherwise in nightly cron scripts.
+    if is_save:
+        logger.info("is save true")
+        return au.save_convert_metadata_to_yaml(
+            gcst_id, is_harmonised_included, globus_endpoint_id
+        )
+    else:
+        logger.info("is save false")
+        au.convert_metadata_to_yaml(gcst_id, is_harmonised_included)
+        mdb = MongoClient(
+            config.MONGO_URI,
+            config.MONGO_USER,
+            config.MONGO_PASSWORD,
+            config.MONGO_DB,
+        )
+        globus_endpoint_id = mdb.get_globus_endpoint_id(gcst_id)
+        logger.info(f"<<<<<<<< {globus_endpoint_id=}")
+        if globus_endpoint_id:
+            logger.info(f"Deleting {globus_endpoint_id}.")
+            au.delete_globus_endpoint(globus_endpoint_id)
+        else:
+            logger.info(f"No globus endpoint id found for {gcst_id}.")
 
 
 @celery.task(queue=config.CELERY_QUEUE1, options={"queue": config.CELERY_QUEUE1})
@@ -431,6 +456,7 @@ def task_failure_handler(sender=None, **kwargs) -> None:
         args = kwargs.get("args", [])
         exception = kwargs.get("exception", "No exception info")
         gcst_id = args[0] if args else "Unknown GCST ID"
+        is_hm = args[1] if args else "Unknown HM"
 
         # Save to MongoDB
         mdb = MongoClient(
@@ -442,9 +468,15 @@ def task_failure_handler(sender=None, **kwargs) -> None:
         study_data = mdb.get_study(gcst_id=gcst_id)
         if not study_data or study_data.get("summaryStatisticsFile", "") != config.NR:
             logger.info(f"Adding {gcst_id=} to the task failures collection")
-            mdb.insert_task_failure(gcst_id=gcst_id, exception=str(exception))
+            # mdb.insert_task_failure(gcst_id=gcst_id, exception=str(exception))
+            mdb.insert_or_update_metadata_yaml_request(
+                gcst_id=gcst_id,
+                status=config.MetadataYamlStatus.FAILED,
+                is_harmonised=is_hm,
+                additional_info={"exception": str(exception)},
+            )
         else:
-            logger.info(f"Skipping {gcst_id=} as it has no sumstats.")
+            logger.info(f"Skipping {gcst_id=} hm: {is_hm} as it has no sumstats.")
 
 
 if __name__ == "__main__":

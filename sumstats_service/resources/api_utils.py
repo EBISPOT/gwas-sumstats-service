@@ -386,9 +386,149 @@ def get_file_type_from_mongo(gcst) -> str:
         return ""
 
 
-# TODO: refactor this method
-def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
-    logger.info(f"::: [convert_metadata_to_yaml] {accession_id=} :::")
+def save_convert_metadata_to_yaml(
+    gcst_id: str, is_harmonised_included: bool, globus_endpoint_id: str
+):
+    logger.info(
+        f"""save_convert_metadata_to_yaml called for {gcst_id}
+        and hm: {is_harmonised_included}"""
+    )
+
+    mdb = MongoClient(
+        config.MONGO_URI,
+        config.MONGO_USER,
+        config.MONGO_PASSWORD,
+        config.MONGO_DB,
+    )
+    study_data = mdb.get_study(gcst_id=gcst_id)
+    if not study_data or study_data.get("summaryStatisticsFile", "") != config.NR:
+        logger.info(f"Adding {gcst_id=} to the metadata yaml collection")
+        mdb.insert_or_update_metadata_yaml_request(
+            gcst_id=gcst_id,
+            status=config.MetadataYamlStatus.PENDING,
+            globus_endpoint_id=globus_endpoint_id,
+        )
+
+        if is_harmonised_included:
+            logger.info(
+                f"""Adding {gcst_id=} hm:{is_harmonised_included}
+                to the metadata yaml collection"""
+            )
+            mdb.insert_or_update_metadata_yaml_request(
+                gcst_id=gcst_id,
+                status=config.MetadataYamlStatus.PENDING,
+                is_harmonised=True,
+            )
+    else:
+        logger.info(
+            f"Adding {gcst_id=} to the metadata yaml coll as it has no sumstats."
+        )
+        additional_info = {"note": f"GCST ID {gcst_id} do not have summary statistics."}
+        mdb.insert_or_update_metadata_yaml_request(
+            gcst_id=gcst_id,
+            status=config.MetadataYamlStatus.COMPLETED,
+            additional_info=additional_info,
+        )
+
+        if is_harmonised_included:
+            mdb.insert_or_update_metadata_yaml_request(
+                gcst_id=gcst_id,
+                status=config.MetadataYamlStatus.COMPLETED,
+                is_harmonised=True,
+            )
+
+    return True
+
+
+def generate_yaml_hm(accession_id, is_harmonised_included):
+    logger.info(f"HM CASE for {accession_id=}")
+    logger.info(
+        f"For HM {accession_id=} - resetting data_file_name and data_file_md5sum"
+    )
+
+    # Consume Ingest API via gwas-sumstats-tools
+    metadata_from_gwas_cat = metadata_dict_from_gwas_cat(
+        accession_id=accession_id,
+        is_bypass_rest_api=True,
+        # DEV ONLY #######
+        # 1. Update for Sandbox in gwas-sumstats-tools
+        # 2. Make a pre-release
+        #
+    )
+    logger.info(f"For non-hm {accession_id=} - {metadata_from_gwas_cat=}")
+    metadata_from_gwas_cat["date_metadata_last_modified"] = date.today()
+    metadata_from_gwas_cat["file_type"] = get_file_type_from_mongo(accession_id)
+
+    metadata_from_gwas_cat["data_file_name"] = ""
+    metadata_from_gwas_cat["data_file_md5sum"] = ""
+    metadata_from_gwas_cat["harmonisation_reference"] = config.HM_REFERENCE
+    metadata_from_gwas_cat["coordinate_system"] = config.HM_COORDINATE_SYSTEM
+    metadata_from_gwas_cat["genome_assembly"] = config.LATEST_ASSEMBLY
+    metadata_from_gwas_cat["is_harmonised"] = True
+    metadata_from_gwas_cat["is_sorted"] = get_is_sorted(
+        config.FTP_SERVER_EBI,
+        f"{config.FTP_PREFIX}/{generate_path(accession_id)}/{accession_id}/harmonised",
+    )
+    metadata_from_gwas_cat["gwas_id"] = accession_id
+    metadata_from_gwas_cat["gwas_catalog_api"] = (
+        f"{config.GWAS_CATALOG_REST_API_STUDY_URL}{accession_id}"
+    )
+
+    # We don't use staging ftp because old harmonised files are not in there
+    # but only in public ftp
+    filenames_to_md5_values = compute_md5_for_ftp_files(
+        config.FTP_SERVER_EBI,
+        f"{config.FTP_PREFIX}/{generate_path(accession_id)}/{accession_id}/harmonised",
+        accession_id,
+    )
+    filename_to_md5sum_hm = get_md5_for_accession(
+        filenames_to_md5_values,
+        accession_id,
+        True,
+    )
+    for k, v in filename_to_md5sum_hm.items():
+        metadata_from_gwas_cat["data_file_name"] = k
+        metadata_from_gwas_cat["data_file_md5sum"] = v
+
+    if not metadata_from_gwas_cat.get("data_file_name"):
+        logger.info(
+            f"""
+            HM data file not available for {accession_id} at
+            '{config.FTP_PREFIX}/{generate_path(accession_id)}/{accession_id}/harmonised'
+            """
+        )
+        # It's okay to return True even though we haven't got the file
+        # because not every study is harmonised
+        return True
+
+    out_dir = os.path.join(config.STAGING_PATH, accession_id)
+    hm_dir = os.path.join(out_dir, "harmonised")
+    Path(hm_dir).mkdir(parents=True, exist_ok=True)
+
+    metadata_filename_hm = f"{metadata_from_gwas_cat['data_file_name']}-meta.yaml"
+    out_file_hm = os.path.join(hm_dir, metadata_filename_hm)
+    logger.info(f"For HM {accession_id=} - {out_file_hm=}")
+
+    # Also generate client for hm case, i.e., if is_harmonised_included
+    metadata_client_hm = MetadataClient(out_file=out_file_hm)
+
+    logger.info(f"For HM {accession_id=} updated -> {metadata_from_gwas_cat=}")
+    metadata_client_hm.update_metadata(metadata_from_gwas_cat)
+
+    metadata_client_hm.to_file()
+
+    filenames_to_md5_values[metadata_filename_hm] = compute_md5_local(out_file_hm)
+    logger.info(f"For HM {accession_id=} - {filenames_to_md5_values=}")
+
+    write_md5_for_files(filenames_to_md5_values, os.path.join(hm_dir, "md5sum.txt"))
+    logger.info(f"Metadata yaml file creation is successful for HM {accession_id=}.")
+
+    logger.info(f"::: ENDOF [convert_metadata_to_yaml] for {accession_id=}:::")
+
+    return True
+
+
+def generate_yaml_non_hm(accession_id, is_harmonised_included):
     logger.info(f"Non-HM case for {accession_id=}")
 
     # Consume Ingest API via gwas-sumstats-tools
@@ -415,19 +555,20 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
         logger.info(f"For non-hm {accession_id=} - Setting default value for {key=}.")
         metadata_from_gwas_cat.setdefault(key, "")
 
-    if not is_harmonised_included:
-        filenames_to_md5_values = compute_md5_for_local_files(
-            accession_id=accession_id,
-            path=os.path.join(config.STAGING_PATH, accession_id),
-        )
-    else:
-        logger.info(f"{accession_id=}")
-        filenames_to_md5_values = compute_md5_for_local_files(
-            accession_id=accession_id,
-            path=os.path.join(
-                config.FTP_STAGING_PATH, generate_path(accession_id), accession_id
-            ),
-        )
+    # if not is_harmonised_included:
+    #     filenames_to_md5_values = compute_md5_for_local_files(
+    #         accession_id=accession_id,
+    #         path=os.path.join(config.STAGING_PATH, accession_id),
+    #     )
+    # else:
+
+    logger.info(f"{accession_id=}")
+    filenames_to_md5_values = compute_md5_for_local_files(
+        accession_id=accession_id,
+        path=os.path.join(
+            config.FTP_STAGING_PATH, generate_path(accession_id), accession_id
+        ),
+    )
 
     filename_to_md5sum = get_md5_for_accession(
         filenames_to_md5_values,
@@ -480,72 +621,31 @@ def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
     if not is_harmonised_included:
         return True
 
-    logger.info(f"HM CASE for {accession_id=}")
-    logger.info(
-        f"For HM {accession_id=} - resetting data_file_name and data_file_md5sum"
-    )
-    metadata_from_gwas_cat["data_file_name"] = ""
-    metadata_from_gwas_cat["data_file_md5sum"] = ""
-    metadata_from_gwas_cat["harmonisation_reference"] = config.HM_REFERENCE
-    metadata_from_gwas_cat["coordinate_system"] = config.HM_COORDINATE_SYSTEM
-    metadata_from_gwas_cat["genome_assembly"] = config.LATEST_ASSEMBLY
-    metadata_from_gwas_cat["is_harmonised"] = True
-    metadata_from_gwas_cat["is_sorted"] = get_is_sorted(
-        config.FTP_SERVER_EBI,
-        f"{config.FTP_PREFIX}/{generate_path(accession_id)}/{accession_id}/harmonised",
-    )
 
-    # We don't use staging ftp because old harmonised files are not in there
-    # but only in public ftp
-    filenames_to_md5_values = compute_md5_for_ftp_files(
-        config.FTP_SERVER_EBI,
-        f"{config.FTP_PREFIX}/{generate_path(accession_id)}/{accession_id}/harmonised",
-        accession_id,
-    )
-    filename_to_md5sum_hm = get_md5_for_accession(
-        filenames_to_md5_values,
-        accession_id,
-        True,
-    )
-    for k, v in filename_to_md5sum_hm.items():
-        metadata_from_gwas_cat["data_file_name"] = k
-        metadata_from_gwas_cat["data_file_md5sum"] = v
+def convert_metadata_to_yaml(accession_id: str, is_harmonised_included: bool):
+    logger.info(f"::: [convert_metadata_to_yaml] {accession_id=} :::")
+    try:
+        if not is_harmonised_included:
+            generate_yaml_non_hm(accession_id, is_harmonised_included)
+        else:
+            generate_yaml_hm(accession_id, is_harmonised_included)
 
-    if not metadata_from_gwas_cat.get("data_file_name"):
-        logger.info(
-            f"""
-            HM data file not available for {accession_id} at
-            '{config.FTP_PREFIX}/{generate_path(accession_id)}/{accession_id}/harmonised'
-            """
+        mdb = MongoClient(
+            config.MONGO_URI,
+            config.MONGO_USER,
+            config.MONGO_PASSWORD,
+            config.MONGO_DB,
         )
-        # It's okay to return True even though we haven't got the file
-        # because not every study is harmonised
-        return True
-
-    hm_dir = os.path.join(out_dir, "harmonised")
-    Path(hm_dir).mkdir(parents=True, exist_ok=True)
-
-    metadata_filename_hm = f"{metadata_from_gwas_cat['data_file_name']}-meta.yaml"
-    out_file_hm = os.path.join(hm_dir, metadata_filename_hm)
-    logger.info(f"For HM {accession_id=} - {out_file_hm=}")
-
-    # Also generate client for hm case, i.e., if is_harmonised_included
-    metadata_client_hm = MetadataClient(out_file=out_file_hm)
-
-    logger.info(f"For HM {accession_id=} updated -> {metadata_from_gwas_cat=}")
-    metadata_client_hm.update_metadata(metadata_from_gwas_cat)
-
-    metadata_client_hm.to_file()
-
-    filenames_to_md5_values[metadata_filename_hm] = compute_md5_local(out_file_hm)
-    logger.info(f"For HM {accession_id=} - {filenames_to_md5_values=}")
-
-    write_md5_for_files(filenames_to_md5_values, os.path.join(hm_dir, "md5sum.txt"))
-    logger.info(f"Metadata yaml file creation is successful for HM {accession_id=}.")
-
-    logger.info(f"::: ENDOF [convert_metadata_to_yaml] for {accession_id=}:::")
-
-    return True
+        mdb.insert_or_update_metadata_yaml_request(
+            gcst_id=accession_id,
+            status=config.MetadataYamlStatus.COMPLETED,
+            is_harmonised=is_harmonised_included,
+        )
+    except Exception:
+        logger.error(
+            f"Error generating yaml for {accession_id} - hm: {is_harmonised_included}"
+        )
+        raise
 
 
 def generate_path(gcst_id):
