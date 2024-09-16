@@ -497,9 +497,12 @@ def generate_yaml_hm(accession_id, is_harmonised_included):
             '{config.FTP_PREFIX}/{generate_path(accession_id)}/{accession_id}/harmonised'
             """
         )
-        # It's okay to return True even though we haven't got the file
-        # because not every study is harmonised
-        return True
+        raise FileNotFoundError(
+            f"""
+            HM data file not available for {accession_id} at
+            '{config.FTP_PREFIX}/{generate_path(accession_id)}/{accession_id}/harmonised'
+            """
+        )
 
     out_dir = os.path.join(config.STAGING_PATH, accession_id)
     hm_dir = os.path.join(out_dir, "harmonised")

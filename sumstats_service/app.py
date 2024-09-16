@@ -402,6 +402,12 @@ def convert_metadata_to_yaml(
 ):
     logger.info(f">>> [convert_metadata_to_yaml] for {gcst_id=}")
     logger.info(f">>>>>>>>>>>>>> {globus_endpoint_id=}")
+    mdb = MongoClient(
+        config.MONGO_URI,
+        config.MONGO_USER,
+        config.MONGO_PASSWORD,
+        config.MONGO_DB,
+    )
 
     # TODO: test by publishing to rabbitmq directly as in deposition
     # ie is_save default value
@@ -409,27 +415,37 @@ def convert_metadata_to_yaml(
 
     # save by default.
     # TODO: Explicitly set otherwise in nightly cron scripts.
-    if is_save:
-        logger.info("is save true")
-        return au.save_convert_metadata_to_yaml(
-            gcst_id, is_harmonised_included, globus_endpoint_id
-        )
-    else:
-        logger.info("is save false")
-        au.convert_metadata_to_yaml(gcst_id, is_harmonised_included)
-        mdb = MongoClient(
-            config.MONGO_URI,
-            config.MONGO_USER,
-            config.MONGO_PASSWORD,
-            config.MONGO_DB,
-        )
-        globus_endpoint_id = mdb.get_globus_endpoint_id(gcst_id)
-        logger.info(f"<<<<<<<< {globus_endpoint_id=}")
-        if globus_endpoint_id:
-            logger.info(f"Deleting {globus_endpoint_id}.")
-            au.delete_globus_endpoint(globus_endpoint_id)
+    try:
+        if is_save:
+            logger.info("is save true")
+            return au.save_convert_metadata_to_yaml(
+                gcst_id, is_harmonised_included, globus_endpoint_id
+            )
         else:
-            logger.info(f"No globus endpoint id found for {gcst_id}.")
+            logger.info("is save false")
+            au.convert_metadata_to_yaml(gcst_id, is_harmonised_included)
+
+            globus_endpoint_id = mdb.get_globus_endpoint_id(gcst_id)
+            logger.info(f"<<<<<<<< {globus_endpoint_id=}")
+            if globus_endpoint_id:
+                logger.info(f"Deleting {globus_endpoint_id}.")
+                au.delete_globus_endpoint(globus_endpoint_id)
+            else:
+                logger.info(f"No globus endpoint id found for {gcst_id}.")
+    except Exception as e:
+        study_data = mdb.get_study(gcst_id=gcst_id)
+        if not study_data or study_data.get("summaryStatisticsFile", "") != config.NR:
+            logger.info(f"Adding {gcst_id=} to the task failures collection")
+            mdb.insert_or_update_metadata_yaml_request(
+                gcst_id=gcst_id,
+                status=config.MetadataYamlStatus.FAILED,
+                is_harmonised=is_harmonised_included,
+                additional_info={"exception": str(e)},
+            )
+        else:
+            logger.info(
+                f"Skipping {gcst_id=} hm: {is_harmonised_included} as it has no files."
+            )
 
 
 @celery.task(queue=config.CELERY_QUEUE1, options={"queue": config.CELERY_QUEUE1})
