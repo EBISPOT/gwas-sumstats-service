@@ -193,7 +193,6 @@ def delete_sumstats(callback_id):
     return Response(response=resp, status=200, mimetype="application/json")
 
 
-# TODO: refactor this
 @app.route("/v1/sum-stats/<string:callback_id>", methods=["PUT"])
 def update_sumstats(callback_id):
     content = request.get_json(force=True)
@@ -227,7 +226,6 @@ def update_sumstats(callback_id):
             if move_files_result.successful():
                 logger.info(f"{callback_id=} :: move_files_result successful")
                 globus_endpoint_id = move_files_result.get()["globus_endpoint_id"]
-                # TODO: test by calling update_sumstats
                 metadata_conversion_result = convert_metadata_to_yaml.apply_async(
                     args=[resp["studyList"][0]["gcst"], False],
                     kwargs={"globus_endpoint_id": globus_endpoint_id},
@@ -409,12 +407,7 @@ def convert_metadata_to_yaml(
         config.MONGO_DB,
     )
 
-    # TODO: test by publishing to rabbitmq directly as in deposition
-    # ie is_save default value
-    # TODO: test by publishing to rabbitmq directly as in nightly cron ie is_save false
-
-    # save by default.
-    # TODO: Explicitly set otherwise in nightly cron scripts.
+    # Explicitly set otherwise in nightly cron scripts.
     try:
         if is_save:
             logger.info("is save true")

@@ -15,7 +15,7 @@ class MongoClient:
         self.study_collection = self.database["sumstats-study-meta"]
         self.error_collection = self.database["sumstats-errors"]
         self.callback_collection = self.database["sumstats-callback-tracking"]
-        # TODO: update cron entries and delete this collection
+        # TODO: This collection can be deleted after yaml gen fix
         self.task_failure_collection = self.database["sumstats-celery-task-failures"]
         self.metadata_yaml_collection = self.database["sumstats-metadata-yaml"]
         self.studies_collection = self.database["studies"]
