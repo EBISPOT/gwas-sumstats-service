@@ -179,24 +179,34 @@ class MongoClient:
     ):
 
         print(f"adding {gcst_id} with hm: {is_harmonised} to yaml")
+
+        update_doc = {
+            "$set": {
+                "request_updated": datetime.now(),
+                "status": status.value,
+                "additional_info": additional_info,
+            },
+            "$setOnInsert": {
+                "request_created": datetime.now(),
+                "globus_endpoint_id": globus_endpoint_id,
+                "attempts": 0,
+            },
+        }
+
+        # If status is COMPLETED, then reset attempts to 0.
+        # Otherwise increment attempts.
+        if status == config.MetadataYamlStatus.COMPLETED:
+            update_doc["$set"]["attempts"] = 0
+        else:
+            update_doc["$inc"] = {"attempts": 1}
+
+        # Perform the update
         self.metadata_yaml_collection.update_one(
             {
                 "gcst_id": gcst_id,
                 "is_harmonised": is_harmonised,
             },
-            {
-                "$set": {
-                    "request_updated": datetime.now(),
-                    "status": status.value,
-                    "additional_info": additional_info,
-                },
-                "$setOnInsert": {
-                    "request_created": datetime.now(),
-                    "globus_endpoint_id": globus_endpoint_id,
-                    "attempts": 0,
-                },
-                "$inc": {"attempts": 1},
-            },
+            update_doc,
             upsert=True,
         )
         print(f"Metadata YAML request for {gcst_id} inserted or updated.")
