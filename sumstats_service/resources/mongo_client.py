@@ -193,7 +193,9 @@ class MongoClient:
                 "$setOnInsert": {
                     "request_created": datetime.now(),
                     "globus_endpoint_id": globus_endpoint_id,
+                    "attempts": 0,
                 },
+                "$inc": {"attempts": 1},
             },
             upsert=True,
         )
