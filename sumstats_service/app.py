@@ -227,8 +227,11 @@ def update_sumstats(callback_id):
                 logger.info(f"{callback_id=} :: move_files_result successful")
                 globus_endpoint_id = move_files_result.get()["globus_endpoint_id"]
                 metadata_conversion_result = convert_metadata_to_yaml.apply_async(
-                    args=[resp["studyList"][0]["gcst"], False],
-                    kwargs={"globus_endpoint_id": globus_endpoint_id},
+                    args=[resp["studyList"][0]["gcst"]],
+                    kwargs={
+                        "is_harmonised_included": False,
+                        "globus_endpoint_id": globus_endpoint_id,
+                    },
                     retry=True,
                 )
 
@@ -392,14 +395,14 @@ def move_files_to_staging(resp):
 # while publishing to rabbitmq pass is_harmonised_included from db
 # and is_save=False
 @celery.task(queue=config.CELERY_QUEUE3, options={"queue": config.CELERY_QUEUE3})
-def convert_metadata_to_yaml(
-    gcst_id,
-    is_harmonised_included=True,
-    is_save=True,
-    globus_endpoint_id=None,
-):
+def convert_metadata_to_yaml(gcst_id, **kwargs):
+    is_harmonised_included = kwargs.get("is_harmonised_included", True)
+    is_save = kwargs.get("is_save", True)
+    globus_endpoint_id = kwargs.get("globus_endpoint_id", None)
+
     logger.info(f">>> [convert_metadata_to_yaml] for {gcst_id=}")
     logger.info(f">>>>>>>>>>>>>> {globus_endpoint_id=}")
+
     mdb = MongoClient(
         config.MONGO_URI,
         config.MONGO_USER,
