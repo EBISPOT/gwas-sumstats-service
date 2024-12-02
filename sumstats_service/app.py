@@ -396,11 +396,14 @@ def move_files_to_staging(resp):
 # and is_save=False
 @celery.task(queue=config.CELERY_QUEUE3, options={"queue": config.CELERY_QUEUE3})
 def convert_metadata_to_yaml(gcst_id, **kwargs):
+    logger.info(f">>> [convert_metadata_to_yaml] for {gcst_id=}")
+
     is_harmonised_included = kwargs.get("is_harmonised_included", True)
     is_save = kwargs.get("is_save", True)
     globus_endpoint_id = kwargs.get("globus_endpoint_id", None)
 
-    logger.info(f">>> [convert_metadata_to_yaml] for {gcst_id=}")
+    logger.info(f">>>>>>>>>>>>>> {is_harmonised_included=}")
+    logger.info(f">>>>>>>>>>>>>> {is_save=}")
     logger.info(f">>>>>>>>>>>>>> {globus_endpoint_id=}")
 
     mdb = MongoClient(
