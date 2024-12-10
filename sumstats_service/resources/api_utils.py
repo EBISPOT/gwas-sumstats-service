@@ -455,7 +455,7 @@ def generate_yaml_hm(accession_id, is_harmonised_included):
         # 2. Make a pre-release
         #
     )
-    logger.info(f"For non-hm {accession_id=} - {metadata_from_gwas_cat=}")
+    logger.info(f"For hm {accession_id=} - {metadata_from_gwas_cat=}")
     metadata_from_gwas_cat["date_metadata_last_modified"] = date.today()
     metadata_from_gwas_cat["file_type"] = get_file_type_from_mongo(accession_id)
 
@@ -546,6 +546,9 @@ def generate_yaml_non_hm(accession_id, is_harmonised_included):
     logger.info(f"For non-hm {accession_id=} - {metadata_from_gwas_cat=}")
     metadata_from_gwas_cat["date_metadata_last_modified"] = date.today()
     metadata_from_gwas_cat["file_type"] = get_file_type_from_mongo(accession_id)
+
+    metadata_from_gwas_cat["is_harmonised"] = False
+    metadata_from_gwas_cat["is_sorted"] = False
 
     # Setting default values for keys that may not exist
     default_keys = [
