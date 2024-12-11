@@ -549,6 +549,7 @@ def generate_yaml_non_hm(accession_id, is_harmonised_included):
 
     metadata_from_gwas_cat["is_harmonised"] = False
     metadata_from_gwas_cat["is_sorted"] = False
+    metadata_from_gwas_cat["harmonisation_reference"] = None
 
     # Setting default values for keys that may not exist
     default_keys = [
