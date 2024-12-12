@@ -463,7 +463,7 @@ def generate_yaml_hm(accession_id, is_harmonised_included):
         accession_id,
         "harmonised",
     )
-    logger.info(f"Latest update was at {latest_update}")
+    logger.info(f"For hm {accession_id=} - latest update was at {latest_update}")
     metadata_from_gwas_cat["date_metadata_last_modified"] = (
         latest_update if latest_update else date.today()
     )
@@ -535,13 +535,18 @@ def generate_yaml_hm(accession_id, is_harmonised_included):
     logger.info(f"For HM {accession_id=} - {filenames_to_md5_values=}")
 
     md5sum_new_yaml = filenames_to_md5_values.get(metadata_filename_hm)
+    logger.info(f"For HM {accession_id=} - new md5sum is {md5sum_new_yaml}")
+
     md5sums = find_latest_yamlmd5sums(
         os.path.join(config.FTP_STAGING_PATH, "gcst_harmo_yamlmd5sum.csv"),
         accession_id,
         "harmonised",
     )
 
+    logger.info(f"For HM {accession_id=} - old md5sums are {md5sums}")
+
     if md5sum_new_yaml not in md5sums:
+        logger.info(f"For HM {accession_id=} - Use today's date")
         metadata_from_gwas_cat["date_metadata_last_modified"] = date.today()
         metadata_client_hm.update_metadata(metadata_from_gwas_cat)
         metadata_client_hm.to_file()
@@ -573,7 +578,7 @@ def generate_yaml_non_hm(accession_id, is_harmonised_included):
         accession_id,
         "not_harmonised",
     )
-    logger.info(f"Latest update was at {latest_update}")
+    logger.info(f"For non-hm {accession_id=} - latest update was at {latest_update}")
     metadata_from_gwas_cat["date_metadata_last_modified"] = (
         latest_update if latest_update else date.today()
     )
@@ -651,17 +656,21 @@ def generate_yaml_non_hm(accession_id, is_harmonised_included):
     filenames_to_md5_values[metadata_filename] = compute_md5_local(out_file)
     logger.info(f"For non-hm {accession_id=} - {filenames_to_md5_values=}")
 
-    md5sum_new_yaml = filenames_to_md5_values.get(metadata_filename_hm)
+    md5sum_new_yaml = filenames_to_md5_values.get(metadata_filename)
+    logger.info(f"For non-hm {accession_id=} - new md5sum is {md5sum_new_yaml}")
+
     md5sums = find_latest_yamlmd5sums(
         os.path.join(config.FTP_STAGING_PATH, "gcst_harmo_yamlmd5sum.csv"),
         accession_id,
         "not_harmonised",
     )
+    logger.info(f"For non-hm {accession_id=} - md5sums are {md5sums}")
 
     if md5sum_new_yaml not in md5sums:
+        logger.info(f"For non-hm {accession_id=} - Use today's date")
         metadata_from_gwas_cat["date_metadata_last_modified"] = date.today()
-        metadata_client_hm.update_metadata(metadata_from_gwas_cat)
-        metadata_client_hm.to_file()
+        metadata_client.update_metadata(metadata_from_gwas_cat)
+        metadata_client.to_file()
 
     write_md5_for_files(filenames_to_md5_values, os.path.join(out_dir, "md5sum.txt"))
 
