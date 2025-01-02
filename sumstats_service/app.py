@@ -442,8 +442,13 @@ def convert_metadata_to_yaml(gcst_id, **kwargs):
                 additional_info={"exception": str(e)},
             )
         else:
-            logger.info(
-                f"Skipping {gcst_id=} hm: {is_harmonised_included} as it has no files."
+            info = f"Skipping {gcst_id=} hm: {is_harmonised_included} as it has no files."
+            logger.info(info)
+            mdb.insert_or_update_metadata_yaml_request(
+                gcst_id=gcst_id,
+                status=config.MetadataYamlStatus.SKIPPED,
+                is_harmonised=is_harmonised_included,
+                additional_info={"info": info},
             )
 
 

@@ -227,3 +227,4 @@ class MetadataYamlStatus(Enum):
     IN_PROGRESS = "in-progress"
     COMPLETED = "completed"
     FAILED = "failed"
+    SKIPPED = "skipped"

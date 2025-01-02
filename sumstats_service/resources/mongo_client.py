@@ -174,9 +174,12 @@ class MongoClient:
         gcst_id,
         status,
         is_harmonised=False,
-        additional_info={},
+        additional_info=None,
         globus_endpoint_id=None,
     ):
+
+        if additional_info is None:
+            additional_info = {}
 
         print(f"adding {gcst_id} with hm: {is_harmonised} to yaml")
 
@@ -194,7 +197,7 @@ class MongoClient:
 
         # If status is COMPLETED, then reset attempts to 0.
         # Otherwise increment attempts.
-        if status == config.MetadataYamlStatus.COMPLETED:
+        if status == config.MetadataYamlStatus.COMPLETED or status == config.MetadataYamlStatus.SKIPPED:
             update_doc["$set"]["attempts"] = 0
         else:
             update_doc["$inc"] = {"attempts": 1}
