@@ -858,7 +858,7 @@ def get_md5_for_accession(
     # i.e., files are named <GCST ID>_<build number>.*
     # e.g. http://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/GCST90308001-GCST90309000/GCST90308682/ # noqa:E501
     for key in md5_checksums:
-        if accession_id in key:
+        if accession_id in key and "yaml" not in key:
             return {key: md5_checksums[key]}
 
     # If still no match, look for any .tsv, .tsv.gz, .txt or .txt.gz files
@@ -867,7 +867,7 @@ def get_md5_for_accession(
     # e.g., http://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/GCST005001-GCST006000/GCST005529/ # noqa:E501
     for key in md5_checksums:
         if (
-            key.endswith((".tsv", ".tsv.gz", ".txt", ".txt.gz"))
+            key.endswith((".tsv", ".tsv.gz", ".txt", ".txt.gz", ".csv", ".csv.gz"))
             and key != "md5sums.txt"
             and "yaml" not in key
         ):
