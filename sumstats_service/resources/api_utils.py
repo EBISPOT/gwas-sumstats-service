@@ -843,16 +843,14 @@ def get_md5_for_accession(
     - A dictionary with the matching filename and its MD5 checksum. Empty if no
     match is found.
     """
-    possible_keys = (
-        [f"{accession_id}.tsv", f"{accession_id}.tsv.gz"]
-        if not is_harmonised
-        else [f"{accession_id}.h.tsv", f"{accession_id}.h.tsv.gz"]
-    )
-
     # Check for exact matches first
-    for key in possible_keys:
-        if key in md5_checksums:
-            return {key: md5_checksums[key]}
+    for key in md5_checksums:
+        if not is_harmonised:
+            if key.endswith((f"{accession_id}.tsv", f"{accession_id}.tsv.gz")):
+                return {key: md5_checksums[key]}
+        else:
+            if key.endswith((f"{accession_id}.h.tsv", f"{accession_id}.h.tsv.gz")):
+                return {key: md5_checksums[key]}
 
     # Check for partial matches if no exact match is found
     # i.e., files are named <GCST ID>_<build number>.*
@@ -860,7 +858,8 @@ def get_md5_for_accession(
     for key in md5_checksums:
         if (
             accession_id in key
-            and "yaml" not in key
+            and key.endswith((".tsv", ".tsv.gz", ".txt", ".txt.gz", ".csv", ".csv.gz"))
+            and ".yaml" not in key
             and ".tbi" not in key
             and "running.log" not in key
             and "README" not in key
@@ -875,7 +874,7 @@ def get_md5_for_accession(
         if (
             key.endswith((".tsv", ".tsv.gz", ".txt", ".txt.gz", ".csv", ".csv.gz"))
             and key != "md5sums.txt"
-            and "yaml" not in key
+            and ".yaml" not in key
             and ".tbi" not in key
             and "running.log" not in key
             and "README" not in key
