@@ -831,13 +831,20 @@ def get_md5_for_accession(
     is_harmonised=False,
 ) -> dict:
     """
-    Return the key (filename) and value (MD5 checksum) from md5_checksums
-    if there's a key that equals to accession_id.tsv.gz or accession_id.tsv.
+    Return the key (filename) and value (MD5 checksum) from md5_checksums.
+
+    First, check if there's a key that ends with accession_id.tsv.gz or
+    accession_id.tsv OR accession_id.h.tsv.gz or accession_id.h.tsv.
+
+    Then check for partial matches if no exact match is found.
+
+    If still no match, look for any .tsv, .tsv.gz, .txt or .txt.gz files.
 
     Parameters:
     - md5_checksums: Dictionary with filenames as keys and their MD5 checksums as
     values.
     - accession_id: The accession ID to look for, with .tsv or .tsv.gz extensions.
+    - is_harmonised: Boolean to look for files in harmonised folders
 
     Returns:
     - A dictionary with the matching filename and its MD5 checksum. Empty if no
@@ -863,6 +870,7 @@ def get_md5_for_accession(
             and ".tbi" not in key
             and "running.log" not in key
             and "README" not in key
+            and not key.endswith((".f.tsv", ".f.tsv.gz"))
         ):
             return {key: md5_checksums[key]}
 
@@ -878,6 +886,7 @@ def get_md5_for_accession(
             and ".tbi" not in key
             and "running.log" not in key
             and "README" not in key
+            and not key.endswith((".f.tsv", ".f.tsv.gz"))
         ):
             return {key: md5_checksums[key]}
 
