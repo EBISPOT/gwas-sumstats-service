@@ -748,7 +748,10 @@ def compute_md5_for_ftp_files(ftp_server: str, ftp_directory: str, file_id: str)
                 logger.error(f"FTP error: {e}")
                 return {}
 
-            files_of_interest = files
+            # Filter out hidden files
+            files_of_interest = [
+                f for f in files if not f.startswith(".")
+            ]
 
             for filename in files_of_interest:
                 try:
@@ -783,9 +786,11 @@ def compute_md5_for_local_files(accession_id, path):
     if not os.path.exists(path):
         raise FileNotFoundError(f"The directory {path} does not exist.")
 
-    # List files in the directory
+    # List files in the directory, excluding hidden files
     files_of_interest = [
-        f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))
+        f
+        for f in os.listdir(path)
+        if os.path.isfile(os.path.join(path, f)) and not f.startswith(".")
     ]
     logger.info(f"{files_of_interest=}")
 
