@@ -784,11 +784,9 @@ def compute_md5_for_local_files(accession_id, path):
         raise FileNotFoundError(f"The directory {path} does not exist.")
 
     # List files in the directory
-    files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
-    logger.info(f"{files=}")
-
-    # Filter files by the starting ID
-    files_of_interest = [f for f in files if f.startswith(accession_id)]
+    files_of_interest = [
+        f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))
+    ]
     logger.info(f"{files_of_interest=}")
 
     # Compute MD5 for each file and store the line for the output file
