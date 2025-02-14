@@ -1,4 +1,3 @@
-import csv
 import ftplib
 import glob
 import hashlib
@@ -7,9 +6,9 @@ import logging
 import os
 import subprocess
 import urllib
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
-from typing import Optional, Union
+from typing import Union
 from urllib.parse import unquote
 
 from flask import url_for
@@ -457,17 +456,7 @@ def generate_yaml_hm(accession_id, is_harmonised_included):
         #
     )
     logger.info(f"For hm {accession_id=} - {metadata_from_gwas_cat=}")
-
-    latest_update = find_latest_metadata_update(
-        os.path.join(config.FTP_STAGING_PATH, "gcst_harmo_metadatalastupdated.csv"),
-        accession_id,
-        "harmonised",
-    )
-    logger.info(f"For hm {accession_id=} - latest update was at {latest_update}")
-    metadata_from_gwas_cat["date_metadata_last_modified"] = (
-        latest_update if latest_update else date.today()
-    )
-
+    metadata_from_gwas_cat["date_metadata_last_modified"] = date.today()
     metadata_from_gwas_cat["file_type"] = get_file_type_from_mongo(accession_id)
 
     metadata_from_gwas_cat["data_file_name"] = ""
@@ -534,22 +523,6 @@ def generate_yaml_hm(accession_id, is_harmonised_included):
     filenames_to_md5_values[metadata_filename_hm] = compute_md5_local(out_file_hm)
     logger.info(f"For HM {accession_id=} - {filenames_to_md5_values=}")
 
-    md5sum_new_yaml = filenames_to_md5_values.get(metadata_filename_hm)
-    logger.info(f"For HM {accession_id=} - new md5sum is {md5sum_new_yaml}")
-
-    md5sums = find_latest_yamlmd5sums(
-        os.path.join(config.FTP_STAGING_PATH, "gcst_harmo_yamlmd5sum.csv"),
-        accession_id,
-        "harmonised",
-    )
-    logger.info(f"For HM {accession_id=} - old md5sums are {md5sums}")
-
-    if md5sums is None or md5sum_new_yaml not in md5sums:
-        logger.info(f"For HM {accession_id=} - Use today's date")
-        metadata_from_gwas_cat["date_metadata_last_modified"] = date.today()
-        metadata_client_hm.update_metadata(metadata_from_gwas_cat)
-        metadata_client_hm.to_file()
-
     write_md5_for_files(filenames_to_md5_values, os.path.join(hm_dir, "md5sum.txt"))
     logger.info(f"Metadata yaml file creation is successful for HM {accession_id=}.")
 
@@ -571,16 +544,7 @@ def generate_yaml_non_hm(accession_id, is_harmonised_included):
         #
     )
     logger.info(f"For non-hm {accession_id=} - {metadata_from_gwas_cat=}")
-
-    latest_update = find_latest_metadata_update(
-        os.path.join(config.FTP_STAGING_PATH, "gcst_harmo_metadatalastupdated.csv"),
-        accession_id,
-        "not_harmonised",
-    )
-    logger.info(f"For non-hm {accession_id=} - latest update was at {latest_update}")
-    metadata_from_gwas_cat["date_metadata_last_modified"] = (
-        latest_update if latest_update else date.today()
-    )
+    metadata_from_gwas_cat["date_metadata_last_modified"] = date.today()
     metadata_from_gwas_cat["file_type"] = get_file_type_from_mongo(accession_id)
 
     metadata_from_gwas_cat["is_harmonised"] = False
@@ -597,13 +561,6 @@ def generate_yaml_non_hm(accession_id, is_harmonised_included):
     for key in default_keys:
         logger.info(f"For non-hm {accession_id=} - Setting default value for {key=}.")
         metadata_from_gwas_cat.setdefault(key, "")
-
-    # if not is_harmonised_included:
-    #     filenames_to_md5_values = compute_md5_for_local_files(
-    #         accession_id=accession_id,
-    #         path=os.path.join(config.STAGING_PATH, accession_id),
-    #     )
-    # else:
 
     logger.info(f"{accession_id=}")
     filenames_to_md5_values = compute_md5_for_local_files(
@@ -654,22 +611,6 @@ def generate_yaml_non_hm(accession_id, is_harmonised_included):
     # compute md5sum of the meta file and write to md5sum.txt here
     filenames_to_md5_values[metadata_filename] = compute_md5_local(out_file)
     logger.info(f"For non-hm {accession_id=} - {filenames_to_md5_values=}")
-
-    md5sum_new_yaml = filenames_to_md5_values.get(metadata_filename)
-    logger.info(f"For non-hm {accession_id=} - new md5sum is {md5sum_new_yaml}")
-
-    md5sums = find_latest_yamlmd5sums(
-        os.path.join(config.FTP_STAGING_PATH, "gcst_harmo_yamlmd5sum.csv"),
-        accession_id,
-        "not_harmonised",
-    )
-    logger.info(f"For non-hm {accession_id=} - old md5sums are {md5sums}")
-
-    if md5sums is None or md5sum_new_yaml not in md5sums:
-        logger.info(f"For non-hm {accession_id=} - Use today's date")
-        metadata_from_gwas_cat["date_metadata_last_modified"] = date.today()
-        metadata_client.update_metadata(metadata_from_gwas_cat)
-        metadata_client.to_file()
 
     write_md5_for_files(filenames_to_md5_values, os.path.join(out_dir, "md5sum.txt"))
 
@@ -749,9 +690,7 @@ def compute_md5_for_ftp_files(ftp_server: str, ftp_directory: str, file_id: str)
                 return {}
 
             # Filter out hidden files
-            files_of_interest = [
-                f for f in files if not f.startswith(".")
-            ]
+            files_of_interest = [f for f in files if not f.startswith(".")]
 
             for filename in files_of_interest:
                 try:
@@ -896,46 +835,6 @@ def get_md5_for_accession(
     return {}
 
 
-def get_md5_for_yaml(
-    md5_checksums: dict,
-    accession_id: str,
-    is_harmonised=False,
-) -> dict:
-    """
-    Return the key (filename) and value (MD5 checksum) from md5_checksums
-    if there's a key that equals to accession_id.tsv.gz-meta.yaml
-    or accession_id.tsv-meta.yaml.
-
-    Parameters:
-    - md5_checksums: Dictionary with filenames as keys and their MD5 checksums as
-    values.
-    - accession_id: The accession ID to look for, with .tsv or .tsv.gz extensions.
-
-    Returns:
-    - A dictionary with the matching filename and its MD5 checksum. Empty if no
-    match is found.
-    """
-    possible_keys = (
-        [f"{accession_id}.tsv-meta.yaml", f"{accession_id}.tsv.gz-meta.yaml"]
-        if not is_harmonised
-        else [f"{accession_id}.h.tsv-meta.yaml", f"{accession_id}.h.tsv.gz-meta.yaml"]
-    )
-
-    # Check for exact matches first
-    for key in possible_keys:
-        if key in md5_checksums:
-            return {key: md5_checksums[key]}
-
-    # Check for partial matches if no exact match is found
-    # i.e., files are named <GCST ID>_<build number>.*
-    # e.g. http://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/GCST90308001-GCST90309000/GCST90308682/ # noqa:E501
-    for key in md5_checksums:
-        if "yaml" in key or "yml" in key:
-            return {key: md5_checksums[key]}
-
-    return {}
-
-
 def construct_get_payload_response(callback_id):
     response = None
     payload = pl.Payload(callback_id=callback_id)
@@ -996,99 +895,3 @@ def create_study_report(study):
 
 def val_from_dict(key, dict, default=None):
     return dict[key] if key in dict else default
-
-
-def find_latest_metadata_update(
-    file_path: str, gcst_id: str, harmonised_status: str
-) -> Optional[str]:
-    """
-    Finds the latest metadata last update date for a given GCST ID
-    and harmonised status.
-
-    Args:
-        file_path (str): Path to the CSV file.
-        gcst_id (str): The GCST identifier to search for.
-        harmonised_status (str): The harmonised status to filter by
-        (e.g., "harmonised" or "not_harmonised").
-
-    Returns:
-        Optional[str]: The latest update date in "YYYY-MM-DD" format if found,
-        else None.
-    """
-    latest_date = None
-    date_format = "%Y-%m-%d"
-
-    try:
-        with open(file_path, mode="r", newline="", encoding="utf-8") as csvfile:
-            reader = csv.reader(csvfile)
-            for row_number, row in enumerate(reader, start=1):
-                if len(row) != 3:
-                    print(f"Skipping malformed row {row_number}: {row}")
-                    continue
-
-                current_gcst, current_status, date_str = [item.strip() for item in row]
-
-                if (
-                    current_gcst == gcst_id
-                    and current_status.lower() == harmonised_status.lower()
-                ):
-                    try:
-                        current_date = datetime.strptime(date_str, date_format)
-                        if latest_date is None or current_date > latest_date:
-                            latest_date = current_date
-                    except ValueError:
-                        print(f"Invalid date format on row {row_number}: {date_str}")
-                        continue
-
-        if latest_date:
-            return latest_date.strftime(date_format)
-        else:
-            print("No matching records found.")
-            return None
-
-    except FileNotFoundError:
-        print(f"File not found: {file_path}")
-        return None
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return None
-
-
-def find_latest_yamlmd5sums(
-    file_path: str,
-    gcst_id: str,
-    harmonised_status: str,
-    # search_file_name: str
-) -> Optional[list]:
-    mdsums = []
-
-    try:
-        with open(file_path, mode="r", newline="", encoding="utf-8") as csvfile:
-            reader = csv.reader(csvfile)
-            for row_number, row in enumerate(reader, start=1):
-                if len(row) != 4:
-                    print(f"Skipping malformed row {row_number}: {row}")
-                    continue
-
-                current_gcst, current_status, file_name, md5sum = [
-                    item.strip() for item in row
-                ]
-
-                if (
-                    current_gcst == gcst_id
-                    and current_status.lower() == harmonised_status.lower()
-                ):
-                    mdsums.append(md5sum)
-
-        if mdsums:
-            return mdsums
-        else:
-            print("No matching records found.")
-            return None
-
-    except FileNotFoundError:
-        print(f"File not found: {file_path}")
-        return None
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return None
