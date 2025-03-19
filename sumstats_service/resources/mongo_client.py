@@ -19,6 +19,7 @@ class MongoClient:
         self.task_failure_collection = self.database["sumstats-celery-task-failures"]
         self.metadata_yaml_collection = self.database["sumstats-metadata-yaml"]
         self.studies_collection = self.database["studies"]
+        self.payload_collection = self.database["sumstats-validation-payload"]
 
     """ generic methods"""
 
@@ -232,3 +233,29 @@ class MongoClient:
 
         print(f"No globus_endpoint_id found for gcst_id: {gcst_id}")
         return None
+
+    def upsert_payload(self, callback_id, payload=None, status=None):
+        set_op = {"request_updated": datetime.now()}
+
+        if payload is not None:
+            set_op["payload"] = payload
+
+        if status is not None:
+            set_op["status"] = status.value
+
+        self.payload_collection.update_one(
+            {"callback_id": callback_id},
+            {
+                "$set": set_op,
+                "$setOnInsert": {
+                    "request_created": datetime.now(),
+                    "callback_id": callback_id,
+                },
+            },
+            upsert=True,
+        )
+        print(f"Payload for callback_id='{callback_id}' upserted.")
+
+    def get_payload(self, callback_id):
+        _ = self.payload_collection.find_one({"callback_id": callback_id})
+        return _["payload"]

@@ -122,10 +122,22 @@ def sumstats():
 
     logger.info(f"{minrows=} {force_valid=} {bypass=} {file_type=}")
 
+    mdb = MongoClient(
+        config.MONGO_URI,
+        config.MONGO_USER,
+        config.MONGO_PASSWORD,
+        config.MONGO_DB,
+    )
+
+    mdb.upsert_payload(
+        callback_id=callback_id,
+        payload=content,
+        status=config.ValidationStatus.PENDING,
+    )
+
     process_studies.apply_async(
         kwargs={
             "callback_id": callback_id,
-            "content": content,
             "file_type": file_type,
             "minrows": minrows,
             "forcevalid": force_valid,
@@ -164,10 +176,22 @@ def validate_sumstats(callback_id: str):
         is_force_valid=bool(force_valid),
     )
 
+    mdb = MongoClient(
+        config.MONGO_URI,
+        config.MONGO_USER,
+        config.MONGO_PASSWORD,
+        config.MONGO_DB,
+    )
+
+    mdb.upsert_payload(
+        callback_id=callback_id,
+        payload=content,
+        status=config.ValidationStatus.PENDING,
+    )
+
     validate_files_in_background.apply_async(
         kwargs={
             "callback_id": callback_id,
-            "content": content,
             "minrows": minrows,
             "forcevalid": force_valid,
             "bypass": bypass,
@@ -310,7 +334,6 @@ def get_dir_contents(unique_id):
 @celery.task(queue=config.CELERY_QUEUE2, options={"queue": config.CELERY_QUEUE2})
 def process_studies(
     callback_id: str,
-    content: dict,
     file_type=None,
     minrows: Union[int, None] = None,
     forcevalid: bool = False,
@@ -318,6 +341,16 @@ def process_studies(
 ):
     logger.info(">>> [process_studies]")
     logger.info(f"{callback_id=} with {minrows=} {forcevalid=} {bypass=} {file_type=}")
+
+    # get payload from db
+    mdb = MongoClient(
+        config.MONGO_URI,
+        config.MONGO_USER,
+        config.MONGO_PASSWORD,
+        config.MONGO_DB,
+    )
+    content = mdb.get_payload(callback_id)
+
     if endpoints.create_studies(
         callback_id=callback_id, file_type=file_type, content=content
     ):
@@ -325,7 +358,6 @@ def process_studies(
         validate_files_in_background.apply_async(
             kwargs={
                 "callback_id": callback_id,
-                "content": content,
                 "minrows": minrows,
                 "forcevalid": forcevalid,
                 "bypass": bypass,
@@ -339,15 +371,26 @@ def process_studies(
 @celery.task(queue=config.CELERY_QUEUE1, options={"queue": config.CELERY_QUEUE1})
 def validate_files_in_background(
     callback_id: str,
-    content: dict,
     minrows: Union[int, None] = None,
     forcevalid: bool = False,
     bypass: bool = False,
     file_type: Union[str, None] = None,
 ):
     logger.info(">>> [validate_files_in_background]")
+    mdb = MongoClient(
+        config.MONGO_URI,
+        config.MONGO_USER,
+        config.MONGO_PASSWORD,
+        config.MONGO_DB,
+    )
+    content = mdb.get_payload(callback_id)
     logger.info(f"{content=}")
     logger.info(f"{callback_id=} with {minrows=} {forcevalid=} {bypass=} {file_type=}")
+
+    mdb.upsert_payload(
+        callback_id=callback_id,
+        status=config.ValidationStatus.IN_PROGRESS,
+    )
 
     logger.info("calling store_validation_method")
     au.store_validation_method(callback_id=callback_id, bypass_validation=forcevalid)
@@ -359,6 +402,10 @@ def validate_files_in_background(
             content=content,
             file_type=file_type,
         )
+        mdb.upsert_payload(
+            callback_id=callback_id,
+            status=config.ValidationStatus.SKIPPED,
+        )
     else:
         logger.info("Validating files.")
         results = au.validate_files(
@@ -368,6 +415,11 @@ def validate_files_in_background(
             forcevalid=forcevalid,
             file_type=file_type,
         )
+        mdb.upsert_payload(
+            callback_id=callback_id,
+            status=config.ValidationStatus.COMPLETED,
+        )
+
     return results
 
 

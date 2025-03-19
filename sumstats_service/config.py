@@ -228,3 +228,11 @@ class MetadataYamlStatus(Enum):
     COMPLETED = "completed"
     FAILED = "failed"
     SKIPPED = "skipped"
+
+
+class ValidationStatus(Enum):
+    PENDING = "pending"
+    IN_PROGRESS = "in-progress"
+    COMPLETED = "completed"
+    # FAILED = "failed"
+    SKIPPED = "skipped"
