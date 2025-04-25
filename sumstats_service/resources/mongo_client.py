@@ -196,9 +196,13 @@ class MongoClient:
             },
         }
 
-        # If status is COMPLETED, then reset attempts to 0.
+        # If status is COMPLETED, SKIPPED or PENDING, then reset attempts to 0.
         # Otherwise increment attempts.
-        if status == config.MetadataYamlStatus.COMPLETED or status == config.MetadataYamlStatus.SKIPPED:
+        if status in [
+            config.MetadataYamlStatus.COMPLETED,
+            config.MetadataYamlStatus.SKIPPED,
+            config.MetadataYamlStatus.PENDING,
+        ]:
             update_doc["$set"]["attempts"] = 0
         else:
             update_doc["$inc"] = {"attempts": 1}
