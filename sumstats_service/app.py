@@ -485,22 +485,26 @@ def convert_metadata_to_yaml(gcst_id, **kwargs):
                 logger.info(f"No globus endpoint id found for {gcst_id}.")
     except Exception as e:
         study_data = mdb.get_study(gcst_id=gcst_id)
-        if not study_data or study_data.get("summaryStatisticsFile", "") != config.NR:
-            logger.info(f"Adding {gcst_id=} to the task failures collection")
-            mdb.insert_or_update_metadata_yaml_request(
-                gcst_id=gcst_id,
-                status=config.MetadataYamlStatus.FAILED,
-                is_harmonised=is_harmonised_included,
-                additional_info={"exception": str(e)},
-            )
-        else:
-            info = f"Skipping {gcst_id=} hm: {is_harmonised_included} as it has no files."
+        if study_data.get("summaryStatisticsFile", "") == config.NR:
+            info = f"""Skipping {gcst_id=} hm: {is_harmonised_included}
+            as summary statistics file=NR."""
             logger.info(info)
             mdb.insert_or_update_metadata_yaml_request(
                 gcst_id=gcst_id,
                 status=config.MetadataYamlStatus.SKIPPED,
                 is_harmonised=is_harmonised_included,
                 additional_info={"info": info},
+            )
+        else:
+            logger.info(
+                f"""Adding {gcst_id=} hm: {is_harmonised_included}
+                to the task failures collection."""
+            )
+            mdb.insert_or_update_metadata_yaml_request(
+                gcst_id=gcst_id,
+                status=config.MetadataYamlStatus.FAILED,
+                is_harmonised=is_harmonised_included,
+                additional_info={"exception": str(e)},
             )
 
 
