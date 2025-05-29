@@ -282,6 +282,56 @@ def update_sumstats(callback_id):
     return Response(status=200, mimetype="application/json")
 
 
+@app.route("/v1/file-types", methods=["PATCH"])
+def update_file_types_route():
+    try:
+        data = request.get_json()
+        if not data:
+            return make_response(jsonify({"error": "Request body must be JSON"}), 400)
+    except Exception as e:
+        logger.error(f"Error parsing JSON: {e}")
+        return make_response(jsonify({"error": "Invalid JSON format"}), 400)
+
+    gcst_id = data.get("gcst_id")
+    file_type = data.get("file_type")
+
+    if not gcst_id:
+        return make_response(jsonify({"error": "gcst_id is required"}), 400)
+
+    if not file_type:
+        return make_response(jsonify({"error": "file_type is required"}), 400)
+
+    logger.info(
+        f"Received request to update gcst_id='{gcst_id}' with file_type='{file_type}'"
+    )
+
+    try:
+        mdb = MongoClient(
+            config.MONGO_URI,
+            config.MONGO_USER,
+            config.MONGO_PASSWORD,
+            config.MONGO_DB,
+        )
+        result = mdb.update_file_type(gcst_id=gcst_id, file_type=file_type)
+    except Exception as e:
+        logger.error(f"An error occurred: {e}")
+        return make_response(jsonify({"error": f"An error occurred: {e}"}), 500)
+
+    if result is None or not result.get("success"):
+        return make_response(jsonify({"error": "An error occured."}), 500)
+    else:
+        return make_response(
+            jsonify(
+                {
+                    "message": result["message"],
+                    "gcst_id": gcst_id,
+                    "file_type": file_type,
+                }
+            ),
+            200,
+        )
+
+
 # --- Globus methods --- #
 
 

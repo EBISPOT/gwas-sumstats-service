@@ -93,6 +93,21 @@ class MongoClient:
         data["gcst"] = gcst
         self.replace_one(self.study_collection, objectid, data)
 
+    def update_file_type(self, gcst_id, file_type):
+        data = self.get_study_metadata_by_gcst(gcst_id)
+        if data is None:
+            print(
+                f"""
+                Error: No study found with gcst_id '{gcst_id}'.
+                Cannot update file type.
+                """
+            )
+            raise ValueError(f"No study found with gcst_id '{gcst_id}'")
+
+        objectid = data["_id"]
+        data["fileType"] = file_type
+        self.replace_one(self.study_collection, objectid, data)
+
     def get_study_count(self):
         return self.study_collection.count_documents({})
 
