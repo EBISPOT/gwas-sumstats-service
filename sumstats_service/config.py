@@ -236,3 +236,9 @@ class ValidationStatus(Enum):
     COMPLETED = "completed"
     # FAILED = "failed"
     SKIPPED = "skipped"
+
+
+class FileType(Enum):
+    GWAS_SSF = "GWAS-SSF v1.0"
+    PRE_GWAS_SSF = "pre-GWAS-SSF"
+    NON_GWAS_SSF = "non-GWAS-SSF"
