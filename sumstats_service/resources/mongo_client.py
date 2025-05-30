@@ -94,8 +94,8 @@ class MongoClient:
         self.replace_one(self.study_collection, objectid, data)
 
     def update_file_type(self, gcst_id, file_type):
-        data = self.get_study_metadata_by_gcst(gcst_id)
-        if data is None:
+        study_data = self.get_study_metadata_by_gcst(gcst_id)
+        if study_data is None:
             print(
                 f"""
                 Error: No study found with gcst_id '{gcst_id}'.
@@ -104,9 +104,15 @@ class MongoClient:
             )
             raise ValueError(f"No study found with gcst_id '{gcst_id}'")
 
-        objectid = data["_id"]
-        data["fileType"] = file_type
-        self.replace_one(self.study_collection, objectid, data)
+        object_id = study_data["_id"]
+        filter_criteria = {"_id": object_id}
+
+        # Define the update operation to set the fileType field
+        # The $set operator adds the field if it doesn't exist,
+        # or updates it if it does.
+        update_operation = {"$set": {"fileType": file_type}}
+        update_result = self.study_collection.update_one(filter_criteria, update_operation)
+        
         return {
             "success": True,
             "message": f"File type updated successfully for gcst_id '{gcst_id}'.",
