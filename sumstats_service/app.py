@@ -301,6 +301,20 @@ def update_file_types_route():
     if not file_type:
         return make_response(jsonify({"error": "file_type is required"}), 400)
 
+    valid_file_types = [ft.value for ft in config.FileType]
+    if file_type not in valid_file_types:
+        return make_response(
+            jsonify(
+                {
+                    "error": f"""
+                    Invalid file_type: '{file_type}'.
+                    Allowed types are: {', '.join(valid_file_types)}
+                    """
+                }
+            ),
+            400,
+        )
+
     logger.info(
         f"Received request to update gcst_id='{gcst_id}' with file_type='{file_type}'"
     )
@@ -314,11 +328,27 @@ def update_file_types_route():
         )
         result = mdb.update_file_type(gcst_id=gcst_id, file_type=file_type)
     except Exception as e:
-        logger.error(f"An error occurred: {e}")
-        return make_response(jsonify({"error": f"An error occurred: {e}"}), 500)
+        logger.error(
+            f"""
+            An unexpected error occurred while updating file type
+            for gcst_id='{gcst_id}': {e}
+            """,
+            exc_info=True,
+        )
+        return make_response(
+            jsonify({"error": "An unexpected internal server error occurred."}), 500
+        )
 
     if result is None or not result.get("success"):
-        return make_response(jsonify({"error": "An error occured."}), 500)
+        error_message = (
+            result.get("message", "An error occurred during the update.")
+            if result
+            else "An unknown error occurred during the update."
+        )
+        logger.error(
+            f"Update file type failed for gcst_id='{gcst_id}'. Reason: {error_message}"
+        )
+        return make_response(jsonify({"error": error_message}), 500)
     else:
         return make_response(
             jsonify(
