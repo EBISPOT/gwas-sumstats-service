@@ -107,6 +107,10 @@ class MongoClient:
         objectid = data["_id"]
         data["fileType"] = file_type
         self.replace_one(self.study_collection, objectid, data)
+        return {
+            "success": True,
+            "message": f"File type updated successfully for gcst_id '{gcst_id}'.",
+        }
 
     def get_study_count(self):
         return self.study_collection.count_documents({})
