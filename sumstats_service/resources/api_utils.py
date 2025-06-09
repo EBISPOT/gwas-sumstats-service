@@ -25,6 +25,7 @@ from sumstats_service import config, logger_config
 from sumstats_service.resources.error_classes import RequestedNotFound
 from sumstats_service.resources.mongo_client import MongoClient
 from sumstats_service.resources.utils import download_with_requests
+from pymongo import UpdateOne
 
 try:
     logger_config.setup_logging()
@@ -67,21 +68,42 @@ def store_validation_method(callback_id: str, bypass_validation: bool = False) -
 
 def store_validation_results_in_db(validation_response):
     valid = True
-    for item in json.loads(validation_response)["validationList"]:
+    validation_list = json.loads(validation_response)["validationList"]
+    callback_id = json.loads(validation_response)["callbackID"]
+
+    bulk_operations = []
+
+    for item in validation_list:
         study_id = item["id"]
         study = st.Study(study_id)
         study.retrieved = item["retrieved"]
         study.data_valid = item["dataValid"]
         study.error_code = item["errorCode"]
-        study.store_validation_statuses()
+        # study.store_validation_statuses()
+
+        update_operation = UpdateOne(
+            {"studyID": study_id},
+            {
+                "$set": {
+                    "retrieved": study.retrieved,
+                    "dataValid": study.data_valid,
+                    "errorCode": study.error_code,
+                }
+            }
+        )
+        bulk_operations.append(update_operation)
+
         if study.error_code:
             valid = False
+    
+    if bulk_operations:
+        study.bulk_store_validation_statuses()
+
     if not valid:
         """
         TODO: reinstate globus permissions
         """
         # reinstate_globus_permissions(globus_uuid)
-        callback_id = json.loads(validation_response)["callbackID"]
         payload = pl.Payload(callback_id=callback_id)
         payload.remove_payload_directory()
 

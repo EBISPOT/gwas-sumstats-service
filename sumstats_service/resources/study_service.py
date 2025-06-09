@@ -101,6 +101,12 @@ class Study:
         # self.store_data_valid_status()
         # self.store_error_code()
 
+    def bulk_store_validation_statuses(self, operations):
+        mdb = MongoClient(
+            config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB
+        )
+        mdb.bulk_update_study_metadata(operations)  
+
     def store_study_metadata(self):
         mdb = MongoClient(
             config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB

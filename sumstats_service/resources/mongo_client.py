@@ -75,6 +75,9 @@ class MongoClient:
         data["errorCode"] = error_code
         self.replace_one(self.study_collection, objectid, data)
 
+    def bulk_update_study_metadata(self, operations):
+        if operations:
+            self.study_collection.bulk_write(operations)
 
     def update_retrieved_status(self, study, status):
         data = self.get_study_metadata(study)
