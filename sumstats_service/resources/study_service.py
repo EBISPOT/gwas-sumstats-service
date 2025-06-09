@@ -2,7 +2,6 @@ import re
 
 import sumstats_service.resources.file_handler as fh
 from sumstats_service import config
-from sumstats_service.resources.error_classes import *
 from sumstats_service.resources.mongo_client import MongoClient
 
 
@@ -105,13 +104,15 @@ class Study:
         mdb = MongoClient(
             config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB
         )
-        mdb.bulk_update_study_metadata(operations)  
+        mdb.bulk_update_study_metadata(operations)
 
     def store_study_metadata(self):
         mdb = MongoClient(
             config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB
         )
-        mdb.update_study_metadata(self.study_id, self.retrieved, self.data_valid, self.error_code)
+        mdb.update_study_metadata(
+            self.study_id, self.retrieved, self.data_valid, self.error_code
+        )
 
     def store_retrieved_status(self):
         mdb = MongoClient(

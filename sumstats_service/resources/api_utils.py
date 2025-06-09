@@ -16,6 +16,7 @@ from gwas_sumstats_tools.interfaces.metadata import (
     MetadataClient,
     metadata_dict_from_gwas_cat,
 )
+from pymongo import UpdateOne
 
 import sumstats_service.resources.globus as globus
 import sumstats_service.resources.payload as pl
@@ -25,7 +26,6 @@ from sumstats_service import config, logger_config
 from sumstats_service.resources.error_classes import RequestedNotFound
 from sumstats_service.resources.mongo_client import MongoClient
 from sumstats_service.resources.utils import download_with_requests
-from pymongo import UpdateOne
 
 try:
     logger_config.setup_logging()
@@ -89,15 +89,15 @@ def store_validation_results_in_db(validation_response):
                     "dataValid": study.data_valid,
                     "errorCode": study.error_code,
                 }
-            }
+            },
         )
         bulk_operations.append(update_operation)
 
         if study.error_code:
             valid = False
-    
+
     if bulk_operations:
-        study.bulk_store_validation_statuses()
+        study.bulk_store_validation_statuses(bulk_operations)
 
     if not valid:
         """
