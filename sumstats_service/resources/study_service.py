@@ -96,9 +96,16 @@ class Study:
         mdb.delete_study_entry(self.study_id)
 
     def store_validation_statuses(self):
-        self.store_retrieved_status()
-        self.store_data_valid_status()
-        self.store_error_code()
+        self.store_study_metadata()
+        # self.store_retrieved_status()
+        # self.store_data_valid_status()
+        # self.store_error_code()
+
+    def store_study_metadata(self):
+        mdb = MongoClient(
+            config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB
+        )
+        mdb.update_study_metadata(self.study_id, self.retrieved, self.data_valid, self.error_code)
 
     def store_retrieved_status(self):
         mdb = MongoClient(
