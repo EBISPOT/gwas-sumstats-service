@@ -565,7 +565,7 @@ def convert_metadata_to_yaml(gcst_id, **kwargs):
                 logger.info(f"No globus endpoint id found for {gcst_id}.")
     except Exception as e:
         study_data = mdb.get_study(gcst_id=gcst_id)
-        if study_data.get("summaryStatisticsFile", "") == config.NR:
+        if study_data and study_data.get("summaryStatisticsFile", "") == config.NR:
             info = f"""Skipping {gcst_id=} hm: {is_harmonised_included}
             as summary statistics file=NR."""
             logger.info(info)
