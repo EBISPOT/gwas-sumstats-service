@@ -66,7 +66,7 @@ def store_validation_method(callback_id: str, bypass_validation: bool = False) -
 
 
 def store_validation_results_in_db(validation_response):
-    is_force_valid = json.loads(validation_response)["forcevalid"]
+    is_force_valid = json.loads(validation_response).get("forcevalid", False)
     valid = True
     for item in json.loads(validation_response)["validationList"]:
         study_id = item["id"]
