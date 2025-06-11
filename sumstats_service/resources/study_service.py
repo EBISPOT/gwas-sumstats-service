@@ -4,6 +4,7 @@ import sumstats_service.resources.file_handler as fh
 from sumstats_service import config
 from sumstats_service.resources.error_classes import *
 from sumstats_service.resources.mongo_client import MongoClient
+import sumstats_service.resources.api_utils as au
 
 
 class Study:
@@ -95,10 +96,13 @@ class Study:
         )
         mdb.delete_study_entry(self.study_id)
 
-    def store_validation_statuses(self):
+    def store_validation_statuses(self, is_force_valid=False):
         self.store_retrieved_status()
         self.store_data_valid_status()
         self.store_error_code()
+
+        if is_force_valid:
+            self.update_file_type()
 
     def store_retrieved_status(self):
         mdb = MongoClient(
@@ -118,6 +122,14 @@ class Study:
             config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB
         )
         mdb.update_error_code(self.study_id, self.error_code)
+
+
+    def update_file_type(self):
+        mdb = MongoClient(
+            config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB
+        )
+        mdb.update_file_type_by_study_id(self.study_id, au.determine_file_type(is_in_file=True, is_force_valid=True))
+
 
     def store_publication_details(self):
         mdb = MongoClient(

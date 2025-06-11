@@ -85,6 +85,12 @@ class MongoClient:
         data["errorCode"] = error_code
         self.replace_one(self.study_collection, objectid, data)
 
+    def update_file_type_by_study_id(self, study, file_type):
+        data = self.get_study_metadata(study)
+        objectid = data["_id"]
+        data["fileType"] = file_type
+        self.replace_one(self.study_collection, objectid, data)
+
     def update_publication_details(self, study, author_name, pmid, gcst):
         data = self.get_study_metadata(study)
         objectid = data["_id"]
