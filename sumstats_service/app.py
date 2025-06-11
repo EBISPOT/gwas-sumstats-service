@@ -250,14 +250,15 @@ def update_sumstats(callback_id):
             if move_files_result.successful():
                 logger.info(f"{callback_id=} :: move_files_result successful")
                 globus_endpoint_id = move_files_result.get()["globus_endpoint_id"]
-                metadata_conversion_result = convert_metadata_to_yaml.apply_async(
-                    args=[resp["studyList"][0]["gcst"]],
-                    kwargs={
-                        "is_harmonised_included": False,
-                        "globus_endpoint_id": globus_endpoint_id,
-                    },
-                    retry=True,
-                )
+                for study in resp["studyList"]:
+                    metadata_conversion_result = convert_metadata_to_yaml.apply_async(
+                        args=[study["gcst"]],
+                        kwargs={
+                            "is_harmonised_included": False,
+                            "globus_endpoint_id": globus_endpoint_id,
+                        },
+                        retry=True,
+                    )
 
                 while (time.time() - start_time) < timeout:
                     if metadata_conversion_result.ready():
