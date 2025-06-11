@@ -3,7 +3,6 @@ from collections import OrderedDict
 
 import sumstats_service.config as config
 import sumstats_service.resources.api_utils as au
-from sumstats_service.resources.error_classes import *
 from sumstats_service.resources.mongo_client import MongoClient
 
 
@@ -23,7 +22,9 @@ def delete_sumstats(callback_id):
 
 
 def create_studies(content, file_type=None, callback_id=None):
-    if au.json_payload_to_db(content=content, file_type=file_type, callback_id=callback_id):
+    if au.json_payload_to_db(
+        content=content, file_type=file_type, callback_id=callback_id
+    ):
         return True
     return False
 

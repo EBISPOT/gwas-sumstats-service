@@ -117,8 +117,8 @@ class MongoClient:
         # The $set operator adds the field if it doesn't exist,
         # or updates it if it does.
         update_operation = {"$set": {"fileType": file_type}}
-        update_result = self.study_collection.update_one(filter_criteria, update_operation)
-        
+        self.study_collection.update_one(filter_criteria, update_operation)
+
         return {
             "success": True,
             "message": f"File type updated successfully for gcst_id '{gcst_id}'.",

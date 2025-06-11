@@ -1,10 +1,9 @@
 import re
 
+import sumstats_service.resources.api_utils as au
 import sumstats_service.resources.file_handler as fh
 from sumstats_service import config
-from sumstats_service.resources.error_classes import *
 from sumstats_service.resources.mongo_client import MongoClient
-import sumstats_service.resources.api_utils as au
 
 
 class Study:
@@ -123,13 +122,13 @@ class Study:
         )
         mdb.update_error_code(self.study_id, self.error_code)
 
-
     def update_file_type(self):
         mdb = MongoClient(
             config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB
         )
-        mdb.update_file_type_by_study_id(self.study_id, au.determine_file_type(is_in_file=True, is_force_valid=True))
-
+        mdb.update_file_type_by_study_id(
+            self.study_id, au.determine_file_type(is_in_file=True, is_force_valid=True)
+        )
 
     def store_publication_details(self):
         mdb = MongoClient(
