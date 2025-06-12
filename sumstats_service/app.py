@@ -197,7 +197,7 @@ def validate_sumstats(callback_id: str):
             "bypass": bypass,
             "file_type": file_type,
         },
-        link=store_validation_results.s(),
+        link=store_validation_results.s(force_valid),
         retry=True,
     )
     return Response(status=200, mimetype="application/json")
@@ -444,7 +444,7 @@ def process_studies(
                 "bypass": bypass,
                 "file_type": file_type,
             },
-            link=store_validation_results.s(),
+            link=store_validation_results.s(forcevalid),
             retry=True,
         )
 
@@ -505,11 +505,11 @@ def validate_files_in_background(
 
 
 @celery.task(queue=config.CELERY_QUEUE2, options={"queue": config.CELERY_QUEUE2})
-def store_validation_results(results):
+def store_validation_results(results, force_valid):
     logger.info(">>> [store_validation_results]")
     if results:
         logger.info("results: True")
-        au.store_validation_results_in_db(results)
+        au.store_validation_results_in_db(results, force_valid)
 
 
 @celery.task(queue=config.CELERY_QUEUE1, options={"queue": config.CELERY_QUEUE1})
