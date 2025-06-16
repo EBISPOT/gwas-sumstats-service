@@ -96,10 +96,10 @@ class Study:
         mdb.delete_study_entry(self.study_id)
 
     def store_validation_statuses(self, is_force_valid=False):
-        self.store_retrieved_status()
-        self.store_data_valid_status()
-        self.store_error_code()
-
+        self.store_study_metadata()
+        # self.store_retrieved_status()
+        # self.store_data_valid_status()
+        # self.store_error_code()
         if is_force_valid:
             self.update_file_type()
 
@@ -293,6 +293,19 @@ class Study:
         )
         return ssf.move_file_to_staging()
 
+    def bulk_store_validation_statuses(self, operations):
+        mdb = MongoClient(
+            config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB
+        )
+        mdb.bulk_update_study_metadata(operations)
+
+    def store_study_metadata(self):
+        mdb = MongoClient(
+            config.MONGO_URI, config.MONGO_USER, config.MONGO_PASSWORD, config.MONGO_DB
+        )
+        mdb.update_study_metadata(
+            self.study_id, self.retrieved, self.data_valid, self.error_code
+        )
 
 def set_var_from_dict(dictionary, var_name, default):
     return dictionary[var_name] if var_name in dictionary else default
