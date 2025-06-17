@@ -67,6 +67,18 @@ class MongoClient:
         meta_dict = next(last_created_entry, None)
         return meta_dict
 
+    def update_study_metadata(self, study, retrieved_status, valid_status, error_code):
+        data = self.get_study_metadata(study)
+        objectid = data["_id"]
+        data["retrieved"] = retrieved_status
+        data["dataValid"] = valid_status
+        data["errorCode"] = error_code
+        self.replace_one(self.study_collection, objectid, data)
+
+    def bulk_update_study_metadata(self, operations):
+        if operations:
+            self.study_collection.bulk_write(operations)
+
     def update_retrieved_status(self, study, status):
         data = self.get_study_metadata(study)
         objectid = data["_id"]

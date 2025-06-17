@@ -16,6 +16,7 @@ from gwas_sumstats_tools.interfaces.metadata import (
     MetadataClient,
     metadata_dict_from_gwas_cat,
 )
+from pymongo import UpdateOne
 
 import sumstats_service.resources.globus as globus
 import sumstats_service.resources.payload as pl
@@ -67,21 +68,45 @@ def store_validation_method(callback_id: str, bypass_validation: bool = False) -
 
 def store_validation_results_in_db(validation_response, is_force_valid=False):
     valid = True
-    for item in json.loads(validation_response)["validationList"]:
+    validation_list = json.loads(validation_response)["validationList"]
+    callback_id = json.loads(validation_response)["callbackID"]
+
+    bulk_operations = []
+
+    for item in validation_list:
         study_id = item["id"]
         study = st.Study(study_id)
         study.retrieved = item["retrieved"]
         study.data_valid = item["dataValid"]
         study.error_code = item["errorCode"]
-        study.store_validation_statuses(is_force_valid=is_force_valid)
+        # study.store_validation_statuses()
+
+        update_fields = {
+            "retrieved": study.retrieved,
+            "dataValid": study.data_valid,
+            "errorCode": study.error_code,
+        }
+
+        if is_force_valid:
+            update_fields["fileType"] = determine_file_type(
+                is_in_file=True, is_force_valid=True
+            )
+
+        update_operation = UpdateOne({"studyID": study_id}, {"$set": update_fields})
+
+        bulk_operations.append(update_operation)
+
         if study.error_code:
             valid = False
+
+    if bulk_operations:
+        study.bulk_store_validation_statuses(bulk_operations)
+
     if not valid:
         """
         TODO: reinstate globus permissions
         """
         # reinstate_globus_permissions(globus_uuid)
-        callback_id = json.loads(validation_response)["callbackID"]
         payload = pl.Payload(callback_id=callback_id)
         payload.remove_payload_directory()
 
