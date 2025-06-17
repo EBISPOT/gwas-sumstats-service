@@ -88,12 +88,11 @@ def store_validation_results_in_db(validation_response, is_force_valid=False):
         }
 
         if is_force_valid:
-            update_fields["fileType"] = file_type
+            update_fields["fileType"] = determine_file_type(
+                is_in_file=True, is_force_valid=True
+            )
 
-        update_operation = UpdateOne(
-            {"studyID": study_id},
-            {"$set": update_fields}
-        )
+        update_operation = UpdateOne({"studyID": study_id}, {"$set": update_fields})
 
         bulk_operations.append(update_operation)
 
