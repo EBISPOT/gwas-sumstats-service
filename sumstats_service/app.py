@@ -6,7 +6,7 @@ from typing import Union
 
 import simplejson
 from celery import Celery
-from celery.signals import task_failure
+from celery.signals import task_failure, worker_process_init
 from flask import Flask, Response, abort, jsonify, make_response, request
 
 import sumstats_service.resources.api_endpoints as endpoints
@@ -14,7 +14,7 @@ import sumstats_service.resources.api_utils as au
 import sumstats_service.resources.globus as globus
 from sumstats_service import config, logger_config
 from sumstats_service.resources.error_classes import APIException
-from sumstats_service.resources.mongo_client import MongoClient
+from sumstats_service.resources.mongo_client import get_mongo_client
 from sumstats_service.resources.utils import send_mail
 
 try:
@@ -34,10 +34,7 @@ app.config["CELERY_BROKER_URL"] = "{msg_protocol}://{user}:{pwd}@{host}:{port}".
     host=os.environ["QUEUE_HOST"],
     port=os.environ["QUEUE_PORT"],
 )
-app.config["CELERY_RESULT_BACKEND"] = (
-    "rpc://"
-    # '{0}://guest@{1}:{2}'.format(config.BROKER,config.BROKER_HOST,config.BROKER_PORT)
-)
+app.config["CELERY_RESULT_BACKEND"] = "rpc://"
 app.config["BROKER_TRANSPORT_OPTIONS"] = {"confirm_publish": True}
 app.url_map.strict_slashes = False
 
@@ -48,6 +45,12 @@ celery = Celery(
     backend=app.config["CELERY_RESULT_BACKEND"],
 )
 celery.conf.update(app.config)
+
+@worker_process_init.connect
+def init_worker(**kwargs):
+    logger.info("Initializing MongoDB connection for worker")
+    get_mongo_client(is_flask=False)
+    logger.info("MongoDB connection initialized for worker")
 
 # --- Errors --- #
 
@@ -122,12 +125,7 @@ def sumstats():
 
     logger.info(f"{minrows=} {force_valid=} {bypass=} {file_type=}")
 
-    mdb = MongoClient(
-        config.MONGO_URI,
-        config.MONGO_USER,
-        config.MONGO_PASSWORD,
-        config.MONGO_DB,
-    )
+    mdb = get_mongo_client(is_flask=True)
 
     mdb.upsert_payload(
         callback_id=callback_id,
@@ -176,12 +174,7 @@ def validate_sumstats(callback_id: str):
         is_force_valid=bool(force_valid),
     )
 
-    mdb = MongoClient(
-        config.MONGO_URI,
-        config.MONGO_USER,
-        config.MONGO_PASSWORD,
-        config.MONGO_DB,
-    )
+    mdb = get_mongo_client(is_flask=True)
 
     mdb.upsert_payload(
         callback_id=callback_id,
@@ -424,12 +417,7 @@ def process_studies(
     logger.info(f"{callback_id=} with {minrows=} {forcevalid=} {bypass=} {file_type=}")
 
     # get payload from db
-    mdb = MongoClient(
-        config.MONGO_URI,
-        config.MONGO_USER,
-        config.MONGO_PASSWORD,
-        config.MONGO_DB,
-    )
+    mdb = get_mongo_client(is_flask=False)
     content = mdb.get_payload(callback_id)
 
     if endpoints.create_studies(
@@ -458,12 +446,7 @@ def validate_files_in_background(
     file_type: Union[str, None] = None,
 ):
     logger.info(">>> [validate_files_in_background]")
-    mdb = MongoClient(
-        config.MONGO_URI,
-        config.MONGO_USER,
-        config.MONGO_PASSWORD,
-        config.MONGO_DB,
-    )
+    mdb = get_mongo_client(is_flask=False)
     content = mdb.get_payload(callback_id)
     logger.info(f"{content=}")
     logger.info(f"{callback_id=} with {minrows=} {forcevalid=} {bypass=} {file_type=}")
@@ -539,12 +522,7 @@ def convert_metadata_to_yaml(gcst_id, **kwargs):
     logger.info(f">>>>>>>>>>>>>> {is_save=}")
     logger.info(f">>>>>>>>>>>>>> {globus_endpoint_id=}")
 
-    mdb = MongoClient(
-        config.MONGO_URI,
-        config.MONGO_USER,
-        config.MONGO_PASSWORD,
-        config.MONGO_DB,
-    )
+    mdb = get_mongo_client(is_flask=False)
 
     # Explicitly set otherwise in nightly cron scripts.
     try:
@@ -616,12 +594,7 @@ def task_failure_handler(sender=None, **kwargs) -> None:
         is_hm = args[1] if args else "Unknown HM"
 
         # Save to MongoDB
-        mdb = MongoClient(
-            config.MONGO_URI,
-            config.MONGO_USER,
-            config.MONGO_PASSWORD,
-            config.MONGO_DB,
-        )
+        mdb = get_mongo_client(is_flask=False)
         study_data = mdb.get_study(gcst_id=gcst_id)
         if not study_data or study_data.get("summaryStatisticsFile", "") != config.NR:
             logger.info(f"Adding {gcst_id=} to the task failures collection")

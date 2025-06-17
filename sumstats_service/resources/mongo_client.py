@@ -1,17 +1,90 @@
 from datetime import datetime
+import logging
 
 from pymongo import MongoClient as pymc
 
 from sumstats_service import config
 
+# Global MongoDB client instances
+_mongo_client_instance = None
+_flask_mongo_client_instance = None
+
+logger = logging.getLogger(__name__)
+
+def get_mongo_client(is_flask=False, **kwargs):
+    """
+    Get or create a MongoDB client based on context.
+    
+    Args:
+        is_flask (bool): Whether this is being called from Flask context
+        **kwargs: Additional parameters to pass to MongoClient
+        
+    Returns:
+        MongoClient: A configured MongoDB client
+    """
+    global _mongo_client_instance, _flask_mongo_client_instance
+    
+    if is_flask:
+        if _flask_mongo_client_instance is None:
+            logger.info("Creating new Flask MongoDB client")
+            _flask_mongo_client_instance = MongoClient(
+                config.MONGO_URI,
+                config.MONGO_USER,
+                config.MONGO_PASSWORD,
+                config.MONGO_DB,
+                maxPoolSize=50,  
+                minPoolSize=10,
+                maxIdleTimeMS=120000,
+                waitQueueTimeoutMS=10000,
+                **kwargs
+            )
+        return _flask_mongo_client_instance
+    else:
+        if _mongo_client_instance is None:
+            logger.info("Creating new worker MongoDB client")
+            _mongo_client_instance = MongoClient(
+                config.MONGO_URI,
+                config.MONGO_USER,
+                config.MONGO_PASSWORD,
+                config.MONGO_DB,
+                maxPoolSize=100,
+                minPoolSize=20,
+                maxIdleTimeMS=120000,
+                waitQueueTimeoutMS=15000,
+                **kwargs
+            )
+        return _mongo_client_instance
+
 
 class MongoClient:
-    def __init__(self, uri, username, password, database):
+    def __init__(self, uri, username, password, database, **kwargs):
+        """
+        Initialize a MongoDB client.
+        
+        Args:
+            uri (str): MongoDB connection URI
+            username (str): MongoDB username
+            password (str): MongoDB password
+            database (str): Database name to connect to
+            **kwargs: Additional connection parameters for pymongo
+        """
         self.uri = uri
         self.username = username
         self.password = password
-        self.client = pymc(self.uri, username=self.username, password=self.password)
+        
+        # Create PyMongo client with connection pooling settings
+        connection_params = {
+            'username': self.username,
+            'password': self.password
+        }
+        
+        # Add any additional connection parameters
+        connection_params.update(kwargs)
+        
+        self.client = pymc(self.uri, **connection_params)
         self.database = self.client[database]
+        
+        # Initialize collections
         self.study_collection = self.database["sumstats-study-meta"]
         self.error_collection = self.database["sumstats-errors"]
         self.callback_collection = self.database["sumstats-callback-tracking"]
@@ -225,7 +298,7 @@ class MongoClient:
         if additional_info is None:
             additional_info = {}
 
-        print(f"adding {gcst_id} with hm: {is_harmonised} to yaml")
+        logger.info(f"Adding {gcst_id} with hm: {is_harmonised} to yaml")
 
         update_doc = {
             "$set": {
@@ -259,7 +332,7 @@ class MongoClient:
             update_doc,
             upsert=True,
         )
-        print(f"Metadata YAML request for {gcst_id} inserted or updated.")
+        logger.info(f"Metadata YAML request for {gcst_id} inserted or updated.")
 
     def get_globus_endpoint_id(self, gcst_id):
         """
@@ -278,7 +351,7 @@ class MongoClient:
         if result and "globus_endpoint_id" in result:
             return result["globus_endpoint_id"]
 
-        print(f"No globus_endpoint_id found for gcst_id: {gcst_id}")
+        logger.info(f"No globus_endpoint_id found for gcst_id: {gcst_id}")
         return None
 
     def upsert_payload(self, callback_id, payload=None, status=None):
@@ -301,7 +374,7 @@ class MongoClient:
             },
             upsert=True,
         )
-        print(f"Payload for callback_id='{callback_id}' upserted.")
+        logger.info(f"Payload for callback_id='{callback_id}' upserted.")
 
     def get_payload(self, callback_id):
         _ = self.payload_collection.find_one({"callback_id": callback_id})
