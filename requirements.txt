@@ -41,7 +41,7 @@ globus-cli==3.12.0
 globus-sdk==3.17.0
 greenlet==2.0.2
 gunicorn==19.9.0
-gwas-sumstats-tools==1.0.23
+gwas-sumstats-tools==1.0.24
 humanize==4.6.0
 hypothesis==6.68.2
 idna==3.4
