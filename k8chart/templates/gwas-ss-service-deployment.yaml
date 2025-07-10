@@ -68,9 +68,9 @@ spec:
           value: {{.Values.image.env.mongoPassword}}
         - name: MONGO_DB
           value: {{.Values.image.env.mongoDB}}
-        - name: HTTP_PROXY
+        - name: http_proxy
           value: {{.Values.image.env.httpProxy}}
-        - name: HTTPS_PROXY
+        - name: https_proxy
           value: {{.Values.image.env.httpsProxy}} 
       volumes:
       - name: log
