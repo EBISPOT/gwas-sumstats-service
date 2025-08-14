@@ -283,7 +283,7 @@ def update_sumstats(callback_id):
     return Response(status=200, mimetype="application/json")
 
 
-@app.route("/v1/file-types", methods=["PATCH"])
+@app.route("/v1/file-type", methods=["PATCH"])
 def update_file_types_route():
     try:
         data = request.get_json()
