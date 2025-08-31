@@ -11,11 +11,16 @@ COPY requirements.txt requirements.txt
 RUN set -eux \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
-    gcc \
-    build-essential \
-    openssh-client \
-    python3-dev \
-    libmagic-dev \
+       curl \
+       ca-certificates \
+       gcc \
+       build-essential \
+       openssh-client \
+       python3-dev \
+       libmagic-dev \
+       procps \
+       dnsutils \
+       iputils-ping \ 
     && rm -rf /var/lib/apt/lists/* \
     && pip install --upgrade pip \
     && pip install -r requirements.txt \
