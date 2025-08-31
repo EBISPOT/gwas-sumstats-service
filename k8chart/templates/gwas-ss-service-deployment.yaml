@@ -71,7 +71,12 @@ spec:
         - name: http_proxy
           value: {{.Values.image.env.httpProxy}}
         - name: https_proxy
-          value: {{.Values.image.env.httpsProxy}} 
+          value: {{.Values.image.env.httpsProxy}}
+        - name: NO_PROXY
+          value: {{ include "noProxy.value" . | quote }}
+        - name: no_proxy
+          value: {{ include "noProxy.value" . | quote }}
+
       volumes:
       - name: log
         persistentVolumeClaim:
