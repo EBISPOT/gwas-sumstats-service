@@ -187,6 +187,8 @@ class SumStatFile:
                 "data": 3,
                 "field order": 7,
                 "p_val": 12,
+                "missing_chromsomes": 3,
+
             }
             self.validation_error = error_to_code_dict.get(validator.primary_error_type)
             if validator.errors_table:
