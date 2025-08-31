@@ -14,6 +14,9 @@ spec:
     metadata:
       labels:
         app: {{.Values.service.name}}
+      annotations:
+        seccomp.security.alpha.kubernetes.io/pod: unconfined
+        container.seccomp.security.alpha.kubernetes.io/{{ .Values.service.name }}: unconfined
     spec:
       containers:
       - name: {{.Values.service.name}}
