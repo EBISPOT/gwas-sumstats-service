@@ -1,4 +1,5 @@
-FROM python:3.9-slim-bullseye
+FROM python:3.9-slim-bookworm
+# Need to compatible with GLIBC 2.36 since slurm 24.11.5 requires 2.34 
 
 RUN groupadd -r sumstats-service && useradd -r --create-home -g sumstats-service sumstats-service
 
@@ -7,12 +8,18 @@ RUN mkdir -p $INSTALL_PATH
 WORKDIR $INSTALL_PATH
 
 COPY requirements.txt requirements.txt
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc openssh-client python-dev libmagic-dev \
+RUN set -eux \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+    gcc \
+    build-essential \
+    openssh-client \
+    python3-dev \
+    libmagic-dev \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --upgrade pip \
     && pip install -r requirements.txt \
-    && apt-get purge -y --auto-remove gcc python-dev
+    && apt-get purge -y --auto-remove gcc python3-dev build-essential
 # the --no-install-recommends helps limit some of the install so that you can be more explicit about what gets installed
 
 COPY . .
