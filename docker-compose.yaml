@@ -3,8 +3,6 @@ services:
     gwas-ss-service:
         build: .
         image: gwas-ss-service:latest
-        security_opt:
-            - seccomp:unconfined
         depends_on:
             - rabbitmq
         links:
