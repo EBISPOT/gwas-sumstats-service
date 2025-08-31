@@ -11,6 +11,7 @@ COPY requirements.txt requirements.txt
 RUN set -eux \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
+    curl \
     gcc \
     build-essential \
     openssh-client \
