@@ -3,7 +3,12 @@ FROM python:3.9-slim-bookworm
 
 RUN groupadd -r sumstats-service && useradd -r --create-home -g sumstats-service sumstats-service
 
-ENV INSTALL_PATH /sumstats_service
+ENV INSTALL_PATH /sumstats_service \
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    NO_PROXY=localhost,127.0.0.1,.svc,.svc.cluster.local,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+ENV no_proxy=${NO_PROXY}
+
 RUN mkdir -p $INSTALL_PATH
 WORKDIR $INSTALL_PATH
 
@@ -11,16 +16,22 @@ COPY requirements.txt requirements.txt
 RUN set -eux \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
-    curl \
-    gcc \
-    build-essential \
-    openssh-client \
-    python3-dev \
-    libmagic-dev \
+       curl \
+       ca-certificates \
+       openssh-client \
+       libmagic-dev \
+       procps \
+       dnsutils \
+       iputils-ping \
+    && apt-get install -y --no-install-recommends \
+       gcc \
+       build-essential \
+       python3-dev \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --upgrade pip \
     && pip install -r requirements.txt \
-    && apt-get purge -y --auto-remove gcc python3-dev build-essential
+    && apt-get purge -y --auto-remove gcc python3-dev build-essential \
+    && curl -V | grep -q AsynchDNS || echo "NOTE: curl built without c-ares (AsynchDNS)."
 # the --no-install-recommends helps limit some of the install so that you can be more explicit about what gets installed
 
 COPY . .
