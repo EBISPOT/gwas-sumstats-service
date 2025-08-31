@@ -33,6 +33,8 @@ spec:
         securityContext:
           runAsUser: {{.Values.image.env.uid}}
           runAsGroup: {{.Values.image.env.gid}}
+          seccompProfile:
+              type: Unconfined
         env:
         - name: CELERY_USER
           value: {{.Values.image.env.celeryUser}}
