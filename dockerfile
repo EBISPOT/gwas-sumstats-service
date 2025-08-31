@@ -1,5 +1,5 @@
-FROM python:3.9-slim-bookworm
-# Need to compatible with GLIBC 2.36 since slurm 24.11.5 requires 2.34 
+FROM python:3.9-slim-bullseye
+# bookworm has 2.36, but curl not work, since glibc triggers clone3, which need docker 20.10+. bullseye ⇒ glibc ~2.31 (no clone3) and currently works with slurm slurm 24.11.5 on clusters with docker 19.3.3
 
 RUN groupadd -r sumstats-service && useradd -r --create-home -g sumstats-service sumstats-service
 
@@ -11,11 +11,16 @@ COPY requirements.txt requirements.txt
 RUN set -eux \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
-    gcc \
-    build-essential \
-    openssh-client \
-    python3-dev \
-    libmagic-dev \
+       curl \
+       ca-certificates \
+       gcc \
+       build-essential \
+       openssh-client \
+       python3-dev \
+       libmagic-dev \
+       procps \
+       dnsutils \
+       iputils-ping \ 
     && rm -rf /var/lib/apt/lists/* \
     && pip install --upgrade pip \
     && pip install -r requirements.txt \
