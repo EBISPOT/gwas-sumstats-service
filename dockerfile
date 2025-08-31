@@ -1,3 +1,17 @@
+# ---- Build curl with c-ares (no threaded resolver) ----
+FROM debian:bookworm-slim AS curl-build
+ARG CURL_VER=8.8.0
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      ca-certificates build-essential autoconf automake libtool pkg-config \
+      curl libssl-dev zlib1g-dev libzstd-dev libidn2-0-dev libpsl-dev \
+      libnghttp2-dev libssh2-1-dev libbrotli-dev libc-ares-dev \
+  && rm -rf /var/lib/apt/lists/*
+RUN curl -fsSL https://curl.se/download/curl-${CURL_VER}.tar.xz | tar -xJ && \
+    cd curl-${CURL_VER} && \
+    ./configure --with-ssl --with-brotli --with-zstd --with-nghttp2 --enable-ares --disable-ldap --prefix=/usr/local && \
+    make -j"$(nproc)" && make install-strip
+
+# --- Final runtime image ---
 FROM python:3.9-slim-bookworm
 # Need to compatible with GLIBC 2.36 since slurm 24.11.5 requires 2.34 
 
@@ -16,10 +30,9 @@ COPY requirements.txt requirements.txt
 RUN set -eux \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
-       curl \
        ca-certificates \
-       openssh-client \
-       libmagic-dev \
+       libc-ares2 libnghttp2-14 libssh2-1 libpsl5 libidn2-0 libbrotli1 libzstd1 zlib1g libssl3 \
+       openssh-client libmagic-dev \
        procps \
        dnsutils \
        iputils-ping \
@@ -30,9 +43,15 @@ RUN set -eux \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --upgrade pip \
     && pip install -r requirements.txt \
-    && apt-get purge -y --auto-remove gcc python3-dev build-essential \
-    && curl -V | grep -q AsynchDNS || echo "NOTE: curl built without c-ares (AsynchDNS)."
+    && apt-get purge -y --auto-remove gcc python3-dev build-essential 
 # the --no-install-recommends helps limit some of the install so that you can be more explicit about what gets installed
+
+# drop in the c-ares-enabled curl
+COPY --from=curl-build /usr/local/bin/curl /usr/local/bin/curl
+COPY --from=curl-build /usr/local/lib/libcurl.so* /usr/local/lib/
+
+# prove curl has AsynchDNS at build-time
+RUN curl -V | grep -q AsynchDNS
 
 COPY . .
 
