@@ -3,7 +3,7 @@ FROM python:3.9-slim-bookworm
 
 RUN groupadd -r sumstats-service && useradd -r --create-home -g sumstats-service sumstats-service
 
-ENV INSTALL_PATH /sumstats_service \
+ENV INSTALL_PATH=/sumstats_service \
     PIP_NO_CACHE_DIR=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     NO_PROXY=localhost,127.0.0.1,.svc,.svc.cluster.local,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
