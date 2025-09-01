@@ -1,5 +1,4 @@
 FROM python:3.9-slim-bullseye
-# bookworm has 2.36, but curl not work, since glibc triggers clone3, which need docker 20.10+. bullseye ⇒ glibc ~2.31 (no clone3) and currently works with slurm slurm 24.11.5 on clusters with docker 19.3.3
 
 RUN groupadd -r sumstats-service && useradd -r --create-home -g sumstats-service sumstats-service
 
@@ -8,23 +7,12 @@ RUN mkdir -p $INSTALL_PATH
 WORKDIR $INSTALL_PATH
 
 COPY requirements.txt requirements.txt
-RUN set -eux \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends \
-       curl \
-       ca-certificates \
-       gcc \
-       build-essential \
-       openssh-client \
-       python3-dev \
-       libmagic-dev \
-       procps \
-       dnsutils \
-       iputils-ping \ 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends gcc openssh-client python-dev libmagic-dev \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --upgrade pip \
     && pip install -r requirements.txt \
-    && apt-get purge -y --auto-remove gcc python3-dev build-essential
+    && apt-get purge -y --auto-remove gcc python-dev
 # the --no-install-recommends helps limit some of the install so that you can be more explicit about what gets installed
 
 COPY . .
