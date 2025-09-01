@@ -3,7 +3,7 @@ FROM python:3.9-slim-bookworm AS base
 
 # ---- Grab a musl-linked curl that doesn't hit glibc's clone3 path ----
 FROM alpine:3.20 AS curlgrab
-RUN apk add --no-cache curl   # /usr/bin/curl (musl)
+RUN apk add --no-cache curl-static 
 
 # ---- Final image ----
 FROM base
@@ -30,7 +30,7 @@ RUN set -eux \
   && rm -rf /var/lib/apt/lists/*
 
 # Copy a MUSL curl and use a distinct name
-COPY --from=curlgrab /usr/bin/curl /usr/local/bin/curl
+COPY --from=curlgrab /usr/bin/curl /usr/bin/curl
 # Optional: make it the default curl (comment out if you prefer to call curl-musl explicitly)
 # RUN ln -sf /usr/local/bin/curl-musl /usr/local/bin/curl
 
