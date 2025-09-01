@@ -1,17 +1,23 @@
-FROM python:3.9-slim-bullseye
-# bookworm has 2.36, but curl not work, since glibc triggers clone3, which need docker 20.10+. bullseye ⇒ glibc ~2.31 (no clone3) and currently works with slurm slurm 24.11.5 on clusters with docker 19.3.3
+# ---- Base with glibc 2.36 so Slurm works ----
+FROM python:3.9-slim-bookworm AS base
 
+# ---- Grab a musl-linked curl that doesn't hit glibc's clone3 path ----
+FROM alpine:3.20 AS curlgrab
+RUN apk add --no-cache curl   # /usr/bin/curl (musl)
+
+# ---- Final image ----
+FROM base
+
+# Create user early so files are owned correctly
 RUN groupadd -r sumstats-service && useradd -r --create-home -g sumstats-service sumstats-service
 
-ENV INSTALL_PATH /sumstats_service
-RUN mkdir -p $INSTALL_PATH
+ENV INSTALL_PATH=/sumstats_service
 WORKDIR $INSTALL_PATH
 
-COPY requirements.txt requirements.txt
+# System deps: keep runtime-only where possible
 RUN set -eux \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends \
-       curl \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends \
        ca-certificates \
        gcc \
        build-essential \
@@ -20,12 +26,21 @@ RUN set -eux \
        libmagic-dev \
        procps \
        dnsutils \
-       iputils-ping \ 
-    && rm -rf /var/lib/apt/lists/* \
-    && pip install --upgrade pip \
-    && pip install -r requirements.txt \
-    && apt-get purge -y --auto-remove gcc python3-dev build-essential
-# the --no-install-recommends helps limit some of the install so that you can be more explicit about what gets installed
+       iputils-ping \
+  && rm -rf /var/lib/apt/lists/*
+
+# Copy a MUSL curl and use a distinct name
+COPY --from=curlgrab /usr/bin/curl /usr/local/bin/curl
+# Optional: make it the default curl (comment out if you prefer to call curl-musl explicitly)
+# RUN ln -sf /usr/local/bin/curl-musl /usr/local/bin/curl
+
+COPY requirements.txt requirements.txt
+RUN pip install --upgrade pip \
+ && pip install -r requirements.txt
+
+# Strip build deps to keep image slim (leave runtime libs)
+RUN apt-get purge -y --auto-remove gcc build-essential python3-dev \
+ && rm -rf /var/lib/apt/lists/*
 
 COPY . .
 
