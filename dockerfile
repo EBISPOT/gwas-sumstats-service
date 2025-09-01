@@ -1,11 +1,11 @@
 # ---- Base with glibc 2.36 so Slurm works ----
 FROM python:3.9-slim-bookworm AS base
 
-# ---- Grab a musl-linked curl that doesn't hit glibc's clone3 path ----
-FROM alpine:edge AS curlgrab
-RUN apk add --no-cache curl-static ca-certificates \
- && which curl \
- && file /usr/bin/curl  
+# Get a fully static curl (avoids glibc clone3 path on old Docker)
+# Tip: pin a version for reproducible builds
+ARG CURL_VERSION=v8.7.1
+ADD https://github.com/moparisthebest/static-curl/releases/download/${CURL_VERSION}/curl-amd64 /usr/bin/curl
+RUN chmod +x /usr/bin/curl && /usr/bin/curl --version
 
 # ---- Final image ----
 FROM base
@@ -30,11 +30,6 @@ RUN set -eux \
        dnsutils \
        iputils-ping \
   && rm -rf /var/lib/apt/lists/*
-
-# Copy a MUSL curl and use a distinct name
-COPY --from=curlgrab /usr/bin/curl /usr/bin/curl
-# Optional: make it the default curl (comment out if you prefer to call curl-musl explicitly)
-# RUN ln -sf /usr/local/bin/curl-musl /usr/local/bin/curl
 
 COPY requirements.txt requirements.txt
 RUN pip install --upgrade pip \
