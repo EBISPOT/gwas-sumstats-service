@@ -3,7 +3,9 @@ FROM python:3.9-slim-bookworm AS base
 
 # ---- Grab a musl-linked curl that doesn't hit glibc's clone3 path ----
 FROM alpine:3.20 AS curlgrab
-RUN apk add --no-cache curl-static 
+RUN apk add --no-cache curl-static ca-certificates \
+ && which curl \
+ && file /usr/bin/curl  
 
 # ---- Final image ----
 FROM base
