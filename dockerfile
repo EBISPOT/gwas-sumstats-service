@@ -1,43 +1,19 @@
-# ---- Base with glibc 2.36 so Slurm works ----
-FROM python:3.9-slim-bookworm AS base
+FROM python:3.9-slim-bullseye
 
-# Get a fully static curl (avoids glibc clone3 path on old Docker)
-# Tip: pin a version for reproducible builds
-ARG CURL_VERSION=v8.7.1
-ADD https://github.com/moparisthebest/static-curl/releases/download/${CURL_VERSION}/curl-amd64 /usr/bin/curl
-RUN chmod +x /usr/bin/curl && /usr/bin/curl --version
-
-# ---- Final image ----
-FROM base
-
-# Create user early so files are owned correctly
 RUN groupadd -r sumstats-service && useradd -r --create-home -g sumstats-service sumstats-service
 
-ENV INSTALL_PATH=/sumstats_service
+ENV INSTALL_PATH /sumstats_service
+RUN mkdir -p $INSTALL_PATH
 WORKDIR $INSTALL_PATH
 
-# System deps: keep runtime-only where possible
-RUN set -eux \
-  && apt-get update \
-  && apt-get install -y --no-install-recommends \
-       ca-certificates \
-       gcc \
-       build-essential \
-       openssh-client \
-       python3-dev \
-       libmagic-dev \
-       procps \
-       dnsutils \
-       iputils-ping \
-  && rm -rf /var/lib/apt/lists/*
-
 COPY requirements.txt requirements.txt
-RUN pip install --upgrade pip \
- && pip install -r requirements.txt
-
-# Strip build deps to keep image slim (leave runtime libs)
-RUN apt-get purge -y --auto-remove gcc build-essential python3-dev \
- && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends gcc openssh-client python-dev libmagic-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --upgrade pip \
+    && pip install -r requirements.txt \
+    && apt-get purge -y --auto-remove gcc python-dev
+# the --no-install-recommends helps limit some of the install so that you can be more explicit about what gets installed
 
 COPY . .
 
