@@ -1,5 +1,6 @@
 # ---- Base with glibc 2.36 so Slurm works ----
-FROM python:3.9-slim-bookworm
+FROM python:3.9-slim-bullseye
+# FROM python:3.9-slim-bookworm
 
 RUN groupadd -r sumstats-service && useradd -r --create-home -g sumstats-service sumstats-service
 
