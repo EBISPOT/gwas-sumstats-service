@@ -11,6 +11,7 @@ WORKDIR $INSTALL_PATH
 RUN set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
+       curl \
        ca-certificates \
        gcc \
        build-essential \
