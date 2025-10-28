@@ -43,14 +43,3 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
-
-{{- define "noProxy.value" -}}
-{{- $base := "localhost,127.0.0.1,.svc,.svc.cluster.local,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16" -}}
-{{- $svc  := .Values.service.name -}}
-{{- $fqdn := printf "%s.%s.svc.cluster.local" .Values.service.name .Values.k8Namespace -}}
-{{- if .Values.image.env.noProxy -}}
-{{ printf "%s,%s,%s,%s" $base $svc $fqdn .Values.image.env.noProxy }}
-{{- else -}}
-{{ printf "%s,%s,%s" $base $svc $fqdn }}
-{{- end -}}
-{{- end -}}
