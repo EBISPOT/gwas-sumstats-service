@@ -72,7 +72,6 @@ spec:
           value: {{.Values.image.env.httpProxy}}
         - name: https_proxy
           value: {{.Values.image.env.httpsProxy}}
-
       volumes:
       - name: log
         persistentVolumeClaim:
