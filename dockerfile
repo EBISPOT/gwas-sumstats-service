@@ -1,5 +1,4 @@
-# ---- GLIBC > 2.34 for sbatch (slurm 2.4.11) to work. This version not support curl ----
-FROM python:3.9-slim-bookworm
+FROM python:3.9-slim-bullseye
 
 RUN groupadd -r sumstats-service && useradd -r --create-home -g sumstats-service sumstats-service
 
@@ -9,11 +8,11 @@ WORKDIR $INSTALL_PATH
 
 COPY requirements.txt requirements.txt
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc openssh-client python3-dev libmagic-dev \
+    && apt-get install -y --no-install-recommends gcc openssh-client python-dev libmagic-dev \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --upgrade pip \
     && pip install -r requirements.txt \
-    && apt-get purge -y --auto-remove gcc python3-dev
+    && apt-get purge -y --auto-remove gcc python-dev
 # the --no-install-recommends helps limit some of the install so that you can be more explicit about what gets installed
 
 COPY . .
