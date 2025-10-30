@@ -285,6 +285,19 @@ def update_sumstats(callback_id):
 
 @app.route("/v1/file-type", methods=["PATCH"])
 def update_file_types_route():
+    """
+    usage:
+    curl -X PATCH "gwas-ss-service-dev:8000/v1/file-type" -H "Content-Type: application/json" -d '{"gcst_id": ["GCSTXXXXXX", ...], "file_type": "<valid file type>"}'
+    
+    New body of request:
+    {
+        "gcst_id": ["GCSTXXXXXX", ...],
+        "file_type": "GWAS_SUMMARY_STATISTICS"
+    }
+
+    Update the file type for a given gcst_id.
+    """
+    # 1. Parse JSON body
     try:
         data = request.get_json()
         if not data:
@@ -293,15 +306,45 @@ def update_file_types_route():
         logger.error(f"Error parsing JSON: {e}")
         return make_response(jsonify({"error": "Invalid JSON format"}), 400)
 
-    gcst_id = data.get("gcst_id")
-    file_type = data.get("file_type")
+    # 2. Extract gcst_id and file_type
+    raw_gcst_ids = data.get("gcst_id")   # may be str or list
+    file_type = data.get("file_type") # String
 
-    if not gcst_id:
+    if raw_gcst_ids is None:
         return make_response(jsonify({"error": "gcst_id is required"}), 400)
 
     if not file_type:
         return make_response(jsonify({"error": "file_type is required"}), 400)
 
+    # normalise gcst_ids to a list of strings
+    if isinstance(raw_gcst_ids, str):
+        gcst_ids = [raw_gcst_ids]
+    elif isinstance(raw_gcst_ids, list):
+        gcst_ids = raw_gcst_ids
+    else:
+        return make_response(
+            jsonify({"error": "gcst_id must be a string or a list of strings"}), 400
+        )
+    
+    # sanity check list content and batch size check
+    gcst_ids = [gcst for gcst in gcst_ids if isinstance(gcst, str) and gcst.strip()]
+    if not gcst_ids:
+        return make_response(jsonify({"error": "gcst_id list is empty"}), 400)
+    
+    MAX_BATCH = 1000  # tune as you like
+    if len(gcst_ids) > MAX_BATCH:
+        return make_response(
+            jsonify({
+                "error": (
+                    f"Too many gcst_id values in one request "
+                    f"({len(gcst_ids)} > {MAX_BATCH}). "
+                    "Please split into smaller batches."
+                )
+            }),
+            400,
+        )
+    
+    # 3. Validate file_type
     valid_file_types = [ft.value for ft in config.FileType]
     if file_type not in valid_file_types:
         return make_response(
@@ -315,11 +358,8 @@ def update_file_types_route():
             ),
             400,
         )
-
-    logger.info(
-        f"Received request to update gcst_id='{gcst_id}' with file_type='{file_type}'"
-    )
-
+    
+    # 4. connect to MongoDB and update file types
     try:
         mdb = MongoClient(
             config.MONGO_URI,
@@ -327,41 +367,104 @@ def update_file_types_route():
             config.MONGO_PASSWORD,
             config.MONGO_DB,
         )
-        result = mdb.update_file_type(gcst_id=gcst_id, file_type=file_type)
     except Exception as e:
         logger.error(
-            f"""
-            An unexpected error occurred while updating file type
-            for gcst_id='{gcst_id}': {e}
-            """,
-            exc_info=True,
+            "Failed to initialise Mongo client: %s", e, exc_info=True
         )
         return make_response(
-            jsonify({"error": "An unexpected internal server error occurred."}), 500
+            jsonify({"error": "Internal database connection error"}), 500
+        )
+    
+    results = []
+    for gcst_id in gcst_ids:
+        logger.info(
+            f"Received request to update gcst_id='{gcst_id}' with file_type='{file_type}'"
         )
 
-    if result is None or not result.get("success"):
-        error_message = (
-            result.get("message", "An error occurred during the update.")
-            if result
-            else "An unknown error occurred during the update."
-        )
-        logger.error(
-            f"Update file type failed for gcst_id='{gcst_id}'. Reason: {error_message}"
-        )
-        return make_response(jsonify({"error": error_message}), 500)
-    else:
-        return make_response(
-            jsonify(
+        try:
+            update_result = mdb.update_file_type(gcst_id=gcst_id, file_type=file_type)
+        except Exception as e:
+            logger.error(
+                f"""
+                An unexpected error occurred while updating file type
+                for gcst_id='{gcst_id}': {e}
+                """,
+                exc_info=True,
+            )
+            results.append(
                 {
-                    "message": result["message"],
                     "gcst_id": gcst_id,
                     "file_type": file_type,
+                    "success": False,
+                    "message": "An unexpected internal server error occurred.",
                 }
-            ),
-            200,
-        )
+            )
+            continue
 
+        if update_result is None or not update_result.get("success"):
+            error_message = (
+                update_result.get("message", "An error occurred during the update.")
+                if update_result
+                else "An unknown error occurred during the update."
+            )
+            logger.error(
+                f"Update file type failed for gcst_id='{gcst_id}'. Reason: {error_message}"
+            )
+            results.append(
+                {
+                    "gcst_id": gcst_id,
+                    "file_type": file_type,
+                    "success": False,
+                    "message": error_message,
+                }
+            )
+        else:
+            results.append(
+                {
+                    "gcst_id": gcst_id,
+                    "file_type": file_type,
+                    "success": True,
+                    "message": update_result["message"],
+                }
+            )
+    
+    # 5. Decide top-level status
+    all_ok = all(r["success"] for r in results)
+
+    response_body = {
+        "file_type": file_type,
+        "summary": {
+            "requested_gcst_ids": gcst_ids,
+            "total": len(results),
+            "succeeded": sum(1 for r in results if r["success"]),
+            "failed": sum(1 for r in results if not r["success"]),
+        },
+        "results": results,
+    }
+
+    # 6. Launch tasks to regenerate metadata YAML for successful updates
+    for result in results:
+        if result["success"]:
+            gcst_id = result["gcst_id"]
+            logger.info(f"Launching metadata YAML regeneration for gcst_id='{gcst_id}'")
+            try:
+                convert_metadata_to_yaml.apply_async(
+                    args=[gcst_id],
+                    kwargs={"is_harmonised_included": True},
+                    queue=config.CELERY_QUEUE3,
+                    retry=True,
+                )
+            except Exception as e:
+                logger.error(
+                    f"Failed to launch metadata YAML regeneration task for gcst_id='{gcst_id}': {e}",
+                    exc_info=True,
+                )
+
+    # If everything succeeded, return 200.
+    # If some failed, using 207 to indicates that the request was successfully processed, but there may be some errors.
+    status_code = 200 if all_ok else 207
+
+    return make_response(jsonify(response_body), status_code)
 
 # --- Globus methods --- #
 
