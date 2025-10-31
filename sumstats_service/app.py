@@ -441,8 +441,8 @@ def update_file_types_route():
         "file_type": file_type,
         "summary": {
             "total_requested_gcst_ids": len(gcst_ids),
-            "succeeded": sum(success_gcst_ids),
-            "failed": sum(failed_gcst_ids),
+            "succeeded": len(success_gcst_ids),
+            "failed": len(failed_gcst_ids),
             "success_gcst_ids": success_gcst_ids,
             "failed_gcst_ids": failed_gcst_ids,
         },
