@@ -327,7 +327,11 @@ def update_file_types_route():
         )
     
     # sanity check list content and batch size check
-    gcst_ids = [gcst for gcst in gcst_ids if isinstance(gcst, str) and gcst.strip()]
+    gcst_ids = list(dict.fromkeys(
+    gcst.strip() for gcst in gcst_ids
+    if isinstance(gcst, str) and gcst.strip()
+    ))
+
     if not gcst_ids:
         return make_response(jsonify({"error": "gcst_id list is empty"}), 400)
     
@@ -430,14 +434,17 @@ def update_file_types_route():
     
     # 5. Decide top-level status
     all_ok = all(r["success"] for r in results)
+    success_gcst_ids = [r["gcst_id"] for r in results if r["success"]]
+    failed_gcst_ids = [r["gcst_id"] for r in results if not r["success"]]
 
     response_body = {
         "file_type": file_type,
         "summary": {
-            "requested_gcst_ids": gcst_ids,
-            "total": len(results),
-            "succeeded": sum(1 for r in results if r["success"]),
-            "failed": sum(1 for r in results if not r["success"]),
+            "total_requested_gcst_ids": len(gcst_ids),
+            "succeeded": sum(success_gcst_ids),
+            "failed": sum(failed_gcst_ids),
+            "success_gcst_ids": success_gcst_ids,
+            "failed_gcst_ids": failed_gcst_ids,
         },
         "results": results,
     }
@@ -450,7 +457,7 @@ def update_file_types_route():
             try:
                 convert_metadata_to_yaml.apply_async(
                     args=[gcst_id],
-                    kwargs={"is_harmonised_included": True},
+                    kwargs={"is_harmonised_included": True, "is_save": False},
                     queue=config.CELERY_QUEUE3,
                     retry=True,
                 )
@@ -461,7 +468,7 @@ def update_file_types_route():
                 )
 
     # If everything succeeded, return 200.
-    # If some failed, using 207 to indicates that the request was successfully processed, but there may be some errors.
+    # If some failed, return 207 Multi-Status.
     status_code = 200 if all_ok else 207
 
     return make_response(jsonify(response_body), status_code)
