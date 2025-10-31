@@ -292,7 +292,8 @@ def update_file_types_route():
     New body of request:
     {
         "gcst_id": ["GCSTXXXXXX", ...],
-        "file_type": "GWAS_SUMMARY_STATISTICS"
+        "file_type": "pre-GWAS-SSF"/"GWAS-SSF v1.0"/"non-GWAS-SSF",
+        "is_harmonised_included": True/False (optional, default True)
     }
 
     Update the file type for a given gcst_id.
@@ -309,6 +310,7 @@ def update_file_types_route():
     # 2. Extract gcst_id and file_type
     raw_gcst_ids = data.get("gcst_id")   # may be str or list
     file_type = data.get("file_type") # String
+    is_harmonised_included = data.get("is_harmonised_included", True)
 
     if raw_gcst_ids is None:
         return make_response(jsonify({"error": "gcst_id is required"}), 400)
@@ -439,6 +441,7 @@ def update_file_types_route():
 
     response_body = {
         "file_type": file_type,
+        "is_harmonised_included": is_harmonised_included,
         "summary": {
             "total_requested_gcst_ids": len(gcst_ids),
             "succeeded": len(success_gcst_ids),
@@ -457,7 +460,7 @@ def update_file_types_route():
             try:
                 convert_metadata_to_yaml.apply_async(
                     args=[gcst_id],
-                    kwargs={"is_harmonised_included": True, "is_save": False},
+                    kwargs={"is_harmonised_included": is_harmonised_included, "is_save": False},
                     queue=config.CELERY_QUEUE3,
                     retry=True,
                 )
