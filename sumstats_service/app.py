@@ -337,19 +337,6 @@ def update_file_types_route():
     if not gcst_ids:
         return make_response(jsonify({"error": "gcst_id list is empty"}), 400)
     
-    MAX_BATCH = 1000  # tune as you like
-    if len(gcst_ids) > MAX_BATCH:
-        return make_response(
-            jsonify({
-                "error": (
-                    f"Too many gcst_id values in one request "
-                    f"({len(gcst_ids)} > {MAX_BATCH}). "
-                    "Please split into smaller batches."
-                )
-            }),
-            400,
-        )
-    
     # 3. Validate file_type
     valid_file_types = [ft.value for ft in config.FileType]
     if file_type not in valid_file_types:
@@ -464,6 +451,7 @@ def update_file_types_route():
                     queue=config.CELERY_QUEUE3,
                     retry=True,
                 )
+                time.sleep(0.001)  # brief pause to avoid overwhelming the queue
             except Exception as e:
                 logger.error(
                     f"Failed to launch metadata YAML regeneration task for gcst_id='{gcst_id}': {e}",
