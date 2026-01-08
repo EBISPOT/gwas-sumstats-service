@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import time
 from typing import Union
 
@@ -293,7 +294,8 @@ def update_file_types_route():
     {
         "gcst_id": ["GCSTXXXXXX", ...],
         "file_type": "pre-GWAS-SSF"/"GWAS-SSF v1.0"/"non-GWAS-SSF",
-        "is_harmonised_included": True/False (optional, default True)
+        "is_harmonised_included": True/False (optional, default True),
+        "email_to": "email address" (optional)
     }
 
     Update the file type for a given gcst_id.
@@ -311,6 +313,18 @@ def update_file_types_route():
     raw_gcst_ids = data.get("gcst_id")   # may be str or list
     file_type = data.get("file_type") # String
     is_harmonised_included = data.get("is_harmonised_included", True)
+    email_to = data.get("email_to", None)
+
+    # check the optional email_to parameter
+    if isinstance(email_to, str):
+        email_to = email_to.strip() or None
+        if email_to and not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email_to):
+            return make_response(
+                jsonify({"error": "email_to must be a valid address"}), 400
+                )
+    else:
+        email_to = None
+    
 
     if raw_gcst_ids is None:
         return make_response(jsonify({"error": "gcst_id is required"}), 400)
@@ -433,7 +447,6 @@ def update_file_types_route():
             "total_requested_gcst_ids": len(gcst_ids),
             "succeeded": len(success_gcst_ids),
             "failed": len(failed_gcst_ids),
-            "success_gcst_ids": success_gcst_ids,
             "failed_gcst_ids": failed_gcst_ids,
         },
         "results": results,
@@ -462,6 +475,19 @@ def update_file_types_route():
     # If some failed, return 207 Multi-Status.
     status_code = 200 if all_ok else 207
 
+    if email_to:
+      try:
+          send_file_type_update_email.apply_async(
+              args=[email_to, response_body],
+              queue=config.CELERY_QUEUE2,
+              retry=True,
+          )
+      except Exception as e:
+          logger.error(
+              f"Failed to queue email notification to '{email_to}': {e}",
+              exc_info=True,
+          )
+    
     return make_response(jsonify(response_body), status_code)
 
 # --- Globus methods --- #
@@ -511,7 +537,11 @@ def get_dir_contents(unique_id):
 # postval --> app side worker queue
 # preval --> compute cluster side worker queue
 # metadata-yml-update --> dynamic metadata update queue
-
+@celery.task(queue=config.CELERY_QUEUE2, options={"queue": config.CELERY_QUEUE2})
+def send_file_type_update_email(mail_to: str, response_body: dict) -> None:
+    subject = "GWAS file-type update summary"
+    message = json.dumps(response_body, indent=2)
+    send_mail(subject=subject, message=message, mail_to=mail_to)
 
 @celery.task(queue=config.CELERY_QUEUE2, options={"queue": config.CELERY_QUEUE2})
 def process_studies(
