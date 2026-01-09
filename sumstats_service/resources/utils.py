@@ -57,9 +57,11 @@ def send_mail(
         mail_from -- (default: {"gwas-dev@ebi.ac.uk"})
         mail_to -- (default: {"gwas-dev@ebi.ac.uk"})
     """
+
     msg = MIMEMultipart()
     msg["From"] = mail_from
     msg["To"] = mail_to
+    print("smtp server:", mail_to)
     msg["Subject"] = subject
     msg.attach(MIMEText(message, "plain"))
     with smtplib.SMTP(server, port) as server:
