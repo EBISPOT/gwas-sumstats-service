@@ -314,7 +314,6 @@ def update_file_types_route():
     file_type = data.get("file_type") # String
     is_harmonised_included = data.get("is_harmonised_included", True)
     email_to = data.get("email_to", None)
-    print("read from json:", email_to)
 
     # check the optional email_to parameter
     if isinstance(email_to, str):
@@ -325,7 +324,6 @@ def update_file_types_route():
                 )
     else:
         email_to = None
-    print("email_to after validation:", email_to)
     
 
     if raw_gcst_ids is None:
@@ -485,7 +483,6 @@ def update_file_types_route():
               queue=config.CELERY_QUEUE2,
               retry=True,
           )
-          print("email_to pass to celery", email_to)
       except Exception as e:
           logger.error(
               f"Failed to queue email notification to '{email_to}': {e}",
@@ -546,7 +543,6 @@ def send_file_type_update_email(mail_to: str, response_body: dict) -> None:
     subject = "GWAS file-type update summary"
     message = json.dumps(response_body, indent=2)
     logger.info(f"Sending GWAS file-type update summary to the mail: {mail_to}")
-    print("send_file_type_update_email celery worker:", mail_to)
     send_mail(subject=subject, message=message, mail_to=mail_to)
 
 @celery.task(queue=config.CELERY_QUEUE2, options={"queue": config.CELERY_QUEUE2})
