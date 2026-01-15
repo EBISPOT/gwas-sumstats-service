@@ -1,6 +1,6 @@
-# Bullseye base image (GLIBC_2.31<2.34) - suitable for curl commands
-# Used for app deployment in k8s (deploy_staging_app)
-FROM python:3.9-slim-bullseye
+# Bookworm base image (GLIBC_2.36>=2.34) - required for celery/nextflow/slurm compatibility
+# Used for celery workers deployment (deploy_staging_workers)
+FROM python:3.9-slim-bookworm
 
 RUN groupadd -r sumstats-service && useradd -r --create-home -g sumstats-service sumstats-service
 
