@@ -51,8 +51,6 @@ celery = Celery(
 celery.conf.update(app.config)
 
 # --- Errors --- #
-
-
 @app.errorhandler(APIException)
 def handle_custom_api_exception(error):
     response = error.to_dict()
@@ -62,16 +60,13 @@ def handle_custom_api_exception(error):
     resp.mimetype = "application/json"
     return resp
 
-
 @app.errorhandler(400)
 def bad_request(error):
     return make_response(jsonify({"error": "Bad request"}), 400)
 
-
 @app.errorhandler(404)
 def not_found(error):
     return make_response(jsonify({"error": "Not found"}), 404)
-
 
 @app.errorhandler(500)
 def internal_server_error(error):
@@ -86,15 +81,11 @@ def internal_server_error(error):
         500,
     )
 
-
 # --- Sumstats service --- #
-
-
 @app.route("/")
 def root():
     resp = endpoints.root()
     return Response(response=resp, status=200, mimetype="application/json")
-
 
 @app.route("/v1/sum-stats", methods=["POST"])
 def sumstats():
@@ -283,7 +274,47 @@ def update_sumstats(callback_id):
     logger.info(f"{callback_id=} :: Return status 200")
     return Response(status=200, mimetype="application/json")
 
+# --- Globus methods --- #
+@app.route("/v1/sum-stats/globus/mkdir", methods=["POST"])
+def make_dir():
+    logger.info(">> /v1/sum-stats/globus/mkdir")
+    req_data = request.get_json()
+    unique_id = req_data["uniqueID"]
+    email = req_data["email"]
+    globus_origin_id = None
+    if globus.list_dir(unique_id) is None:  # if not already exists
+        globus_origin_id = globus.mkdir(unique_id, email)
+    if globus_origin_id:
+        resp = {"globusOriginID": globus_origin_id}
+        return make_response(jsonify(resp), 201)
+    else:
+        resp = {"error": "Account not linked to Globus"}
+        return make_response(jsonify(resp), 200)
 
+
+@app.route("/v1/sum-stats/globus/<unique_id>", methods=["DELETE"])
+def deactivate_dir(unique_id):
+    resp = {"unique_id": unique_id}
+    logger.info(f">> DELETE /v1/sum-stats/globus/{unique_id}")
+    status = au.delete_globus_endpoint(unique_id)
+    logger.info(f">> {status=}")
+    if status is False:
+        logger.info("aborting...")
+        abort(404)
+    return make_response(jsonify(resp), status)
+
+
+@app.route("/v1/sum-stats/globus/<unique_id>")
+def get_dir_contents(unique_id):
+    resp = {"unique_id": unique_id}
+    data = globus.list_dir(unique_id)
+    resp["data"] = data
+    if data is None:
+        abort(404)
+    else:
+        return make_response(jsonify(resp), 200)
+
+# --- File type update route --- #
 @app.route("/v1/file-type", methods=["PATCH"])
 def update_file_types_route():
     """
@@ -366,7 +397,71 @@ def update_file_types_route():
             400,
         )
     
-    # 4. connect to MongoDB and update file types
+    # 4. Queue the task for asynchronous processing and return immediately
+    try:
+        logger.info(
+            f"Queuing file type update task for {len(gcst_ids)} gcst_ids with file_type='{file_type}'"
+        )
+        update_file_types_async.apply_async(
+            kwargs={
+                "gcst_ids": gcst_ids,
+                "file_type": file_type,
+                "is_harmonised_included": is_harmonised_included,
+                "email_to": email_to,
+            },
+            queue=config.CELERY_QUEUE2,
+            retry=True,
+        )
+        
+        # Return 200 immediately with short summary
+        response_body = {
+            "message": "Request received and queued for processing",
+            "total_gcst_ids_received": len(gcst_ids),
+            "file_type": file_type,
+        }
+        
+        return make_response(jsonify(response_body), 200)
+        
+    except Exception as e:
+        logger.error(
+            f"Failed to queue file type update task: {e}",
+            exc_info=True,
+        )
+        return make_response(
+            jsonify({"error": "Failed to queue processing task"}), 500
+        )
+
+
+
+
+# --- Celery tasks --- #
+# postval --> app side worker queue
+# preval --> compute cluster side worker queue
+# metadata-yml-update --> dynamic metadata update queue
+@celery.task(queue=config.CELERY_QUEUE2, options={"queue": config.CELERY_QUEUE2})
+def send_file_type_update_email(mail_to: str, response_body: dict) -> None:
+    subject = "GWAS file-type update summary"
+    message = json.dumps(response_body, indent=2)
+    logger.info(f"Sending GWAS file-type update summary to the mail: {mail_to}")
+    send_mail(subject=subject, message=message, mail_to=mail_to)
+
+
+@celery.task(queue=config.CELERY_QUEUE2, options={"queue": config.CELERY_QUEUE2})
+def update_file_types_async(
+    gcst_ids: list,
+    file_type: str,
+    is_harmonised_included: bool = True,
+    email_to: Union[str, None] = None,
+):
+    """
+    Asynchronously update file types for multiple gcst_ids.
+    This task handles all MongoDB updates, metadata regeneration, and email notifications.
+    """
+    logger.info(
+        f">>> [update_file_types_async] Processing {len(gcst_ids)} gcst_ids with file_type='{file_type}'"
+    )
+    
+    # Connect to MongoDB
     try:
         mdb = MongoClient(
             config.MONGO_URI,
@@ -376,16 +471,14 @@ def update_file_types_route():
         )
     except Exception as e:
         logger.error(
-            "Failed to initialise Mongo client: %s", e, exc_info=True
+            f"Failed to initialise Mongo client in async task: {e}", exc_info=True
         )
-        return make_response(
-            jsonify({"error": "Internal database connection error"}), 500
-        )
+        return
     
     results = []
     for gcst_id in gcst_ids:
         logger.info(
-            f"Received request to update gcst_id='{gcst_id}' with file_type='{file_type}'"
+            f"Processing update for gcst_id='{gcst_id}' with file_type='{file_type}'"
         )
 
         try:
@@ -435,8 +528,7 @@ def update_file_types_route():
                 }
             )
     
-    # 5. Decide top-level status
-    all_ok = all(r["success"] for r in results)
+    # Calculate summary statistics
     success_gcst_ids = [r["gcst_id"] for r in results if r["success"]]
     failed_gcst_ids = [r["gcst_id"] for r in results if not r["success"]]
 
@@ -452,7 +544,7 @@ def update_file_types_route():
         "results": results,
     }
 
-    # 6. Launch tasks to regenerate metadata YAML for successful updates
+    # Launch tasks to regenerate metadata YAML for successful updates
     for result in results:
         if result["success"]:
             gcst_id = result["gcst_id"]
@@ -471,79 +563,25 @@ def update_file_types_route():
                     exc_info=True,
                 )
 
-    # If everything succeeded, return 200.
-    # If some failed, return 207 Multi-Status.
-    status_code = 200 if all_ok else 207
-
+    # Send email notification if requested
     if email_to:
-      try:
-          logger.info(f"Queuing email notification to '{email_to}'")
-          send_file_type_update_email.apply_async(
-              args=[email_to, response_body],
-              queue=config.CELERY_QUEUE2,
-              retry=True,
-          )
-      except Exception as e:
-          logger.error(
-              f"Failed to queue email notification to '{email_to}': {e}",
-              exc_info=True,
-          )
+        try:
+            logger.info(f"Queuing email notification to '{email_to}'")
+            send_file_type_update_email.apply_async(
+                args=[email_to, response_body],
+                queue=config.CELERY_QUEUE2,
+                retry=True,
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to queue email notification to '{email_to}': {e}",
+                exc_info=True,
+            )
     
-    return make_response(jsonify(response_body), status_code)
-
-# --- Globus methods --- #
-
-
-@app.route("/v1/sum-stats/globus/mkdir", methods=["POST"])
-def make_dir():
-    logger.info(">> /v1/sum-stats/globus/mkdir")
-    req_data = request.get_json()
-    unique_id = req_data["uniqueID"]
-    email = req_data["email"]
-    globus_origin_id = None
-    if globus.list_dir(unique_id) is None:  # if not already exists
-        globus_origin_id = globus.mkdir(unique_id, email)
-    if globus_origin_id:
-        resp = {"globusOriginID": globus_origin_id}
-        return make_response(jsonify(resp), 201)
-    else:
-        resp = {"error": "Account not linked to Globus"}
-        return make_response(jsonify(resp), 200)
-
-
-@app.route("/v1/sum-stats/globus/<unique_id>", methods=["DELETE"])
-def deactivate_dir(unique_id):
-    resp = {"unique_id": unique_id}
-    logger.info(f">> DELETE /v1/sum-stats/globus/{unique_id}")
-    status = au.delete_globus_endpoint(unique_id)
-    logger.info(f">> {status=}")
-    if status is False:
-        logger.info("aborting...")
-        abort(404)
-    return make_response(jsonify(resp), status)
-
-
-@app.route("/v1/sum-stats/globus/<unique_id>")
-def get_dir_contents(unique_id):
-    resp = {"unique_id": unique_id}
-    data = globus.list_dir(unique_id)
-    resp["data"] = data
-    if data is None:
-        abort(404)
-    else:
-        return make_response(jsonify(resp), 200)
-
-
-# --- Celery tasks --- #
-# postval --> app side worker queue
-# preval --> compute cluster side worker queue
-# metadata-yml-update --> dynamic metadata update queue
-@celery.task(queue=config.CELERY_QUEUE2, options={"queue": config.CELERY_QUEUE2})
-def send_file_type_update_email(mail_to: str, response_body: dict) -> None:
-    subject = "GWAS file-type update summary"
-    message = json.dumps(response_body, indent=2)
-    logger.info(f"Sending GWAS file-type update summary to the mail: {mail_to}")
-    send_mail(subject=subject, message=message, mail_to=mail_to)
+    logger.info(
+        f"<<< [update_file_types_async] Completed processing. "
+        f"Success: {len(success_gcst_ids)}, Failed: {len(failed_gcst_ids)}"
+    )
 
 @celery.task(queue=config.CELERY_QUEUE2, options={"queue": config.CELERY_QUEUE2})
 def process_studies(
