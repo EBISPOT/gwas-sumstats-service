@@ -12,17 +12,25 @@ variables:
   DOCKER_TLS_CERTDIR: ""
   DOCKER_HOST: tcp://docker:2375
   CI_REGISTRY_IMAGE: ebispot/gwas-sumstats-service
+  APP_IMAGE_TAG: $CI_COMMIT_SHA
+  CELERY_IMAGE_TAG: ${CI_COMMIT_SHA}-celery
 
 
 # always build an image tagged with the commit SHA from master
+# Build two images with same content but different OS:
+# - APP_IMAGE_TAG: bullseye (GLIBC_2.31<2.34) for app/k8s deployment
+# - CELERY_IMAGE_TAG: bookworm (GLIBC_2.36>=2.34) for celery workers/nextflow/slurm
 build:
   stage: build
   script:
    - echo "$DOCKER_HUB_PASSWORD" > dhpw.txt
    - docker login -u "${DOCKER_HUB_USER}" --password-stdin < dhpw.txt
    - docker pull $CI_REGISTRY_IMAGE:latest
-   - docker build --network=host --cache-from $CI_REGISTRY_IMAGE:latest -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
-   - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+   - docker pull $CI_REGISTRY_IMAGE:latest-celery || true
+   - docker build --network=host --cache-from $CI_REGISTRY_IMAGE:latest -t $CI_REGISTRY_IMAGE:$APP_IMAGE_TAG .
+   - docker build --network=host --cache-from $CI_REGISTRY_IMAGE:latest-celery -f dockerfile_celery -t $CI_REGISTRY_IMAGE:$CELERY_IMAGE_TAG .
+   - docker push $CI_REGISTRY_IMAGE:$APP_IMAGE_TAG
+   - docker push $CI_REGISTRY_IMAGE:$CELERY_IMAGE_TAG
   only:
    - master
    - dev
@@ -36,15 +44,21 @@ build_release:
   script:
    - echo "$DOCKER_HUB_PASSWORD" > dhpw.txt
    - docker login -u "${DOCKER_HUB_USER}" --password-stdin < dhpw.txt
-   - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-   - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:latest
-   - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+   - docker pull $CI_REGISTRY_IMAGE:$APP_IMAGE_TAG
+   - docker pull $CI_REGISTRY_IMAGE:$CELERY_IMAGE_TAG
+   - docker tag $CI_REGISTRY_IMAGE:$APP_IMAGE_TAG $CI_REGISTRY_IMAGE:latest
+   - docker tag $CI_REGISTRY_IMAGE:$APP_IMAGE_TAG $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+   - docker tag $CI_REGISTRY_IMAGE:$CELERY_IMAGE_TAG $CI_REGISTRY_IMAGE:latest-celery
+   - docker tag $CI_REGISTRY_IMAGE:$CELERY_IMAGE_TAG $CI_REGISTRY_IMAGE:${CI_COMMIT_TAG}-celery
    - docker push $CI_REGISTRY_IMAGE:latest
    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+   - docker push $CI_REGISTRY_IMAGE:latest-celery
+   - docker push $CI_REGISTRY_IMAGE:${CI_COMMIT_TAG}-celery
   only:
    - tags
 
 
+# Deploy app to k8s using bullseye image (GLIBC_2.31<2.34) - suitable for curl commands
 deploy_staging_app:
   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/dtzar/helm-kubectl:2.13.1
   stage: deploy
@@ -55,16 +69,20 @@ deploy_staging_app:
     - RABBITPWD=$(kubectl --namespace rabbitmq get secret rabbitmq -o jsonpath="{.data.rabbitmq-password}" | base64 -d)
     - helm init --stable-repo-url https://charts.helm.sh/stable
     - helm delete --purge gwas-sumstats-service-dev || true
-    - helm install --name gwas-sumstats-service-dev --set k8Namespace=gwas-dev,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_SHA,service.name=gwas-ss-service-dev,worker.name=gwas-ss-worker-dev,image.env.celeryUser=$RABBITUSER,image.env.celeryPwd=$RABBITPWD,image.env.celeryQueue1='prevalDev',image.env.celeryQueue2='postvalDev',image.env.celeryQueue3='metadata-yml-update-sandbox',image.env.gwasEndpointID=$GWAS_ENDPOINT_ID_DEV,image.env.globusSecret=$CLIENT_SECRET,image.env.transferClientID=$TRANSFER_CLIENT_ID_DEV,image.env.clientID=$CLIENT_ID_DEV,image.env.gwasGlobusGroup=$GWAS_GLOBUS_GROUP,image.env.globusHostname=$GLOBUS_HOSTNAME,image.env.mappedCollectionId=$MAPPED_COLLECTION_ID,image.env.storageGatewayId=$STORAGE_GATEWAY_ID,image.env.ftpServer=$FTP_SERVER,image.env.ftpUser=$FTP_USERNAME,image.env.ftpPassword=$FTP_PASSWORD,image.env.mongoURI=$SANDBOX_MONGO_URI,image.env.mongoUser=$SANDBOX_MONGO_USER,image.env.mongoPassword=$SANDBOX_MONGO_PASSWORD,image.env.mongoDB=$SANDBOX_MONGO_DB,image.env.validatedPath=$VALIDATED_PATH_SANDBOX,volume.log.ClaimName=gwas-dev-depo-logs,image.env.singularityCache=$SINGULARITY_CACHEDIR,image.env.storagePath=$STORAGE_PATH_SANDBOX,image.env.computeFarmLogin=$HH_LOGIN_NODE,image.env.computeFarmUser=$CLUSTER_USERNAME,image.env.computeFarmQueueLong=$COMPUTE_FARM_QUEUE_LONG,image.env.httpProxy=$HH_HTTP_PROXY,image.env.httpsProxy=$HH_HTTPS_PROXY,image.env.remoteHttpProxy=$PG_HTTP_PROXY,image.env.remoteHttpsProxy=$PG_HTTPS_PROXY,image.env.stagingPath=$STAGING_PATH_SANDBOX,image.env.swPath=$SW_PATH,replicaCount=1,volume.data.nfsServer=$NFS_SERVER_PROD,volume.data.path=$NFS_PATH_PROD,image.env.uid=$UID,image.env.gid=$GID,image.env.depoAPIToken=$DEPO_API_AUTH_TOKEN,image.env.outputDataPath=$OUTPUT_PATH,image.env.depoPath=$DEPO_PATH ./k8chart/ --wait
+    - helm install --name gwas-sumstats-service-dev --set k8Namespace=gwas-dev,image.repository=$CI_REGISTRY_IMAGE,image.tag=$APP_IMAGE_TAG,service.name=gwas-ss-service-dev,worker.name=gwas-ss-worker-dev,image.env.celeryUser=$RABBITUSER,image.env.celeryPwd=$RABBITPWD,image.env.celeryQueue1='prevalDev',image.env.celeryQueue2='postvalDev',image.env.celeryQueue3='metadata-yml-update-sandbox',image.env.gwasEndpointID=$GWAS_ENDPOINT_ID_DEV,image.env.globusSecret=$CLIENT_SECRET,image.env.transferClientID=$TRANSFER_CLIENT_ID_DEV,image.env.clientID=$CLIENT_ID_DEV,image.env.gwasGlobusGroup=$GWAS_GLOBUS_GROUP,image.env.globusHostname=$GLOBUS_HOSTNAME,image.env.mappedCollectionId=$MAPPED_COLLECTION_ID,image.env.storageGatewayId=$STORAGE_GATEWAY_ID,image.env.ftpServer=$FTP_SERVER,image.env.ftpUser=$FTP_USERNAME,image.env.ftpPassword=$FTP_PASSWORD,image.env.mongoURI=$SANDBOX_MONGO_URI,image.env.mongoUser=$SANDBOX_MONGO_USER,image.env.mongoPassword=$SANDBOX_MONGO_PASSWORD,image.env.mongoDB=$SANDBOX_MONGO_DB,image.env.validatedPath=$VALIDATED_PATH_SANDBOX,volume.log.ClaimName=gwas-dev-depo-logs,image.env.singularityCache=$SINGULARITY_CACHEDIR,image.env.storagePath=$STORAGE_PATH_SANDBOX,image.env.computeFarmLogin=$HH_LOGIN_NODE,image.env.computeFarmUser=$CLUSTER_USERNAME,image.env.computeFarmQueueLong=$COMPUTE_FARM_QUEUE_LONG,image.env.httpProxy=$HH_HTTP_PROXY,image.env.httpsProxy=$HH_HTTPS_PROXY,image.env.remoteHttpProxy=$PG_HTTP_PROXY,image.env.remoteHttpsProxy=$PG_HTTPS_PROXY,image.env.stagingPath=$STAGING_PATH_SANDBOX,image.env.swPath=$SW_PATH,replicaCount=1,volume.data.nfsServer=$NFS_SERVER_PROD,volume.data.path=$NFS_PATH_PROD,image.env.uid=$UID,image.env.gid=$GID,image.env.depoAPIToken=$DEPO_API_AUTH_TOKEN,image.env.outputDataPath=$OUTPUT_PATH,image.env.depoPath=$DEPO_PATH ./k8chart/ --wait
   environment:
     name: sandbox
   only:
     - master
     - dev
 
+# Deploy celery workers using bookworm image (GLIBC_2.36>=2.34) - required for nextflow/slurm
+# Waits for k8s app deployment to complete first (needs RabbitMQ to be ready)
 deploy_staging_workers:
   image: alpine
   stage: deploy
+  needs:
+    - deploy_staging_app
   before_script:
     - apk add openssh-client
     - eval $(ssh-agent -s)
@@ -73,7 +91,7 @@ deploy_staging_workers:
     - chmod 700 ~/.ssh
   script:
     # note the new  START_CELERY_WORKERS_SLURM script
-    - ssh -o StrictHostKeyChecking=no "$WORKER_USER"@"$WORKER_SERVER_SLURM" "sbatch --mem=12000M --time=00:30:00 -D $WORKER_DIR_DEV -o deploy.out -e deploy.err --wrap='./START_CELERY_WORKERS_SLURM.sh $CI_COMMIT_SHA'"
+    - ssh -o StrictHostKeyChecking=no "$WORKER_USER"@"$WORKER_SERVER_SLURM" "sbatch --mem=12000M --time=00:30:00 -D $WORKER_DIR_DEV -o deploy.out -e deploy.err --wrap='./START_CELERY_WORKERS_SLURM.sh $CELERY_IMAGE_TAG'"
   tags:
     - gwas
   only:
