@@ -431,9 +431,6 @@ def update_file_types_route():
             jsonify({"error": "Failed to queue processing task"}), 500
         )
 
-
-
-
 # --- Celery tasks --- #
 # postval --> app side worker queue
 # preval --> compute cluster side worker queue
@@ -531,6 +528,7 @@ def update_file_types_async(
     # Calculate summary statistics
     success_gcst_ids = [r["gcst_id"] for r in results if r["success"]]
     failed_gcst_ids = [r["gcst_id"] for r in results if not r["success"]]
+    failed_results = [r for r in results if not r["success"]]   
 
     response_body = {
         "file_type": file_type,
@@ -539,9 +537,8 @@ def update_file_types_async(
             "total_requested_gcst_ids": len(gcst_ids),
             "succeeded": len(success_gcst_ids),
             "failed": len(failed_gcst_ids),
-            "failed_gcst_ids": failed_gcst_ids,
         },
-        "results": results,
+        "failed_details": failed_results,
     }
 
     # Launch tasks to regenerate metadata YAML for successful updates
